@@ -1,0 +1,3 @@
+[submodule "submodules/FittingScripts"]
+	path = submodules/FittingScripts
+	url = https://gitlab.rschluessler.com/BrillouinMicroscopy/FittingScripts.git
