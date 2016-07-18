@@ -15,8 +15,8 @@ fwhm = 5;               % [pix] approx. fwhm of the lorenz peaks
 %% open h5-file
 
 % get the handle to the file
-path = 'd:\user\Raimund\#Biotec\Messungen\20160715\';
-file = h5bmread([path 'Methanol.h5']);
+path = 'd:\brillouin-microscopy\Messdaten\20160718\USAF\';
+file = h5bmread([path 'Testchart10.h5']);
 
 % get the attributes and comment
 version = file.version;
@@ -26,19 +26,27 @@ comment = file.comment;
 % get the resolution
 resolution.X = file.resolutionX;
 resolution.Y = file.resolutionY;
+resolution.Z = file.resolutionZ;
+
+% get the positions
+positions.X = file.positionsX;
+positions.Y = file.positionsY;
+positions.Z = file.positionsZ;
 
 %% calculating the brillouin shifts from the data
-intensity = NaN(resolution.X, resolution.Y);
-for n = 1:1:resolution.X
-    for m = 1:1:resolution.Y
-        img_data = file.readPayloadData(n,m,'data');
-        img_res.X = size(img_data, 2);
-        img_res.Y = size(img_data, 1);
-        
-        for k = 1:1:size(img_data, 3)
-            intensity(n, m) = sum(img_data(:));
+intensity = NaN(resolution.X, resolution.Y, resolution.Z);
+for jj = 1:1:resolution.Z
+    for kk = 1:1:resolution.Y
+        for ll = 1:1:resolution.X
+            img_data = file.readPayloadData(ll,kk,jj,'data');
+            img_res.X = size(img_data, 2);
+            img_res.Y = size(img_data, 1);
+
+            for k = 1:1:size(img_data, 3)
+                intensity(ll, kk, jj) = sum(img_data(:));
+            end
+
         end
-        
     end
 end
 
@@ -46,10 +54,10 @@ end
 h5bmclose(file);
 
 %% show image
-intensity_aligned = rot90(intensity,2);
-
 figure;
-imagesc(intensity_aligned);
-set(gca,'yDir','normal');
-axis on
+imagesc(positions.Y(:,1), positions.X(1,:), intensity);
+set(gca,'xDir','reverse');
+axis on;
+xlabel('y');
+ylabel('x');
 
