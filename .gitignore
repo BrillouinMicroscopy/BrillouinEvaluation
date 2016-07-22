@@ -1,0 +1,26 @@
+# Temporary MATLAB files #
+##########################
+*.asv
+
+# HDF5 files #
+##############
+*.h5
+
+# Temporary latex files #
+#########################
+*.aux
+*.bcf
+*.blg
+*.lof
+*.log
+*.out
+*.spl
+*synctex.gz
+*.run.xml
+*.auxlock
+*.toc
+
+# TryFiles #
+############
+TryFile.m
+in_progress/

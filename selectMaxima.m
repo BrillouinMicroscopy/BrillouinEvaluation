@@ -1,4 +1,4 @@
-function [ p1, p2 ] = ChooseMaxima( maxima, x, y, gap)
+function [ maxima ] = selectMaxima( maxima, x, y, gap)
 %ChooseMaxima selects two maxima on a diagonal plane
 %   the function selects the outer maxima on a diagonal plane in the image.
 %
@@ -24,7 +24,6 @@ distance = xmaxima + ymaxima;
 [~, ind1] = min(distance);
 [~, ind2] = max(distance);
 
-p1 = maxima(:, ind1);
-p2 = maxima(:, ind2);
+maxima = maxima(:, [ind1, ind2]);
 end
 

@@ -27,7 +27,7 @@ diagonal = round(sqrt(X^2 + Y^2));
 %linear equation for sectional plane
 m1 = (p1(2) - p2(2))/(p1(1) - p2(1));
 n1 = p1(2) - m1*p1(1);
-
+x0 = -n1/m1;
 % angle of the linear equation
 theta = atan(m1);
 
@@ -36,7 +36,13 @@ theta = atan(m1);
 
 % turning grid by the angle of the linear equation
 x_interpol = x*cos(theta) - y*sin(theta);
-y_interpol = x*sin(theta) + y*cos(theta) + n1;
+y_interpol = x*sin(theta) + y*cos(theta);
+
+if n1<0
+    x_interpol = x_interpol + x0;
+elseif n1>0
+    y_interpol = y_interpol + n1;
+end
 
 % interpolate along the turned grid
 intensity = interp2(spectrum, x_interpol, y_interpol);
