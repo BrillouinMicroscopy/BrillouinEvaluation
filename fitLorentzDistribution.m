@@ -47,7 +47,7 @@ switch nrPeaks
             start = [maxima(1, 2), maxima(1, 3), fwhm, fwhm, maxima(2, 2), maxima(2, 3)];
             x = 1:1:length(intensity);
             % limit fitted area to 75 % between Rayleigh peaks
-            ind = borders + [1 -1] * round((1-0.75)/2*diff(borders));
+            ind = borders + [1 -1] * round((1-0.70)/2*diff(borders));
             ind = ind(1):ind(2);
             %fit
             [params_B, ~, ~, ~]  = nfit_2peaks(x(ind), intensity(ind), start, thres);
