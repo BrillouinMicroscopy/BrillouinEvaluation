@@ -135,15 +135,15 @@ VIPAparams.theta = thetaRange(thetaInd);
 VIPAparams.x0    = x0Range(x0Ind);
 VIPAparams.xs    = xsRange(xsInd);
 
-%% Check Results
-% x_F = NaN(1,4);
-% % position of the two Rayleigh peaks
-% [x_F(1,[1 4]), ~] = peakPosition( params, constants, orders, constants.lambda0);
-% % position of the Stokes and Anti-Stokes peaks
-% [x_F(2), ~] = peakPosition(params, constants, 1, lambdaAS);
-% [x_F(3), ~] = peakPosition(params, constants, 2, lambdaS);
 
 %% Plot Results
+% x_F = NaN(1,4);
+% % position of the two Rayleigh peaks
+% [x_F(1,[1 4]), ~] = peakPosition( VIPAparams, constants, orders, constants.lambda0);
+% % position of the Stokes and Anti-Stokes peaks
+% [x_F(2), ~] = peakPosition(VIPAparams, constants, 1, lambdaAS);
+% [x_F(3), ~] = peakPosition(VIPAparams, constants, 2, lambdaS);
+% 
 % figure;
 % hold on
 % box on
