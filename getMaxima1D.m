@@ -1,4 +1,4 @@
-function [maxima] = getMaxima1D(img, limit, borders)
+function [maxima] = getMaxima1D(img, limit)
 %% GETMAXIMA
 %   localises maxima in an image
 %
@@ -13,78 +13,48 @@ function [maxima] = getMaxima1D(img, limit, borders)
 %   ##INPUT
 %   img:            [1]     array containing the image
 %   limit:          [1]     maximum number of maximas
-%   borders:        [pix]   borders outside of which all found maximas are
-%                           discarded
 % 
 %   ##OUTPUT
 %   maxima:         [1]     2-D array containing the found maxima
-%       array [x, y, intensity]     [pix, pix, 1]
+%       array [x, intensity]     [pix, 1]
 
 %%
-% number of pixels to ignore at the image border
-border = 3;
-
-% get the background threshold
-thres = getBackground(img);
-
 % remove salt and pepper pixels by a median filter
-if size(img,1) > 1
-    img = medfilt2(img,[3,3]);
-else
-    img = medfilt1(img,3);
-end
+img = medfilt1(img,3);
 
-% set all values smaller than the threshold to zero
-img = img.*double(img>thres);
+% find all local peaks
+[intensity,position,width,prominence] = findpeaks(img);
 
-% smooth image
-filt = [1 1 1 1]/4;
-img = conv(double(img),filt,'same');
+% sort the peaks by their prominence
+[prominence,ind] = sort(prominence,'descend');
+intensity = intensity(ind);
+position = position(ind);
+width = width(ind);
 
-% again apply the threshold
-img = img.*(img>0.9*thres);
+% check intermediate result
+% figure(15);
+% findpeaks(img, 'Annotate', 'extents');
+% ylim([100 300]);
+% text(position(1:limit)+.02,intensity(1:limit),num2str((1:limit)'));
+% drawnow;
 
-% find all non-zero values
-sizeImg = length(img);
-[~, x, I] = find(img(border:sizeImg(1)-border));
+% limit number of peaks
+prominence = prominence(1:limit);
+intensity = intensity(1:limit);
+position = position(1:limit);
+width = width(1:limit);
 
-% correct for ignored image border
-x = x+border-1;
-
-% iterate over all non-zero pixels and check if they are a local maxima
-posX = [];
-int = [];
-for j=1:length(x)
-    if (img(x(j))>=img(x(j)-1)) && ...
-       (img(x(j))>=img(x(j)+1));
-    
-        posX = [posX; x(j)]; %#ok<*AGROW>
-        int = [int; I(j)];
-    end
-end
-
-% discard all values with positions outside the specified borders (usually
-% the positions of the Rayleigh peaks
-borders = sort(borders, 'ascend');
-posX(posX < borders(1) | posX > borders(2)) = NaN;
-int = int(~isnan(posX));
-posX = posX(~isnan(posX));
-
-% sort the peaks by intensity and limit to 'limit' highest peaks
-[int,ind] = sort(int,'descend');
-posX = posX(ind);
-posX = posX(1:limit);
-int = int(1:limit);
-
-% sort the peaks by position
-[posX,ind] = sort(posX,'ascend');
-int = int(ind);
+% sort the peaks by their position
+[position,ind] = sort(position,'ascend');
+prominence = prominence(ind);
+intensity = intensity(ind);
+width = width(ind);
 
 % construct array with position and intensity
-maxima = [transpose(posX); transpose(int)];
+maxima = [position; intensity; prominence; width];
 
 %% Check result
-% figure;
+% figure(16);
 % plot(img);
 % hold on;
 % plot(maxima(1,:), maxima(2,:), 'linestyle', 'none', 'Marker', 'x', 'color', 'red');

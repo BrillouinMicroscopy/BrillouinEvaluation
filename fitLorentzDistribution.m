@@ -25,7 +25,7 @@ thres = getBackground(intensity);
 
 % getting the maxima in the 1D distribution
 borders = [borders(1,1), borders(1,2)] + [-5, 5];
-[maxima] = getMaxima1D(intensity, nrPeaks, borders);
+[maxima] = getMaxima1D(intensity, nrPeaks);
 
 %% fit the data
 
