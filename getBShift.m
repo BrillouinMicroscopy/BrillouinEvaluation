@@ -17,28 +17,36 @@ function [BShift] = getBShift(peakPos, VIPAparams, constants, orders, correctDri
 
 otherdims = repmat({':'},1,ndims(peakPos)-1);
 
-AntiStokes = getWavelength(peakPos(otherdims{:}, 2), VIPAparams, constants, orders(1));
-Stokes     = getWavelength(peakPos(otherdims{:}, 3), VIPAparams, constants, orders(2));
-
 % calculate Brillouin shifts
-BShift(otherdims{:}, 1) = getFrequencyShift(AntiStokes, constants.lambda0);
-BShift(otherdims{:}, 2) = getFrequencyShift(Stokes, constants.lambda0);
-% tmp = squeeze(BShift);
 
-if correctDrift && size(peakPos,ndims(peakPos)) > 2
+if size(peakPos,ndims(peakPos)) == 1
+    AntiStokes = getWavelength(peakPos(otherdims{:}, 1), VIPAparams, constants, orders(1));
+elseif size(peakPos,ndims(peakPos)) == 2
+    AntiStokes = getWavelength(peakPos(otherdims{:}, 1), VIPAparams, constants, orders(1));
+    Stokes     = getWavelength(peakPos(otherdims{:}, 2), VIPAparams, constants, orders(2));
+elseif size(peakPos,ndims(peakPos)) == 4
+    AntiStokes = getWavelength(peakPos(otherdims{:}, 2), VIPAparams, constants, orders(1));
+    Stokes     = getWavelength(peakPos(otherdims{:}, 3), VIPAparams, constants, orders(2));
+else
+    % throw an error if the size is unexpected
+    ME = MException('The size of the last dimension of the array should either be 1, 2 or 4.');
+    throw(ME);
+end
+
+% convert wavelengths to frequency shifts
+BShift(otherdims{:}, 1) = getFrequencyShift(AntiStokes, constants.lambda0);
+if size(peakPos,ndims(peakPos)) > 1
+    BShift(otherdims{:}, 2) = getFrequencyShift(Stokes, constants.lambda0);
+end
+
+% correct for laser frequency shifts is requested and possible
+if correctDrift && size(peakPos,ndims(peakPos)) == 4
     Rayleigh1 = getWavelength(peakPos(otherdims{:}, 1), VIPAparams, constants, orders(1));
     Rayleigh2 = getWavelength(peakPos(otherdims{:}, 4), VIPAparams, constants, orders(2));
     Drift(otherdims{:}, 1) = getFrequencyShift(Rayleigh1, constants.lambda0);
     Drift(otherdims{:}, 2) = getFrequencyShift(Rayleigh2, constants.lambda0);
-    
-    tmp1 = squeeze(Rayleigh1);
-    
-    tmp2 = squeeze(BShift);
+
     BShift = BShift - Drift;
-    tmp3 = squeeze(Drift);
-    tmp4 = squeeze(BShift);
 end
-% BShift(otherdims{:}, 1) = BShiftAS;
-% BShift(otherdims{:}, 2) = BShiftS;
-% BShift = (BShiftAS - BShiftS)./2;
+
 end
