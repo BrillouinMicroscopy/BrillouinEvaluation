@@ -1,4 +1,4 @@
-function [ values ] = discardOutlier ( values, dim, maxd )
+function [ values, nrDdiscarded ] = discardOutlier ( values, dim, maxd )
 %% DISCARDOUTLIER
 % function discards outliers by setting them to NaN
 
@@ -14,7 +14,10 @@ should = repmat(med,repeats);
 % calculate the absolute difference between the median and each value
 dif = abs(values - should);
 
+mask = dif > abs(maxd*values);
+nrDdiscarded = sum(mask(:));
+
 %discard all values which differ from median more than by "maxd"
-values(dif > abs(maxd*values) ) = NaN;
+values(mask) = NaN;
 
 end
