@@ -32,7 +32,7 @@ img = medfilt2(img,[3,3]);
 img = img.*double(img>thres);
 
 % smooth image
-filt = (fspecial('gaussian', 7,1));
+filt = (fspecial('gaussian', 15,1));
 img = conv2(double(img),filt,'same');
 
 % again apply the threshold
@@ -71,7 +71,24 @@ posX = posX(ind);
 posY = posY(ind);
 
 maxima = [transpose(posX); transpose(posY); transpose(int)];
+
+% check intermediate result
+% figure(12);
+% imagesc(img);
+% hold on;
+% for jj = 1:size(maxima,2)
+%     plot(maxima(2,jj),maxima(1,jj),'r+');
+% end
+
 maxima = maxima(:,1:limit);
+
+% check final result
+% figure(13);
+% imagesc(img);
+% hold on;
+% for jj = 1:size(maxima,2)
+%     plot(maxima(2,jj),maxima(1,jj),'r+');
+% end
 
 end
 
