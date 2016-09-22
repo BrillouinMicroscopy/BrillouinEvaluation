@@ -1,8 +1,18 @@
-function [ frequencyShift ] = getFrequencyShift( wavelength, reference )
-%GETFREQUENCYSHIFT
+function [frequencyShift] = getFrequencyShift(wavelength, reference)
+%% GETFREQUENCYSHIFT
+%   This function calculates the frequency shift of wavelength compared to
+%   reference
+% 
+%   ##INPUT
+%   wavelength:     [nm]    shifted wavelength
+%   reference:      [nm]    reference wavelength
 %
-c = 299792458;  % [m/s] speed of light
+%   ##OUTPUT
+%   frequencyShift: [Hz]    frequency shift
 
-frequencyShift = c./wavelength - c/reference;
+%%
+c = 299792458;    % [m/s]   speed of light
+
+frequencyShift = c./wavelength - c./reference;
 
 end

@@ -1,14 +1,19 @@
-function [ maxima ] = selectMaxima( maxima, x, y, gap)
-%ChooseMaxima selects two maxima on a diagonal plane
+function [maxima] = selectMaxima(maxima, x, y, gap)
+%% SELECTMAXIMA
 %   the function selects the outer maxima on a diagonal plane in the image.
 %
-%   input:
-%   maxima: matrix of maxima position and intensity [x; y; I;]
-%   x, y: x- and y-resolution of the image
-%   gap: minimum gap between the edges of the Image and the coosen maxima
+%   ##INPUT
+%   maxima:         [ ]     matrix of maxima position and intensity
+%       array [x, y, intensity]     [pix, pix, 1]
+%   x:              [pix]   x-resolution of the image
+%   y:              [pix]   y-resolution of the image
+%   gap:            [pix]   minimum gap between the edges of the image and
+%                           the chose maxima
 %
-%   output:
-%   p1, p2: positions and intensity of the selected maxima [x, y, I]
+%   ##OUTPUT
+%   maxima:         [ ]     matrix of the selected maxima with their
+%                           position and intensity
+%       array [x, y, intensity]     [pix, pix, 1]
 
 xmaxima = maxima(1,:);
 xmaxima(xmaxima < (gap + 1) | xmaxima > (x - gap - 1)) = NaN;

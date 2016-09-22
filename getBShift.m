@@ -1,24 +1,34 @@
 function [BShift] = getBShift(peakPos, VIPAparams, constants, orders, correctDrift)
-% this function calculates the Brillouin shifts corresponding to the
-% Brillouin peaks in ImagePeaks using the non-linear frequency axis with
-% the fitted VIPA parameters
+%% GETBSHIFT
+%   this function calculates the Brillouin shifts corresponding to the
+%   Brillouin peaks in ImagePeaks using the non-linear frequency axis with
+%   the fitted VIPA parameters
 % 
-% input:
-% ImagePeaks    5-D array of the peak positions for each pixel, multiple
-%               measurements per pixel
-% lambda0       wavelength of the incident laser light
-% VIPAparams    fitted parameters of the VIPA conraining:
-% VIPAparams = [d, n, theta, F, x0, xs]
+%   ##INPUT
+%   peakPos:        [m]     5-D array of the peak positions on the camera
+%   VIPAparams =
+%             d:    [m]     width of the cavity
+%             n:    [1]     refractive index
+%         theta:    [rad]   angle of the VIPA
+%             F:    [m]     focal length of the lens behind the VIPA
+%            x0:    [m]     offset for fitting
+%            xs:    [1]     scale factor for fitting
+%   constants =
+%             c:    [m/s]   speed of light
+%     pixelSize:    [m]     pixel size of the camera
+%       lambda0:    [m]     laser wavelength
+%     bshiftCal:    [Hz]    calibration shift frequency
+%   order:          [1]     orders of the peaks
 % 
-% output:
-% bShift        5-D array of the brillouin shifts corresponding to the peak positions
+%   ##OUTPUT
+%   bShift:         [Hz]    5-D array of the brillouin shifts corresponding
+%                           to the peak positions 
 
-% calculate wavelengths corresponding to the peak positions
-
+%%
+% create the indice vector
 otherdims = repmat({':'},1,ndims(peakPos)-1);
 
-% calculate Brillouin shifts
-
+% calculate wavelengths corresponding to the peak positions
 if size(peakPos,ndims(peakPos)) == 1
     AntiStokes = getWavelength(peakPos(otherdims{:}, 1), VIPAparams, constants, orders(1));
 elseif size(peakPos,ndims(peakPos)) == 2
@@ -33,7 +43,7 @@ else
     throw(ME);
 end
 
-% convert wavelengths to frequency shifts
+% convert wavelengths to Brillouin frequency shifts
 BShift(otherdims{:}, 1) = getFrequencyShift(AntiStokes, constants.lambda0);
 if size(peakPos,ndims(peakPos)) > 1
     BShift(otherdims{:}, 2) = getFrequencyShift(Stokes, constants.lambda0);

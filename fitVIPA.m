@@ -1,33 +1,34 @@
 function [VIPAparams] = fitVIPA(peakPos, VIPAstart, constants, IterNum)
-% this function fits the VIPA parameters to the measured peaks. To
-% calculate the Parameters, 2 Rayleigh peaks and 2 Brillouin peaks within
-% one FSR are required
+%% FITVIPA
+%   this function fits the VIPA parameters to the measured peaks. To
+%   calculate the Parameters, 2 Rayleigh peaks and 2 Brillouin peaks within
+%   one FSR are required
 % 
-% input:
-% peaks:        [m]     peak locations on the camera
-% VIPAstart =
-%           d:  [m]     width of the cavity
-%           n:  [1]     refractive index
-%       theta:  [rad]   angle of the VIPA
-%           F:  [m]     focal length of the lens behind the VIPA
-%          x0:  [m]     offset for fitting
-%          xs:  [1]     scale factor for fitting
-%       order:  [1]     observed order of the VIPA spectrum
-% constants =
-%           c:  [m/s]   speed of light
-%   pixelSize:  [m]     pixel size of the camera
-%     lambda0:  [m]     laser wavelength
-%   bshiftCal:  [Hz]    calibration shift frequency
-% IterNum:      [1]     number of Iterations for the Fit
+%   ##INPUT
+%   peakPos:        [m]     peak locations on the camera
+%   VIPAstart =
+%              d:   [m]     width of the cavity
+%              n:   [1]     refractive index
+%          theta:   [rad]   angle of the VIPA
+%              F:   [m]     focal length of the lens behind the VIPA
+%             x0:   [m]     offset for fitting
+%             xs:   [1]     scale factor for fitting
+%          order:   [1]     observed order of the VIPA spectrum
+%   constants =
+%             c:    [m/s]   speed of light
+%     pixelSize:    [m]     pixel size of the camera
+%       lambda0:    [m]     laser wavelength
+%     bshiftCal:    [Hz]    calibration shift frequency
+%   IterNum:        [1]     number of Iterations for the Fit
 % 
-% output:
-% params =
-%           d:  [m]     width of the cavity
-%           n:  [1]     refractive index
-%       theta:  [rad]   angle of the VIPA
-%           F:  [m]     focal length of the lens behind the VIPA
-%          x0:  [m]     offset for fitting
-%          xs:  [1]     scale factor for fitting
+%   ##OUTPUT
+%   VIPAparams =
+%             d:    [m]     width of the cavity
+%             n:    [1]     refractive index
+%         theta:    [rad]   angle of the VIPA
+%             F:    [m]     focal length of the lens behind the VIPA
+%            x0:    [m]     offset for fitting
+%            xs:    [1]     scale factor for fitting
 
 orders = VIPAstart.order:(VIPAstart.order + 1);
 

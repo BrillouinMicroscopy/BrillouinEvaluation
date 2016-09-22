@@ -1,20 +1,22 @@
-function [peakPos, peakFWHM, peakInt, FittedCurve] = fitLorentzDistribution(intensity, fwhm, nrPeaks, borders)
-% This function will fit a double Lorentzian distribution to the peaks in
-% the 1D intensity distribution
+function [peakPos, peakFWHM, peakInt, fittedCurve] = fitLorentzDistribution(intensity, fwhm, nrPeaks, borders)
+%% FITLORENTZDISTRIBUTION
+%   This function will fit a Lorentzian distribution with the requested
+%   number of peaks to a given 1-D intensity distribution
 % 
-% input:
-% intensity         1D intensity distribution
-% fwhm              approximated fwhm
-% nrPeaks           '2' or '4' select
-% borders           position of the Rayleigh peaks (should not be necessary
-%                   if the prominence of the peaks is evaluated)
-% 
-% output:
-% peaks             peak positions
-% peakInt           peak intensities
-% fwhm              full width at half maximum of the peaks
-% FittedCurve       fitted intensity distribution
+%   ##INPUT
+%   intensity:      [1]     1D intensity distribution
+%   fwhm:           [pix]   approximated fwhm
+%   nrPeaks:        [1]     number of peaks: either '2' or '4'
+%   borders:        [1]     position of the Rayleigh peaks (should not be necessary
+%                           if the prominence of the peaks is evaluated)
+%
+%   ##OUTPUT
+%   peakPos:        [pix]   peak positions
+%   peakInt:        [1]     peak intensities
+%   fwhm:           [pix]   full width at half maximum of the peaks
+%   fittedCurve:    [1]     fitted intensity distribution
 
+%%
 % get the background threshold
 thres = getBackground(intensity);
 
@@ -34,7 +36,7 @@ switch nrPeaks
         start = [maxima(1, 1), maxima(1, 2), fwhm, fwhm, maxima(2, 1), maxima(2, 2)];
         x = 1:1:length(intensity);
         % fitting
-        [params, ~, ~, FittedCurve]  = nfit_2peaks(x, intensity, start, thres);
+        [params, ~, ~, fittedCurve]  = nfit_2peaks(x, intensity, start, thres);
 
         peakPos = params(1:2);
         peakFWHM = params(3:4);
@@ -64,12 +66,12 @@ switch nrPeaks
                       params_R(3), params_B(3), params_B(4), params_R(4),...
                       params_R(5), params_B(5), params_B(6), params_R(6)];
             % calculate fitte curve
-            [~, FittedCurve] = lorentz4(params, x, intensity, thres);
+            [~, fittedCurve] = lorentz4(params, x, intensity, thres);
         else
             % start parameters
             start = [maxima(1, 1:4), fwhm, fwhm, fwhm, fwhm, maxima(2, 1:4)];
             x = 1:1:length(intensity);
-            [params, ~, ~, FittedCurve] = nfit_4peaks(x, intensity, start, thres);
+            [params, ~, ~, fittedCurve] = nfit_4peaks(x, intensity, start, thres);
         end
         peakPos = params(1:4);
         peakFWHM = params(5:8);

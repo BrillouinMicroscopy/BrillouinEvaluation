@@ -1,12 +1,7 @@
-function [ maxima ] = getMaxima2D( img, limit )
-%% GETMAXIMA localises maxima in an image
-%   input:
-%   img: image
-%   limit: maximum number of maximas
+function [maxima] = getMaxima2D(img, limit)
+%% GETMAXIMA
+%   localises maxima in an image
 %
-%   output:
-%   maxima: array [x, y, intensity]
-
 %   idea of the function was adapted form FastPeakFind:
 %   https://de.mathworks.com/matlabcentral/fileexchange/37388-fast-2d-peak-finder
 
@@ -14,7 +9,16 @@ function [ maxima ] = getMaxima2D( img, limit )
 %   find all non-zero pixels and check if they are local maxima
 %   sort local maxima by intensity limit count of maxima to the value of
 %   limit
+% 
+%   ##INPUT
+%   img:            [1]     array containing the image
+%   limit:          [1]     maximum number of maximas
+% 
+%   ##OUTPUT
+%   maxima:         [1]     2-D array containing the found maxima
+%       array [x, y, intensity]     [pix, pix, 1]
 
+%%
 % number of pixels to ignore at the image border
 border = 3;
 
