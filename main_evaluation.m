@@ -96,6 +96,7 @@ for ll = 1:1:resolution.X
                     % get the peak positions of one pixel
                     ImagePeaks(ll, kk, jj, mm, :) = peakPos;
                 catch
+                    ImagePeaks(ll, kk, jj, mm, :) = NaN(1,4);
                 end
             end
             finishedPoints = ((jj-1)*(resolution.X*resolution.Y) + (kk-1)*resolution.X + ll);
