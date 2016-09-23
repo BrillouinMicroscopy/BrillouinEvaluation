@@ -81,10 +81,14 @@ switch nrPeaks
 end
 
 %% check result
-% figure;
+% figure(3);
+% hold off;
 % plot(x, intensity, 'color', 'blue');
 % hold on;
-% plot(x, FittedCurve, 'color', 'red');
+% plot(x, fittedCurve, 'color', 'red');
 % plot(x, thres*ones(size(x)));
+% ylim([100 400]);
+% drawnow;
+% pause(0.5);
 
 end
