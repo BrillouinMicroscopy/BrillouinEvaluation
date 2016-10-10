@@ -1,6 +1,9 @@
 # Temporary MATLAB files #
 ##########################
 *.asv
+Tests/log.txt
+Tests/ExitCode.txt
+
 
 # HDF5 files #
 ##############
