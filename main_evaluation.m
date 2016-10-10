@@ -5,22 +5,10 @@ filename = 'Solution_merged';
 %% parameters calibration
 
 % constant parameters
-constants = {};                     % struct with constants
-constants.c         = 299792458;    % [m/s] speed of light
-constants.pixelSize = 6.5e-6;       % [m]   pixel size of the camera
-constants.lambda0   = 780.24e-9;    % [m]   laser wavelength
-constants.bShiftCal = 5.09e9;       % [Hz]  calibration shift frequency
-constants.F         = 0.2;          % [m]   focal length of the lens behind the VIPA
+constants = getConstants();
 
 % start parameters for VIPA fit
-VIPAstart = {};
-VIPAstart.d     = 0.006774;         % [m]   width of the cavity
-VIPAstart.n     = 1.453683;         % [1]   refractive index
-VIPAstart.theta = 0.8*2*pi/360;     % [rad] angle of the VIPA
-VIPAstart.x0    = 0.0021;           % [m]   offset for fitting
-VIPAstart.xs    = 1.1348;           % [1]   scale factor for fitting
-VIPAstart.order = 1;                % [1]   observed order of the VIPA spectrum
-IterNum = 4;
+VIPAstart = getStartparameters();
 
 %%
 load_path = 'RawData';
@@ -48,7 +36,7 @@ img = file.readCalibrationData('data');
 
 % fit the parameters of the VIPA to the peak positions of the calibration
 % data
-VIPAparams = fitVIPA(peakPos, VIPAstart, constants, IterNum);
+VIPAparams = fitVIPA(peakPos, VIPAstart, constants);
 
 %% evaluation
 

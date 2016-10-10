@@ -1,4 +1,4 @@
-function [VIPAparams] = fitVIPA(peakPos, VIPAstart, constants, IterNum)
+function [VIPAparams] = fitVIPA(peakPos, VIPAstart, constants)
 %% FITVIPA
 %   this function fits the VIPA parameters to the measured peaks. To
 %   calculate the Parameters, 2 Rayleigh peaks and 2 Brillouin peaks within
@@ -14,12 +14,12 @@ function [VIPAparams] = fitVIPA(peakPos, VIPAstart, constants, IterNum)
 %             x0:   [m]     offset for fitting
 %             xs:   [1]     scale factor for fitting
 %          order:   [1]     observed order of the VIPA spectrum
+%        iterNum:   [1]     number of iterations for the fit
 %   constants =
 %             c:    [m/s]   speed of light
 %     pixelSize:    [m]     pixel size of the camera
 %       lambda0:    [m]     laser wavelength
 %     bshiftCal:    [Hz]    calibration shift frequency
-%   IterNum:        [1]     number of Iterations for the Fit
 % 
 %   ##OUTPUT
 %   VIPAparams =
@@ -40,7 +40,7 @@ lambdaAS = 1/(1/constants.lambda0 + constants.bShiftCal/constants.c);
 
 %% calculation
 
-for gg = 1:1:IterNum
+for gg = 1:1:VIPAstart.iterNum
 
     if exist('ItRun', 'var')
         ItRun = ItRun + 1;
@@ -135,6 +135,7 @@ VIPAparams.n     = nRange(nInd);
 VIPAparams.theta = thetaRange(thetaInd);
 VIPAparams.x0    = x0Range(x0Ind);
 VIPAparams.xs    = xsRange(xsInd);
+VIPAparams.error = ErrorVector(ind);
 
 
 %% Plot Results
