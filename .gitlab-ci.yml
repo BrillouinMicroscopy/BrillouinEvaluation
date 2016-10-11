@@ -1,4 +1,4 @@
-test1:
-  script:
-  - cd Tests
-  - sh "executeTests.sh"
+# test1:
+#   script:
+#   - cd Tests
+#   - sh "executeTests.sh"
