@@ -83,11 +83,15 @@ end
 %% check result
 % figure(3);
 % hold off;
-% plot(x, intensity, 'color', 'blue');
+% plot(x, intensity, 'color', [0 0.4470 0.7410]);
 % hold on;
-% plot(x, fittedCurve, 'color', 'red');
+% plot(x, fittedCurve, 'color', [0.8500 0.3250 0.0980]);
 % plot(x, thres*ones(size(x)));
-% ylim([100 400]);
+% xlim([0 500]);
+% ylim([100 160]);
+% xlabel('[pix]', 'interpreter', 'latex');
+% ylabel('intensity [a.u.]', 'interpreter', 'latex');
+% grid on;
 % drawnow;
 % pause(0.5);
 

@@ -34,8 +34,11 @@ width = width(ind);
 % check intermediate result
 % figure(15);
 % findpeaks(img, 'Annotate', 'extents');
-% ylim([100 300]);
+% ylim([100 160]);
 % text(position(1:limit)+.02,intensity(1:limit),num2str((1:limit)'));
+% xlabel('[pix]', 'interpreter', 'latex');
+% ylabel('intensity [a.u.]', 'interpreter', 'latex');
+% xlim([0 500]);
 % drawnow;
 
 % limit number of peaks
@@ -55,9 +58,17 @@ maxima = [position; intensity; prominence; width];
 
 %% Check result
 % figure(16);
-% plot(img);
+% sig = plot(img);
 % hold on;
-% plot(maxima(1,:), maxima(2,:), 'linestyle', 'none', 'Marker', 'x', 'color', 'red');
+% peaks = plot(maxima(1,:), maxima(2,:)+1.3, 'linestyle', 'none', 'Marker', 'v', 'color', [0 0.4470 0.7410], 'MarkerFaceColor', [0 0.4470 0.7410]);
+% xlabel('[pix]', 'interpreter', 'latex');
+% ylabel('intensity [a.u.]', 'interpreter', 'latex');
+% xlim([0 500]);
+% ylim([100 160]);
+% grid on;
+% prom = line([maxima(1,:); maxima(1,:)], [maxima(2,:)-maxima(3,:); maxima(2,:)], 'color', [0.8500 0.3250 0.0980]);
+% width = line([maxima(1,:)-0.5*maxima(4,:);maxima(1,:)+0.5*maxima(4,:)], [maxima(2,:)-0.5*maxima(3,:); maxima(2,:)-0.5*maxima(3,:)], 'color', [0.9290 0.6940 0.1250]);
+% legend([sig; peaks; prom(1); width(1)], {'signal', 'peak', 'prominence', 'width (half-prominence)'},'location','North');
 
 end
 
