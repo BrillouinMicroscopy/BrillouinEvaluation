@@ -17,10 +17,17 @@ nrBins = round(max(img(:))/0.5);
 [N,edges] = histcounts(img,nrBins);
 
 % find the index of the most frequent value
-[~, ind] = max(N);
+[Nmax, ind] = max(N);
 
-% calculate the threshold from the borders of the bin
-thres = mean(edges(ind:ind+1));
+%% check the significancy of the count
+% most frequent value has to occur five times more often  than the average)
+if Nmax > 5*mean(N(N~=0))
+    % calculate the threshold from the borders of the bin
+    thres = mean(edges(ind:ind+1));
+% if it does not, use the minimum value
+else
+    thres = min(img(:));
+end
     
 %% Check results
 % figure(14);
