@@ -31,6 +31,16 @@ borders = [borders(1,1), borders(1,2)] + [-5, 5];
 
 % select fitting mode
 switch nrPeaks
+    case 1
+        %start parameters
+        start = [maxima(1, 1), fwhm, maxima(2, 1)];
+        x = 1:1:length(intensity);
+        % fitting
+        [params, ~, ~, fittedCurve]  = nfit_1peaks(x, intensity, start, thres);
+
+        peakPos = params(1);
+        peakFWHM = params(2);
+        peakInt = params(3); 
     case 2
         %start parameters
         start = [maxima(1, 1), maxima(1, 2), fwhm, fwhm, maxima(2, 1), maxima(2, 2)];
