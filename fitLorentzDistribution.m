@@ -36,7 +36,7 @@ switch nrPeaks
         start = [maxima(1, 1), fwhm, maxima(2, 1)];
         x = 1:1:length(intensity);
         % fitting
-        [params, ~, ~, fittedCurve]  = nfit_1peaks(x, intensity, start, thres);
+        [params, ~, ~, fittedCurve]  = Utils.FittingScripts.nfit_1peaks(x, intensity, start, thres);
 
         peakPos = params(1);
         peakFWHM = params(2);
@@ -46,7 +46,7 @@ switch nrPeaks
         start = [maxima(1, 1), maxima(1, 2), fwhm, fwhm, maxima(2, 1), maxima(2, 2)];
         x = 1:1:length(intensity);
         % fitting
-        [params, ~, ~, fittedCurve]  = nfit_2peaks(x, intensity, start, thres);
+        [params, ~, ~, fittedCurve]  = Utils.FittingScripts.nfit_2peaks(x, intensity, start, thres);
 
         peakPos = params(1:2);
         peakFWHM = params(3:4);
@@ -62,26 +62,26 @@ switch nrPeaks
             ind = borders + [1 -1] * round((1-0.70)/2*diff(borders));
             ind = ind(1):ind(2);
             %fit
-            [params_B, ~, ~, ~]  = nfit_2peaks(x(ind), intensity(ind), start, thres);
+            [params_B, ~, ~, ~]  = Utils.FittingScripts.nfit_2peaks(x(ind), intensity(ind), start, thres);
             
             % fit Rayleigh peak
             % construct start parameter array
             start = [maxima(1, 1), maxima(1, 4), fwhm, fwhm, maxima(2, 1), maxima(2, 4)];
             x = 1:1:length(intensity);
             % fit
-            [params_R, ~, ~, ~]  = nfit_2peaks(x, intensity, start, thres);
+            [params_R, ~, ~, ~]  = Utils.FittingScripts.nfit_2peaks(x, intensity, start, thres);
             
             % construct parameter array as 4 peak fits returns it
             params = [params_R(1), params_B(1), params_B(2), params_R(2),...
                       params_R(3), params_B(3), params_B(4), params_R(4),...
                       params_R(5), params_B(5), params_B(6), params_R(6)];
             % calculate fitte curve
-            [~, fittedCurve] = lorentz4(params, x, intensity, thres);
+            [~, fittedCurve] = Utils.FittingScripts.lorentz4(params, x, intensity, thres);
         else
             % start parameters
             start = [maxima(1, 1:4), fwhm, fwhm, fwhm, fwhm, maxima(2, 1:4)];
             x = 1:1:length(intensity);
-            [params, ~, ~, fittedCurve] = nfit_4peaks(x, intensity, start, thres);
+            [params, ~, ~, fittedCurve] = Utils.FittingScripts.nfit_4peaks(x, intensity, start, thres);
         end
         peakPos = params(1:4);
         peakFWHM = params(5:8);
