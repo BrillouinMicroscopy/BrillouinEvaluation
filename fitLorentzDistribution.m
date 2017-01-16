@@ -24,8 +24,9 @@ thres = getBackground(intensity);
 % intensity(intensity<thres) = thres;
 
 % getting the maxima in the 1D distribution
-borders = [borders(1,1), borders(1,2)] + [-5, 5];
 [maxima] = getMaxima1D(intensity, nrPeaks);
+
+borders = [borders(1,1), borders(1,2)] + [-5, 5];
 
 %% fit the data
 
@@ -91,18 +92,21 @@ switch nrPeaks
 end
 
 %% check result
+% lim.x = [min(x(:)) max(x(:))];
+% tmp = max(fittedCurve(:));
+% lim.y = [thres, tmp] + 0.05*(tmp-thres)*[-1 1];
 % figure(3);
 % hold off;
 % plot(x, intensity, 'color', [0 0.4470 0.7410]);
 % hold on;
 % plot(x, fittedCurve, 'color', [0.8500 0.3250 0.0980]);
 % plot(x, thres*ones(size(x)));
-% xlim([0 500]);
-% ylim([100 160]);
+% xlim(lim.x);
+% ylim(lim.y);
 % xlabel('[pix]', 'interpreter', 'latex');
 % ylabel('intensity [a.u.]', 'interpreter', 'latex');
 % grid on;
 % drawnow;
-% pause(0.5);
+% pause(0.02);
 
 end
