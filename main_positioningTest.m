@@ -130,13 +130,11 @@ for jj = 1:1:resolution.X
             for mm = 1:size(imgs,3)
                 try 
                     img = imgs(:,:,mm);
-                    tic
-%                     spectrum = getIntensity1D(img, maxima,width);
                     
+                    tic
                     spectrum = getIntensity1D(img, model, params, 3, 'axis', 'y', 'averaging', 'f');
-%                     figure;plot(spectrum);hold on;plot(spectrum_new,'color','red');
-                    tmp = toc;
-                    tp((jj-1)*(resolution.Y*resolution.Z) + (kk-1)*resolution.Z + ll) = tmp;
+                    toc
+                    figure;plot(spectrum);
                     %%
                     intensity(kk, jj, ll, mm) = sum(img(:));
 

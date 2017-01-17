@@ -49,31 +49,23 @@ function [intensity] = getIntensity1D(img, model, params, width, varargin)
     
     % preallocate borders arrays
     borders = struct();
-    borders.xInner = NaN(1,length(centers.x));
-    borders.yInner = NaN(1,length(centers.x));
-    borders.xOuter = NaN(1,length(centers.x));
-    borders.yOuter = NaN(1,length(centers.x));
+    borders.x = NaN(2,length(centers.x));
+    borders.y = NaN(2,length(centers.x));
     
     switch p.Results.averaging
         case 'f'
             %% correct way to average the spectrum
-            borders.xInner = centers.x - width/2 * cos(alpha);
-            borders.yInner = centers.y - width/2 * sin(alpha);
-            borders.xOuter = centers.x + width/2 * cos(alpha);
-            borders.yOuter = centers.y + width/2 * sin(alpha);
+            borders.x = [1; 1] * centers.x + [-1; 1] .* width/2 * cos(alpha);
+            borders.y = [1; 1] * centers.y + [-1; 1] .* width/2 * sin(alpha);
         case 'x'
             %% "wrong" way to average the spectrum
             % corresponds to the old way of averaging
-            borders.xInner = centers.x - width * sin(alpha);
-            borders.yInner = centers.y;
-            borders.xOuter = centers.x + width * sin(alpha);
-            borders.yOuter = centers.y;
+            borders.x = [1; 1] * centers.x + [-1; 1] .* width/2 * sin(alpha);
+            borders.y = [1; 1] * centers.y;
         case 'y'
-            %% 
-            borders.xInner = centers.x;
-            borders.yInner = centers.y - width * cos(alpha);
-            borders.xOuter = centers.x;
-            borders.yOuter = centers.y + width * cos(alpha);
+            %%
+            borders.x = [1; 1] * centers.x;
+            borders.y = [1; 1] * centers.y + [-1; 1] .* width/2 * cos(alpha);
         otherwise
             ex = MException('MATLAB:noSuchAveraging', ...
                 'Not possible to average in direction %s. Chose either x, y or f.', p.Results.averaging);
@@ -81,9 +73,9 @@ function [intensity] = getIntensity1D(img, model, params, width, varargin)
     end
     
     % create positions array for interpolating
-    for jj = 1:length(centers.x)
-        positions.x(:,jj) = linspace(borders.xInner(jj), borders.xOuter(jj), width);
-        positions.y(:,jj) = linspace(borders.yInner(jj), borders.yOuter(jj), width);
+    for jj = 1:length(centers.(p.Results.axis))
+        positions.x(:,jj) = linspace(borders.x(1,jj), borders.x(2,jj), width);
+        positions.y(:,jj) = linspace(borders.y(1,jj), borders.y(2,jj), width);
     end
     
     [X, Y] = meshgrid(1:size(img,2),1:size(img,1));
@@ -103,7 +95,7 @@ function [intensity] = getIntensity1D(img, model, params, width, varargin)
 %     plot(centers.x, centers.y, 'color', 'green', 'linestyle', '--', 'linewidth', 2, 'marker', 'x');
 % %     plot(centers.xInner, centers.y, 'color', 'red', 'linestyle', '--', 'linewidth', 2);
 % %     plot(centers.xOuter, centers.y, 'color', 'red', 'linestyle', '--', 'linewidth', 2);
-%     plot([borders.xInner; borders.xOuter], [borders.yInner; borders.yOuter], 'color', 'yellow');
+%     plot(borders.x, borders.y, 'color', 'yellow');
 %     axis equal
 %     axis([1, size(img,2), 1, size(img,1)])
 end
