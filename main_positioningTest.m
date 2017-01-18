@@ -69,7 +69,7 @@ filename = filenames{fileNr};
 
 
 %% calibration parameters
-lorentzParams.plane_width = 30; % [pix] width of the plane to cut around the intensity maxima
+lorentzParams.plane_width = 3;  % [pix] width of the plane to cut around the intensity maxima
 lorentzParams.gap = 10;         % [pix] minimum x and y distance of maxima to the edges of the image
 lorentzParams.fwhm = 5;         % [pix] estimated width of the lorentz peaks for the fit
 
@@ -111,13 +111,11 @@ totalPoints = (resolution.X*resolution.Y*resolution.Z);
 % bg = medfilt1(bg,3);
 
 %% this is the calibration
-width = 22;
 img = file.readPayloadData(1, 1, 1, 'data');
 start = [1, size(img,1), mean(size(img))];
 [params, ~, ~, ~] = fitSpectrum(settings(fileNr).peaks.x, settings(fileNr).peaks.y, start);
 
 %%
-maxima = [14 274 ;32 276 ; 1 1];
 for jj = 1:1:resolution.X
     for kk = 1:1:resolution.Y
         for ll = 1:1:resolution.Z
@@ -130,7 +128,7 @@ for jj = 1:1:resolution.X
                     img = imgs(:,:,mm);
                     
                     tic
-                    spectrum = getIntensity1D(img, params, 3, 'axis', 'y', 'averaging', 'f');
+                    spectrum = getIntensity1D(img, params, lorentzParams.plane_width, 'axis', 'f', 'averaging', 'f');
                     t(((jj-1)*(resolution.Y*resolution.Z) + (kk-1)*resolution.Z + ll)) = toc;
 %                     figure;plot(spectrum);
                     %%
