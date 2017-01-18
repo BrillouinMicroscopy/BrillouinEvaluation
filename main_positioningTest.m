@@ -116,8 +116,6 @@ img = file.readPayloadData(1, 1, 1, 'data');
 start = [1, size(img,1), mean(size(img))];
 [params, ~, ~, ~] = fitSpectrum(settings(fileNr).peaks.x, settings(fileNr).peaks.y, start);
 
-model = @circle;
-
 %%
 maxima = [14 274 ;32 276 ; 1 1];
 for jj = 1:1:resolution.X
@@ -132,9 +130,9 @@ for jj = 1:1:resolution.X
                     img = imgs(:,:,mm);
                     
                     tic
-                    spectrum = getIntensity1D(img, model, params, 3, 'axis', 'y', 'averaging', 'f');
-                    toc
-                    figure;plot(spectrum);
+                    spectrum = getIntensity1D(img, params, 3, 'axis', 'y', 'averaging', 'f');
+                    t(((jj-1)*(resolution.Y*resolution.Z) + (kk-1)*resolution.Z + ll)) = toc;
+%                     figure;plot(spectrum);
                     %%
                     intensity(kk, jj, ll, mm) = sum(img(:));
 

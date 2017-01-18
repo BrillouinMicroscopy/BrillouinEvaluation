@@ -1,29 +1,28 @@
-function [intensity] = getIntensity1D(img, model, params, width, varargin)
+function [intensity] = getIntensity1D(img, params, width, varargin)
 %% parse input values
     p = inputParser;
 
     addRequired(p,'img',@isnumeric);
-    addRequired(p,'model',@(model) isa(model, 'function_handle'));
     addRequired(p,'params',@isnumeric);
     addRequired(p,'width',@isnumeric);
     addParameter(p,'axis',@ischar);
     addParameter(p,'averaging',@ischar);
     
-    parse(p, img, model, params, width, varargin{:});
+    parse(p, img, params, width, varargin{:});
 
 %% calculate positions of the interpolation positions
     switch p.Results.axis
         case 'x'
             centers.x = 1:size(img,2);
             centers.y = 1:size(img,1);
-            [~, centers.y] = model(params, centers.x, NaN, -1);
+            [~, centers.y] = circle(params, centers.x, NaN, -1);
         case 'y'
             centers.x = 1:size(img,2);
             centers.y = 1:size(img,1);
             n(1) = params(2);
             n(2) = params(1);
             n(3) = params(3);
-            [~, centers.x] = model(n, centers.y, NaN, 1);
+            [~, centers.x] = circle(n, centers.y, NaN, 1);
         case 'f'
             ex = MException('MATLAB:notImplemented', ...
                 'Not possible to use the axis %s. This option is not implemented yet.', p.Results.axis);
@@ -33,13 +32,6 @@ function [intensity] = getIntensity1D(img, model, params, width, varargin)
                 'Not possible to use the axis %s. Chose either x, y or f.', p.Results.axis);
             throw(ex)
     end
-%% calculate the borders (just for visualisation)
-%     paramsInner = n;
-%     paramsInner(3) = paramsInner(3) - width/2;
-%     [~, centers.xInner] = model(paramsInner, centers.y, NaN, -1);
-%     paramsOuter = n;
-%     paramsOuter(3) = paramsOuter(3) + width/2;
-%     [~, centers.xOuter] = model(paramsOuter, centers.y, NaN, -1);
     
     x0 = params(1);
     y0 = params(2);
@@ -71,19 +63,26 @@ function [intensity] = getIntensity1D(img, model, params, width, varargin)
                 'Not possible to average in direction %s. Chose either x, y or f.', p.Results.averaging);
             throw(ex)
     end
-    
+
     % create positions array for interpolating
-    for jj = 1:length(centers.(p.Results.axis))
-        positions.x(:,jj) = linspace(borders.x(1,jj), borders.x(2,jj), width);
-        positions.y(:,jj) = linspace(borders.y(1,jj), borders.y(2,jj), width);
-    end
+    steps = repmat(transpose(0:(width-1)),1,size(borders.y,2));
+    positions.x = repmat(borders.x(1,:),width,1) + repmat(diff(borders.x,1,1),width,1)./(width-1) .* steps;
+    positions.y = repmat(borders.y(1,:),width,1) + repmat(diff(borders.y,1,1),width,1)./(width-1) .* steps;
     
     [X, Y] = meshgrid(1:size(img,2),1:size(img,1));
     intensity = interp2(X,Y,img,positions.x,positions.y);
     
     intensity = nanmean(intensity, 1);
     
-    %%
+%% calculate the borders (just for visualisation)
+%     paramsInner = params;
+%     paramsInner(3) = paramsInner(3) - width/2;
+%     [~, centers.yInner] = circle(paramsInner, centers.x, NaN, -1);
+%     paramsOuter = params;
+%     paramsOuter(3) = paramsOuter(3) + width/2;
+%     [~, centers.yOuter] = circle(paramsOuter, centers.x, NaN, -1);
+
+%% plot
 %     figure;
 %     plot(diff(centers.x), 'color', 'blue');
 %     hold on;
@@ -93,8 +92,8 @@ function [intensity] = getIntensity1D(img, model, params, width, varargin)
 %     imagesc(img);
 %     hold on;
 %     plot(centers.x, centers.y, 'color', 'green', 'linestyle', '--', 'linewidth', 2, 'marker', 'x');
-% %     plot(centers.xInner, centers.y, 'color', 'red', 'linestyle', '--', 'linewidth', 2);
-% %     plot(centers.xOuter, centers.y, 'color', 'red', 'linestyle', '--', 'linewidth', 2);
+%     plot(centers.x, centers.yInner, 'color', 'red', 'linestyle', '--', 'linewidth', 2);
+%     plot(centers.x, centers.yOuter, 'color', 'red', 'linestyle', '--', 'linewidth', 2);
 %     plot(borders.x, borders.y, 'color', 'yellow');
 %     axis equal
 %     axis([1, size(img,2), 1, size(img,1)])
