@@ -11,22 +11,28 @@ function [intensity] = getIntensity1D(img, params, width, varargin)
     parse(p, img, params, width, varargin{:});
 
 %% calculate positions of the interpolation positions
+    centers.x = 1:size(img,2);
+    centers.y = 1:size(img,1);
     switch p.Results.axis
         case 'x'
-            centers.x = 1:size(img,2);
-            centers.y = 1:size(img,1);
             [~, centers.y] = circle(params, centers.x, NaN, -1);
         case 'y'
-            centers.x = 1:size(img,2);
-            centers.y = 1:size(img,1);
             n(1) = params(2);
             n(2) = params(1);
             n(3) = params(3);
             [~, centers.x] = circle(n, centers.y, NaN, 1);
         case 'f'
-            ex = MException('MATLAB:notImplemented', ...
-                'Not possible to use the axis %s. This option is not implemented yet.', p.Results.axis);
-            throw(ex)
+            [~, centers.y] = circle(params, centers.x, NaN, -1);
+            centers.y(~isreal(centers.y)) = NaN;
+            [yMax, ind] = max(centers.y);
+            xMax = centers.x(ind);
+            [yMin, ind] = min(centers.y);
+            xMin = centers.x(ind);
+            aMax = atan2((yMax - params(2)),(xMax - params(1)));
+            aMin = atan2((yMin - params(2)),(xMin - params(1)));
+            a = linspace(aMin, aMax, round(mean(size(img))));
+            centers.x = params(1) + params(3) * cos(a);
+            centers.y = params(2) + params(3) * sin(a);
         otherwise
             ex = MException('MATLAB:noSuchAxis', ...
                 'Not possible to use the axis %s. Chose either x, y or f.', p.Results.axis);
