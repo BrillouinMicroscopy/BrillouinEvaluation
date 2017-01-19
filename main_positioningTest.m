@@ -110,10 +110,13 @@ totalPoints = (resolution.X*resolution.Y*resolution.Z);
 % bg = file.readPayloadData(1, 1, 1, 'data');
 % bg = medfilt1(bg,3);
 
+tic
 %% this is the calibration
 img = file.readPayloadData(1, 1, 1, 'data');
 start = [1, size(img,1), mean(size(img))];
 [params, ~, ~, ~] = fitSpectrum(settings(fileNr).peaks.x, settings(fileNr).peaks.y, start);
+
+interpolationPositions = getInterpolationPositions(img, params, lorentzParams.plane_width, 'axis', 'f', 'averaging', 'f');
 
 %%
 for jj = 1:1:resolution.X
@@ -126,10 +129,7 @@ for jj = 1:1:resolution.X
             for mm = 1:size(imgs,3)
                 try 
                     img = imgs(:,:,mm);
-                    
-                    tic
-                    spectrum = getIntensity1D(img, params, lorentzParams.plane_width, 'axis', 'f', 'averaging', 'f');
-                    t(((jj-1)*(resolution.Y*resolution.Z) + (kk-1)*resolution.Z + ll)) = toc;
+                    spectrum = getIntensity1D(img, interpolationPositions);
 %                     figure;plot(spectrum);
                     %%
                     intensity(kk, jj, ll, mm) = sum(img(:));
@@ -158,6 +158,7 @@ for jj = 1:1:resolution.X
         end
     end
 end
+toc
 
 delete(file);
 %%
