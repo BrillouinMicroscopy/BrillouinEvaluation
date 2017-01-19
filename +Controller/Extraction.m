@@ -40,11 +40,17 @@ end
 function optimizePeaks(~, ~, model)
     if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
         img = model.file.readPayloadData(1, 1, 1, 'data');
-        % do a median filtering to prevent finding maxixums which are none
-        img = medfilt2(img);
+        r=10;
+        % do a median filtering to prevent finding maxixums which are none,
+        % reduce radius if medfilt2 is not possible (license checkout
+        % failure)
+        try
+            img = medfilt2(img);
+        catch
+            r = 4;
+        end
         peaks = model.settings.extraction.peaks;
         siz=size(img);
-        r=4;
         for jj = 1:length(peaks.x)
             cx=peaks.x(jj);
             cy=peaks.y(jj);
