@@ -3,6 +3,7 @@ function extraction = Extraction(model, view)
 
     %% callbacks Calibration
     set(view.extraction.selectPeaks, 'Callback', {@selectPeaks, model});
+    set(view.extraction.optimizePeaks, 'Callback', {@optimizePeaks, model});
     
     set(view.extraction.extractionAxis, 'Callback', {@changeSettings, view, model});
     set(view.extraction.interpolationDirection, 'Callback', {@changeSettings, view, model});
@@ -34,6 +35,28 @@ function selectPeaks(~, ~, model)
         'x', x, ...
         'y', y ...
     );
+end
+
+function optimizePeaks(~, ~, model)
+    if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
+        img = model.file.readPayloadData(1, 1, 1, 'data');
+        % do a median filtering to prevent finding maxixums which are none
+        img = medfilt2(img);
+        peaks = model.settings.extraction.peaks;
+        siz=size(img);
+        r=4;
+        for jj = 1:length(peaks.x)
+            cx=peaks.x(jj);
+            cy=peaks.y(jj);
+            [x,y]=meshgrid(-(cx-1):(siz(2)-cx),-(cy-1):(siz(1)-cy));
+            mask=((x.^2+y.^2)<=r^2);
+            tmp = img;
+            tmp(~mask) = NaN;
+            [~, ind] = max(tmp(:));
+            [peaks.y(jj),peaks.x(jj)] = ind2sub(siz,ind);
+        end
+        model.settings.extraction.peaks = peaks;
+    end
 end
 
 function changeSettings(~, ~, view, model)
