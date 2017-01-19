@@ -171,7 +171,7 @@ function onFileLoad(handles, model)
         img = model.file.readPayloadData(1, 1, 1, 'data');
         handles.imageCamera.CData = img;
         colorbar(handles.axesImage);
-        axis(handles.axesImage, [1 size(img,2) 1 size(img,1)]);
+        axis(handles.axesImage, [0.5 size(img,2)+0.5 0.5 size(img,1)+0.5]);
         model.settings.extraction.circleStart = [1, size(img,1), mean(size(img))];
 
         if model.settings.extraction.autoscale
@@ -179,6 +179,7 @@ function onFileLoad(handles, model)
         else
             caxis(handles.axesImage,[model.settings.extraction.floor model.settings.extraction.cap]);
         end
+        zoom reset;
     end
 end
 
@@ -322,6 +323,18 @@ function getInterpolationPositions(handles, model)
     positions.y = repmat(borders.y(1,:),width,1) + repmat(diff(borders.y,1,1),width,1)./(width-1) .* steps;
     
     model.settings.extraction.interpolationPositions = positions;
+    
+%% clean data for plotting to not show values outside the image
+    centers = cleanArray(centers, img);
+    borders = cleanArray(borders, img);
+    positions = cleanArray(positions, img);
+    
+    function arr = cleanArray(arr, img)
+        arr.x(arr.x > size(img,2)) = NaN;
+        arr.x(arr.x < 1) = NaN;
+        arr.y(arr.y > size(img,1)) = NaN;
+        arr.y(arr.y < 1) = NaN;
+    end
 
 %% plot
     handles.plotCenters.XData = centers.x;
