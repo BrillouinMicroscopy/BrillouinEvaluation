@@ -17,10 +17,10 @@ function handles = initGUI(model)
     calibration = uitab('Parent', tabgroup, 'Title', 'Calibration');
     evaluation = uitab('Parent', tabgroup, 'Title', 'Evaluation');
     
-    data = View.Data(data, model);
-    calibration = View.Calibration(calibration, model);
-    extraction = View.Extraction(extraction, model);
-    evaluation = View.Evaluation(evaluation, model);
+    data = BE_View.Data(data, model);
+    calibration = BE_View.Calibration(calibration, model);
+    extraction = BE_View.Extraction(extraction, model);
+    evaluation = BE_View.Evaluation(evaluation, model);
                  
     % Assign the name to appear in the window title.
     f.Name = 'Brillouin Evaluation';

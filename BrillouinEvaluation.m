@@ -1,12 +1,12 @@
-function MainController
+function BrillouinEvaluation
 %% MAINCONTROLLER  MainController
 
     % controller knows about model and view
-    model = Model.Model();      % model is independent
+    model = BE_Model.Model();      % model is independent
     
     includePath(model);
     
-    view = View.Tabs(model);    % view has a reference of the model
+    view = BE_View.Tabs(model);    % view has a reference of the model
     
     controllers = controller(model, view);
     
@@ -19,10 +19,10 @@ function closeGUI(~, ~, model, controllers)
 end
 
 function controllers = controller(model, view)
-    data = Controller.Data(model, view);
-    extraction = Controller.Extraction(model, view);
-    calibration = Controller.Calibration(model, view);
-    evaluation = Controller.Evaluation(model, view);
+    data = BE_Controller.Data(model, view);
+    extraction = BE_Controller.Extraction(model, view);
+    calibration = BE_Controller.Calibration(model, view);
+    evaluation = BE_Controller.Evaluation(model, view);
     controllers = struct( ...
         'data', data, ...
         'extraction', extraction, ...
