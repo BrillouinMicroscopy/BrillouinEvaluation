@@ -30,11 +30,14 @@ end
 
 function selectPeaks(~, ~, model)
     % manually select the peaks of the spectrum
-    x = [25, 144, 214, 271];    % placeholder data
-    y = [12, 119, 199, 274];    % placeholder data
+    try
+        [x, y] = getpts;
+    catch
+        [x,y] = ginput;
+    end
     model.settings.extraction.peaks = struct( ...
-        'x', x, ...
-        'y', y ...
+        'x', transpose(x), ...
+        'y', transpose(y) ...
     );
     fitSpectrum(model);
 end
