@@ -2,7 +2,7 @@ function extraction = Extraction(model, view)
 %% CALIBRATION Controller
 
     %% callbacks Calibration
-    set(view.extraction.selectPeaks, 'Callback', {@selectPeaks, model});
+    set(view.extraction.selectPeaks, 'Callback', {@selectPeaks, view, model});
     set(view.extraction.optimizePeaks, 'Callback', {@optimizePeaks, model});
     set(view.extraction.clearPeaks, 'Callback', {@clearPeaks, model});
     
@@ -28,16 +28,52 @@ function extraction = Extraction(model, view)
     );
 end
 
-function selectPeaks(~, ~, model)
-    % manually select the peaks of the spectrum
-    try
-        [x, y] = getpts;
-    catch
-        [x,y] = ginput;
+function selectPeaks(~, ~, view, model)
+    set(view.figure,'KeyPressFcn',{@finishPeaks, view});
+    set(view.extraction.selectPeaks, 'KeyPressFcn', {@finishPeaks, view});
+    set(view.figure,'WindowButtonMotionFcn',{@changepointer, view});
+    set(view.extraction.axesImage,'ButtonDownFcn',{@getpoints, view, model});
+    set(view.extraction.imageCamera,'ButtonDownFcn',{@getpoints, view, model});
+end
+
+function changepointer(~, ~, view)
+    view.extraction.axesImage.Units = 'pixels';
+    view.figure.Units = 'pixels';
+    axlim = get(view.extraction.axesImage,'Position');
+    fglim = get(view.figure,'Position');
+    x1 = fglim(1) + axlim(1);
+    x2 = x1 + axlim(3);
+    y1 = fglim(2) + axlim(2);
+    y2 = y1 + axlim(4);
+    pntr = get(0,'PointerLocation');
+    if pntr(2)>y1 && pntr(2)<y2 && pntr(1)>x1 && pntr(1)<x2
+        set(view.figure,'Pointer','crosshair');
+    else
+        set(view.figure,'Pointer','arrow');
     end
+end
+
+function finishPeaks(~, ~, view)
+    val=double(get(view.figure,'CurrentCharacter'));
+    if val == 13 || val == 27
+        set(view.figure,'Pointer','arrow');
+        set(view.figure,'WindowButtonMotionFcn',[]);
+        set(view.extraction.axesImage,'ButtonDownFcn',[]);
+        set(view.extraction.imageCamera,'ButtonDownFcn',[]);
+        set(view.figure,'KeyPressFcn',[]);
+    end
+end
+
+function getpoints(~, ~, view, model)
+    % manually select the peaks of the spectrum
+    cp = get(view.extraction.axesImage,'CurrentPoint');
+    x = model.settings.extraction.peaks.x;
+    x = [x cp(1,1)];
+    y = model.settings.extraction.peaks.y;
+    y = [y cp(1,2)];
     model.settings.extraction.peaks = struct( ...
-        'x', transpose(x), ...
-        'y', transpose(y) ...
+        'x', x, ...
+        'y', y ...
     );
     fitSpectrum(model);
 end
