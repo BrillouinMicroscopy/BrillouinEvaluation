@@ -153,7 +153,11 @@ end
 function getInterpolationPositions(model)
 
 %% calculate positions of the interpolation positions
-    img = model.file.readPayloadData(1, 1, 1, 'data');
+    if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
+        img = model.file.readPayloadData(1, 1, 1, 'data');
+    else
+        return;
+    end
     params = model.settings.extraction.circleFit;
     width = model.settings.extraction.width;
     
