@@ -14,12 +14,14 @@ function handles = initGUI(model)
     tabgroup = uitabgroup('Parent', f);
     data = uitab('Parent', tabgroup, 'Title', 'Data');
     extraction = uitab('Parent', tabgroup, 'Title', 'Extraction');
+    peakSelection = uitab('Parent', tabgroup, 'Title', 'Peak Selection');
     calibration = uitab('Parent', tabgroup, 'Title', 'Calibration');
     evaluation = uitab('Parent', tabgroup, 'Title', 'Evaluation');
     
     data = BE_View.Data(data, model);
     calibration = BE_View.Calibration(calibration, model);
     extraction = BE_View.Extraction(extraction, model);
+    peakSelection = BE_View.PeakSelection(peakSelection, model);
     evaluation = BE_View.Evaluation(evaluation, model);
                  
     % Assign the name to appear in the window title.
@@ -36,6 +38,7 @@ function handles = initGUI(model)
         'figure', f, ...
         'data', data, ...
         'extraction', extraction, ...
+        'peakSelection', peakSelection, ...
         'calibration', calibration, ...
         'evaluation', evaluation ...
     );
