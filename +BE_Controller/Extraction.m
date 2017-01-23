@@ -100,6 +100,7 @@ end
 function optimizePeaks(~, ~, model)
     if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
         img = model.file.readPayloadData(1, 1, 1, 'data');
+        img = img(:,:,model.settings.extraction.imageNr);
         r=10;
         % do a median filtering to prevent finding maxixums which are none,
         % reduce radius if medfilt2 is not possible (license checkout
@@ -191,6 +192,7 @@ function getInterpolationPositions(model)
 %% calculate positions of the interpolation positions
     if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
         img = model.file.readPayloadData(1, 1, 1, 'data');
+        img = img(:,:,model.settings.extraction.imageNr);
     else
         return;
     end

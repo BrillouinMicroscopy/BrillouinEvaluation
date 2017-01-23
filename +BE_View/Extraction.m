@@ -180,9 +180,13 @@ end
 function onFileLoad(handles, model)
     if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
         img = model.file.readPayloadData(1, 1, 1, 'data');
+        img = img(:,:,model.settings.extraction.imageNr);
         handles.imageCamera.CData = img;
         colorbar(handles.axesImage);
         axis(handles.axesImage, [0.5 size(img,2)+0.5 0.5 size(img,1)+0.5]);
+        
+        % set start values for spectrum axis fitting
+        % probably a better algorithm needed
         model.settings.extraction.circleStart = [1, size(img,1), mean(size(img))];
 
         if model.settings.extraction.autoscale
