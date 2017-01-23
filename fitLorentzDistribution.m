@@ -1,4 +1,4 @@
-function [peakPos, peakFWHM, peakInt, fittedCurve, thres] = fitLorentzDistribution(intensity, fwhm, nrPeaks, borders)
+function [peakPos, peakFWHM, peakInt, fittedCurve, thres] = fitLorentzDistribution(intensity, fwhm, nrPeaks, borders, debug)
 %% FITLORENTZDISTRIBUTION
 %   This function will fit a Lorentzian distribution with the requested
 %   number of peaks to a given 1-D intensity distribution
@@ -92,21 +92,23 @@ switch nrPeaks
 end
 
 %% check result
-% lim.x = [min(x(:)) max(x(:))];
-% tmp = max(fittedCurve(:));
-% lim.y = [thres, tmp] + 0.05*(tmp-thres)*[-1 1];
-% figure(3);
-% hold off;
-% plot(x, intensity, 'color', [0 0.4470 0.7410]);
-% hold on;
-% plot(x, fittedCurve, 'color', [0.8500 0.3250 0.0980]);
-% plot(x, thres*ones(size(x)));
-% xlim(lim.x);
-% ylim(lim.y);
-% xlabel('[pix]', 'interpreter', 'latex');
-% ylabel('intensity [a.u.]', 'interpreter', 'latex');
-% grid on;
-% drawnow;
-% pause(0.02);
+if debug
+    lim.x = [min(x(:)) max(x(:))];
+    tmp = max(fittedCurve(:));
+    lim.y = [thres, tmp] + 0.05*(tmp-thres)*[-1 1];
+    figure(3);
+    hold off;
+    plot(x, intensity, 'color', [0 0.4470 0.7410]);
+    hold on;
+    plot(x, fittedCurve, 'color', [0.8500 0.3250 0.0980]);
+    plot(x, thres*ones(size(x)));
+    xlim(lim.x);
+    ylim(lim.y);
+    xlabel('[pix]', 'interpreter', 'latex');
+    ylabel('intensity [a.u.]', 'interpreter', 'latex');
+    grid on;
+    drawnow;
+    pause(0.02);
+end
 
 end

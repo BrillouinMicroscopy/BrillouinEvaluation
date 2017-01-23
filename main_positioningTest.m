@@ -99,11 +99,11 @@ positions.Z = file.positionsZ;
 
 % preallocate result arrays
 imgs = file.readPayloadData(1, 1, 1, 'data');
-intensity = NaN(resolution.Y, resolution.X, resolution.Z, size(imgs,4));
-maximas = NaN(resolution.Y, resolution.X, resolution.Z, size(imgs,4));
-peaks = NaN(resolution.Y, resolution.X, resolution.Z, size(imgs,4), nrPeaks);
-peaks_int = NaN(resolution.Y, resolution.X, resolution.Z, size(imgs,4), nrPeaks);
-peaksRayleigh = NaN(resolution.Y, resolution.X, resolution.Z, size(imgs,4), nrPeaks);
+intensity = NaN(resolution.Y, resolution.X, resolution.Z, size(imgs,3));
+maximas = NaN(resolution.Y, resolution.X, resolution.Z, size(imgs,3));
+peaks = NaN(resolution.Y, resolution.X, resolution.Z, size(imgs,3), nrPeaks);
+peaks_int = NaN(resolution.Y, resolution.X, resolution.Z, size(imgs,3), nrPeaks);
+peaksRayleigh = NaN(resolution.Y, resolution.X, resolution.Z, size(imgs,3), nrPeaks);
 
 totalPoints = (resolution.X*resolution.Y*resolution.Z);
 
@@ -135,7 +135,7 @@ for jj = 1:1:resolution.X
                     intensity(kk, jj, ll, mm) = sum(img(:));
 
                     spectrumSection = spectrum(settings(fileNr).rayleigh);
-                    [peakPos, ~, ~] = fitLorentzDistribution(spectrumSection, lorentzParams.fwhm, nrPeaks, parameters.peaks);
+                    [peakPos, ~, ~] = fitLorentzDistribution(spectrumSection, lorentzParams.fwhm, nrPeaks, parameters.peaks, 0);
                     peaksRayleigh(kk, jj, ll, mm, :) = peakPos + min(settings(fileNr).rayleigh(:));
                     
                     shift = round((max(settings(fileNr).rayleigh(:)) - min(settings(fileNr).rayleigh(:)))/2 - peakPos);
@@ -146,7 +146,7 @@ for jj = 1:1:resolution.X
                     [~, ind] = max(spectrumSection);
                     maximas(kk, jj, ll, mm) = ind + min(secInd(:));
 
-                    [peakPos, ~, int, ~, thres] = fitLorentzDistribution(spectrumSection, lorentzParams.fwhm, nrPeaks, parameters.peaks);
+                    [peakPos, ~, int, ~, thres] = fitLorentzDistribution(spectrumSection, lorentzParams.fwhm, nrPeaks, parameters.peaks, 0);
                     peaks(kk, jj, ll, mm, :) = peakPos + min(secInd(:));
                     peaks_int(kk, jj, ll, mm, :) = int - thres;
                 catch
@@ -164,25 +164,26 @@ delete(file);
 %%
 intensity_mean = mean(intensity,4);
 maximas_mean = mean(maximas,4);
-peaks_mean = mean(peaks,4);
-peaks_int_mean = mean(peaks_int,4);
-peaksRayleigh_mean = mean(peaksRayleigh,4);
+peaksBrillouin_pos_mean = mean(peaks,4);
+peaksBrillouin_int_mean = mean(peaks_int,4);
+peaksRayleigh_pos_mean = mean(peaksRayleigh,4);
 
 %% clean
-brillouinShift = 0.0568*(peaksRayleigh_mean-peaks_mean);
+brillouinShift = 0.0568*(peaksRayleigh_pos-peaksBrillouin_pos);
 brillouinShift(brillouinShift > 4.8) = NaN;
 brillouinShift(brillouinShift < 3) = NaN;
 
+brillouinShift_mean = mean(brillouinShift, 4);
 
-peaks_int_mean(brillouinShift > 4.8) = NaN;
-peaks_int_mean(brillouinShift < 3) = NaN;
+peaksBrillouin_int_mean(brillouinShift > 4.8) = NaN;
+peaksBrillouin_int_mean(brillouinShift < 3) = NaN;
 
 
 %%
 % 0.0568
-plotData(intensity_mean, positions, '$I$ [a.u.]');
-plotData(peaks_int_mean, positions, '$I$ [a.u.]');
-% plotData(maximas_mean, positions, '$f$ [GHz]');
-% plotData(peaks_mean, positions, '$f$ [GHz]');
-% plotData(peaksRayleigh_mean, positions, '$f$ [GHz]');
-plotData(brillouinShift, positions, '$f$ [GHz]');
+plotData(intensity_mean, model.parameters.positions, 'Complete Intensity', '$I$ [a.u.]');
+plotData(peaksBrillouin_int_mean, model.parameters.positions, 'Intensity of the Brillouin peaks', '$I$ [a.u.]');
+plotData(peaksRayleigh_pos_mean, model.parameters.positions, 'Position of the Rayleigh peaks', '$f$ [pix]');
+plotData(peaksBrillouin_pos_mean, model.parameters.positions, 'Position of the Brillouin peaks', '$f$ [pix]');
+plotData(brillouinShift_mean, model.parameters.positions, 'Corrected position of the Brillouin peaks', '$f$ [pix]');
+% plotData(peaksBrillouin_fwhm_mean, model.parameters.positions, 'FWHM of the Brillouin peaks', '$\Delta f$ [pix]');

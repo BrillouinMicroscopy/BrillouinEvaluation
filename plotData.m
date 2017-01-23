@@ -1,4 +1,4 @@
-function plotData (data, positions, datalabel)
+function plotData (data, positions, titlestring, datalabel)
     %% define possible dimensions and their labels
     dims = {'Y', 'X', 'Z'};
     dimslabel = {'y', 'x', 'z'};
@@ -31,8 +31,9 @@ function plotData (data, positions, datalabel)
             %% 1D data
             d = squeeze(data);
             p = squeeze(positions.([nsdims{1} '_zm']));
-            figure;
+            figure();
             plot(p,d);
+            title(titlestring);
             xlim([min(p(:)), max(p(:))]);
             xlabel(['$' nsdimslabel{1} '$ [$\mu$m]'], 'interpreter', 'latex');
             ylabel(datalabel, 'interpreter', 'latex');
@@ -44,6 +45,7 @@ function plotData (data, positions, datalabel)
             pz = squeeze(positions.Z_zm);
             figure;
             surf(px, py, pz, d);
+            title(titlestring);
             shading flat;
             axis equal;
 %             xlim([min(px(:)), max(px(:))]);
@@ -61,6 +63,7 @@ function plotData (data, positions, datalabel)
             for jj = 1:size(data,3)
                 surf(positions.X_zm(:,:,jj),positions.Y_zm(:,:,jj),positions.Z_zm(:,:,jj),data(:,:,jj));
             end
+            title(titlestring);
             shading flat;
             axis equal;
             xlim([min(positions.X_zm(:)), max(positions.X_zm(:))]);

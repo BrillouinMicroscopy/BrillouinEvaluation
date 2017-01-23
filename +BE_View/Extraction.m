@@ -194,7 +194,7 @@ function onFileLoad(handles, model)
         else
             caxis(handles.axesImage,[model.settings.extraction.floor model.settings.extraction.cap]);
         end
-        zoom reset;
+        zoom(handles.axesImage,'reset');
     end
 end
 
