@@ -2,7 +2,7 @@ function acquisition = Evaluation(model, view)
 %% EVALUATION Controller
 
     %% callbacks Calibration
-    set(view.evaluation.evaluate, 'Callback', {@evaluate, model});
+    set(view.evaluation.evaluate, 'Callback', {@evaluate, view, model});
     set(view.evaluation.newFig, 'Callback', {@openNewFig, view, model});
     
     set(view.evaluation.zoomIn, 'Callback', {@zoom, 'in', view});
@@ -26,7 +26,7 @@ function acquisition = Evaluation(model, view)
 end
 
 
-function evaluate(~, ~, model)
+function evaluate(~, ~, view, model)
     model.displaySettings.evaluation.preview = 0;
     totalPoints = (model.parameters.resolution.X*model.parameters.resolution.Y*model.parameters.resolution.Z);
     imgs = model.file.readPayloadData(1, 1, 1, 'data');
@@ -77,7 +77,9 @@ function evaluate(~, ~, model)
 
                 end
                 finishedPoints = ((jj-1)*(model.parameters.resolution.Y*model.parameters.resolution.Z) + (kk-1)*model.parameters.resolution.Z + ll);
-                fprintf('%02.0f of %02.0f done.\n',finishedPoints,totalPoints);
+                prog = 100*finishedPoints/totalPoints;
+                view.evaluation.progressBar.setValue(prog);
+                view.evaluation.progressBar.setString(sprintf('%01.1f%%',prog));
             end
         end
     end
