@@ -12,6 +12,8 @@ function handles = Evaluation(parent, model)
         @(o,e) onResults(handles, e.AffectedObject));
     addlistener(model, 'displaySettings', 'PostSet', ...
         @(o,e) onDisplaySettings(handles, e.AffectedObject));
+    addlistener(model, 'status', 'PostSet', ...
+        @(o,e) onStatus(handles, e.AffectedObject));
 end
 
 function handles = initGUI(model, parent)
@@ -126,6 +128,15 @@ end
 
 function onResults(handles, model)
     plotData(handles, model, 'int');
+end
+
+function onStatus(handles, model)
+    if model.status.evaluation.evaluate
+        label = 'Stop';
+    else
+        label = 'Evaluate';
+    end
+    set(handles.evaluate, 'String', label);
 end
 
 function onDisplaySettings(handles, model)

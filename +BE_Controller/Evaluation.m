@@ -2,7 +2,7 @@ function acquisition = Evaluation(model, view)
 %% EVALUATION Controller
 
     %% callbacks Calibration
-    set(view.evaluation.evaluate, 'Callback', {@evaluate, view, model});
+    set(view.evaluation.evaluate, 'Callback', {@startEvaluation, view, model});
     set(view.evaluation.newFig, 'Callback', {@openNewFig, view, model});
     
     set(view.evaluation.zoomIn, 'Callback', {@zoom, 'in', view});
@@ -25,8 +25,15 @@ function acquisition = Evaluation(model, view)
     ); 
 end
 
+function startEvaluation(~, ~, view, model)
+    model.status.evaluation.evaluate = ~model.status.evaluation.evaluate;
+    if model.status.evaluation.evaluate
+        evaluate(view, model);
+    end
+end
 
-function evaluate(~, ~, view, model)
+function evaluate(view, model)
+    
     model.displaySettings.evaluation.preview = 0;
     totalPoints = (model.parameters.resolution.X*model.parameters.resolution.Y*model.parameters.resolution.Z);
     
@@ -50,13 +57,25 @@ function evaluate(~, ~, view, model)
     
     uu = 0;
     for jj = 1:1:model.parameters.resolution.X
+        if ~model.status.evaluation.evaluate
+            break
+        end
         for kk = 1:1:model.parameters.resolution.Y
+            if ~model.status.evaluation.evaluate
+                break
+            end
             for ll = 1:1:model.parameters.resolution.Z
+                if ~model.status.evaluation.evaluate
+                    break
+                end
                 % read data from the file
                 imgs = model.file.readPayloadData(jj, kk, ll, 'data');
                 imgs = medfilt1(imgs,3);
 
                 for mm = 1:size(imgs,3)
+                    if ~model.status.evaluation.evaluate
+                        break
+                    end
                     uu = uu + 1;
                     try 
                         img = imgs(:,:,mm);
