@@ -29,6 +29,7 @@ function startEvaluation(~, ~, view, model)
     model.status.evaluation.evaluate = ~model.status.evaluation.evaluate;
     if model.status.evaluation.evaluate
         evaluate(view, model);
+        model.status.evaluation.evaluate = 0;
     end
 end
 
@@ -76,6 +77,7 @@ function evaluate(view, model)
                     if ~model.status.evaluation.evaluate
                         break
                     end
+                    drawnow;
                     uu = uu + 1;
                     try 
                         img = imgs(:,:,mm);
