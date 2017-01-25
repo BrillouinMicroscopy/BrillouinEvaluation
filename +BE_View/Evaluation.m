@@ -28,6 +28,12 @@ function handles = initGUI(model, parent)
     
     plotTypes = uicontrol('Parent', parent, 'Style','popup', 'Units', 'normalized','Position',[0.02 0.85,0.22,0.055],...
         'String',model.displaySettings.evaluation.types,'FontSize', 11, 'HorizontalAlignment', 'left');
+    
+    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Live preview (2x slower)', 'Units', 'normalized',...
+        'Position', [0.02,0.8,0.19,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
+
+    livePreview = uicontrol('Parent', parent, 'Style', 'checkbox', 'Units', 'normalized',...
+        'Position', [0.22,0.8,0.04,0.034], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
     zoomIn = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
         'CData', readTransparent([model.pp '/images/zoomin.png']), 'Position',[0.33,0.92,0.0375,0.055],...
@@ -102,6 +108,7 @@ function handles = initGUI(model, parent)
         'evaluate', evaluate, ...
         'newFig', newFig, ...
         'plotTypes', plotTypes, ...
+        'livePreview', livePreview, ...
         'zoomIn', zoomIn, ...
         'zoomOut', zoomOut, ...
         'panButton', panButton, ...
@@ -147,6 +154,32 @@ function onDisplaySettings(handles, model)
 end
 
 function plotData (handles, model, location)
+    
+    data = model.results.(model.displaySettings.evaluation.type);
+    data = mean(data,4);
+    
+    %% find non-singleton dimensions
+    dimensions = size(data);
+    dimension = sum(dimensions > 1);
+    
+    %% only update cdata for live preview
+    if model.displaySettings.evaluation.preview
+        try
+            switch dimension
+                case 1
+                    set(model.handles.results, 'YData', data);
+                case 2
+                    set(model.handles.results, 'CData', data);
+                case 3
+                    for jj = 1:size(data,3)
+                        set(model.handles.results(jj), 'CData', data(:,:,jj));
+                    end
+            end
+            return;
+        catch
+        end
+    end
+    
     switch location
         case 'int'
             ax = handles.axesImage;
@@ -159,20 +192,10 @@ function plotData (handles, model, location)
 
     labels = model.displaySettings.evaluation.typesLabels.(model.displaySettings.evaluation.type);
     
-    data = model.results.(model.displaySettings.evaluation.type);
-    data = mean(data,4);
     %% define possible dimensions and their labels
     dims = {'Y', 'X', 'Z'};
     dimslabel = {'y', 'x', 'z'};
     
-    %% calculate zero mean positions
-    for jj = 1:length(dims)
-        positions.([dims{jj} '_zm']) = model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
-    end
-    
-    %% find non-singleton dimensions
-    dimensions = size(data);
-    dimension = sum(dimensions > 1);
     nsdims = cell(dimension,1);
     nsdimslabel = cell(dimension,1);
     ind = 0;
@@ -182,6 +205,11 @@ function plotData (handles, model, location)
             nsdims{ind} = dims{jj};
             nsdimslabel{ind} = dimslabel{jj};
         end
+    end
+    
+    %% calculate zero mean positions
+    for jj = 1:length(dims)
+        positions.([dims{jj} '_zm']) = model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
     end
 
     %% plot data for different dimensions
@@ -194,7 +222,7 @@ function plotData (handles, model, location)
             d = squeeze(data);
             p = squeeze(positions.([nsdims{1} '_zm']));
             hold(ax,'on');
-            plot(ax,p,d);
+            model.handles.results = plot(ax,p,d);
             title(ax,labels.titleString);
             xlim([min(p(:)), max(p(:))]);
             xlabel(ax, ['$' nsdimslabel{1} '$ [$\mu$m]'], 'interpreter', 'latex');
@@ -213,7 +241,7 @@ function plotData (handles, model, location)
             py = squeeze(positions.Y_zm);
             pz = squeeze(positions.Z_zm);
             hold(ax,'off');
-            surf(ax,px, py, pz, d);
+            model.handles.results = surf(ax,px, py, pz, d);
             title(ax,labels.titleString);
             shading(ax, 'flat');
             axis(ax, 'equal');
@@ -236,10 +264,12 @@ function plotData (handles, model, location)
         case 3
             %% 3D data
             hold(ax,'off');
+            hndls = NaN(size(data,3),1);
             for jj = 1:size(data,3)
-                surf(ax,positions.X_zm(:,:,jj),positions.Y_zm(:,:,jj),positions.Z_zm(:,:,jj),data(:,:,jj));
+                hndls(jj) = surf(ax,positions.X_zm(:,:,jj),positions.Y_zm(:,:,jj),positions.Z_zm(:,:,jj),data(:,:,jj));
                 hold(ax,'on');
             end
+            model.handles.results = hndls;
             title(ax,labels.titleString);
             shading(ax, 'flat');
             axis(ax, 'equal');
@@ -252,12 +282,16 @@ function plotData (handles, model, location)
             cb = colorbar(ax);
             title(cb,labels.dataLabel, 'interpreter', 'latex');
             box(ax, 'on');
-            caxis(ax, [100 500]);
             if model.displaySettings.evaluation.autoscale
                 model.displaySettings.evaluation.floor = min(data(:));
                 model.displaySettings.evaluation.cap = max(data(:));
+                if model.displaySettings.evaluation.floor >= model.displaySettings.evaluation.cap
+                    model.displaySettings.evaluation.floor = 0.95*model.displaySettings.evaluation.floor;
+                end
+                caxis(ax, 'auto');
+            else
+                caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
             end
-            caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
             zoom(ax, 'reset');
             view(ax, [az el]);
     end

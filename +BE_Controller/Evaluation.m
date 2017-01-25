@@ -5,6 +5,8 @@ function acquisition = Evaluation(model, view)
     set(view.evaluation.evaluate, 'Callback', {@startEvaluation, view, model});
     set(view.evaluation.newFig, 'Callback', {@openNewFig, view, model});
     
+    set(view.evaluation.livePreview, 'Callback', {@toggleLivePreview, view, model});
+    
     set(view.evaluation.zoomIn, 'Callback', {@zoom, 'in', view});
     set(view.evaluation.zoomOut, 'Callback', {@zoom, 'out', view});
     set(view.evaluation.panButton, 'Callback', {@pan, view});
@@ -35,7 +37,6 @@ end
 
 function evaluate(view, model)
     
-    model.displaySettings.evaluation.preview = 0;
     totalPoints = (model.parameters.resolution.X*model.parameters.resolution.Y*model.parameters.resolution.Z);
     
     ind_Rayleigh = model.settings.peakSelection.Rayleigh(1,1):model.settings.peakSelection.Rayleigh(1,2);
@@ -77,7 +78,6 @@ function evaluate(view, model)
                     if ~model.status.evaluation.evaluate
                         break
                     end
-                    drawnow;
                     uu = uu + 1;
                     try 
                         img = imgs(:,:,mm);
@@ -97,15 +97,29 @@ function evaluate(view, model)
                         [~, ind] = max(spectrumSection);
                         peaksBrillouin_max(kk, jj, ll, mm) = ind + min(secInd(:));
 
-                        [peakPos, fwhm, int, ~, thres] = fitLorentzDistribution(spectrumSection, model.settings.fitting.fwhm, nrPeaks, parameters.peaks, 1);
+                        [peakPos, fwhm, int, ~, thres] = fitLorentzDistribution(spectrumSection, model.settings.fitting.fwhm, nrPeaks, parameters.peaks, 0);
                         peaksBrillouin_fwhm(kk, jj, ll, mm, :) = fwhm;
                         peaksBrillouin_pos(kk, jj, ll, mm, :) = peakPos + min(secInd(:));
                         peaksBrillouin_int(kk, jj, ll, mm, :) = int - thres;
+                        
+
                     catch e
                         disp(e);
                     end
-
                 end
+                if model.displaySettings.evaluation.preview
+                    brillouinShift = (peaksRayleigh_pos-peaksBrillouin_pos);
+                    model.results = struct( ...
+                        'BrillouinShift',       brillouinShift, ...      % [GHz]  the Brillouin shift
+                        'peaksBrillouin_pos',   peaksBrillouin_pos, ...  % [pix]  the position of the Brillouin peak(s) in the spectrum
+                        'peaksBrillouin_int',   peaksBrillouin_int, ...  % [a.u.] the intensity of the Brillouin peak(s)
+                        'peaksBrillouin_fwhm',  peaksBrillouin_fwhm, ... % [pix]  the FWHM of the Brillouin peak
+                        'peaksRayleigh_pos',    peaksRayleigh_pos, ...   % [pix]  the position of the Rayleigh peak(s) in the spectrum
+                        'intensity',            intensity ...            % [a.u.] the overall intensity of the image
+                    );
+                end
+                drawnow;
+                
                 finishedPoints = ((jj-1)*(model.parameters.resolution.Y*model.parameters.resolution.Z) + (kk-1)*model.parameters.resolution.Z + ll);
                 prog = 100*finishedPoints/totalPoints;
                 view.evaluation.progressBar.setValue(prog);
@@ -210,6 +224,10 @@ function selectPlotType(src, ~, model)
     val = get(src,'Value');
     types = get(src,'String');
     model.displaySettings.evaluation.type = types{val};
+end
+
+function toggleLivePreview(~, ~, view, model)
+    model.displaySettings.evaluation.preview = get(view.evaluation.livePreview, 'Value');
 end
 
 function openNewFig(~, ~, view, model)
