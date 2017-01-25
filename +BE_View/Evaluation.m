@@ -177,7 +177,7 @@ function plotData (handles, model, location)
     switch dimension
         case 0
             %% 0D data
-            disp(data(1,1,1));
+%             disp(data(1,1,1));
         case 1
             %% 1D data
             d = squeeze(data);

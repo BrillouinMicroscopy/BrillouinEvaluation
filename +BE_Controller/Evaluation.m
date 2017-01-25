@@ -29,15 +29,24 @@ end
 function evaluate(~, ~, view, model)
     model.displaySettings.evaluation.preview = 0;
     totalPoints = (model.parameters.resolution.X*model.parameters.resolution.Y*model.parameters.resolution.Z);
-    imgs = model.file.readPayloadData(1, 1, 1, 'data');
+    
+    ind_Rayleigh = model.settings.peakSelection.rayleigh(1,1):model.settings.peakSelection.rayleigh(1,2);
+    ind_Brillouin = model.settings.peakSelection.brillouin(1,1):model.settings.peakSelection.brillouin(1,2);
+    
     nrPeaks = 1;
+    parameters.peaks = [6 20];
+    
+    imgs = model.file.readPayloadData(1, 1, 1, 'data');
+    img = imgs(:,:,1);
+    spectrum = getIntensity1D(img, model.settings.extraction.interpolationPositions);
+    spectrumSection = spectrum(ind_Rayleigh);
+    [initRayleighPos, ~, ~] = fitLorentzDistribution(spectrumSection, model.settings.fitting.fwhm, nrPeaks, parameters.peaks, 0);
     intensity = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
     peaksBrillouin_pos = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrPeaks);
     peaksBrillouin_fwhm = peaksBrillouin_pos;
     peaksBrillouin_max = peaksBrillouin_pos;
     peaksBrillouin_int = peaksBrillouin_pos;
     peaksRayleigh_pos = peaksBrillouin_pos;
-    parameters.peaks = [6 20];
     
     uu = 0;
     for jj = 1:1:model.parameters.resolution.X
@@ -55,19 +64,19 @@ function evaluate(~, ~, view, model)
                         %%
                         intensity(kk, jj, ll, mm) = sum(img(:));
 
-                        spectrumSection = spectrum(model.settings.extraction.rayleigh);
+                        spectrumSection = spectrum(ind_Rayleigh);
                         [peakPos, ~, ~] = fitLorentzDistribution(spectrumSection, model.settings.fitting.fwhm, nrPeaks, parameters.peaks, 0);
-                        peaksRayleigh_pos(kk, jj, ll, mm, :) = peakPos + min(model.settings.extraction.rayleigh(:));
+                        peaksRayleigh_pos(kk, jj, ll, mm, :) = peakPos + min(ind_Rayleigh(:));
 
-                        shift = round((max(model.settings.extraction.rayleigh(:)) - min(model.settings.extraction.rayleigh(:)))/2 - peakPos);
+                        shift = round(peakPos - initRayleighPos);
 
-                        secInd = model.settings.extraction.brillouin - shift;
+                        secInd = ind_Brillouin + shift;
                         spectrumSection = spectrum(secInd);
 
                         [~, ind] = max(spectrumSection);
                         peaksBrillouin_max(kk, jj, ll, mm) = ind + min(secInd(:));
 
-                        [peakPos, fwhm, int, ~, thres] = fitLorentzDistribution(spectrumSection, model.settings.fitting.fwhm, nrPeaks, parameters.peaks, 0);
+                        [peakPos, fwhm, int, ~, thres] = fitLorentzDistribution(spectrumSection, model.settings.fitting.fwhm, nrPeaks, parameters.peaks, 1);
                         peaksBrillouin_fwhm(kk, jj, ll, mm, :) = fwhm;
                         peaksBrillouin_pos(kk, jj, ll, mm, :) = peakPos + min(secInd(:));
                         peaksBrillouin_int(kk, jj, ll, mm, :) = int - thres;
