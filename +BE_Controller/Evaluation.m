@@ -30,8 +30,8 @@ function evaluate(~, ~, view, model)
     model.displaySettings.evaluation.preview = 0;
     totalPoints = (model.parameters.resolution.X*model.parameters.resolution.Y*model.parameters.resolution.Z);
     
-    ind_Rayleigh = model.settings.peakSelection.rayleigh(1,1):model.settings.peakSelection.rayleigh(1,2);
-    ind_Brillouin = model.settings.peakSelection.brillouin(1,1):model.settings.peakSelection.brillouin(1,2);
+    ind_Rayleigh = model.settings.peakSelection.Rayleigh(1,1):model.settings.peakSelection.Rayleigh(1,2);
+    ind_Brillouin = model.settings.peakSelection.Brillouin(1,1):model.settings.peakSelection.Brillouin(1,2);
     
     nrPeaks = 1;
     parameters.peaks = [6 20];
