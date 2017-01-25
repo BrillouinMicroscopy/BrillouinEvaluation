@@ -27,7 +27,7 @@ function handles = initGUI(model, parent)
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     peakTableBrillouin = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.72 0.22 0.15], ...
-        'ColumnWidth', {86, 87}, 'ColumnName', {'start','end'}, 'FontSize', 12);
+        'ColumnWidth', {86, 87}, 'ColumnName', {'start','end'}, 'FontSize', 12, 'ColumnEditable', true);
 
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Rayleigh peaks:', 'Units', 'normalized',...
         'Position', [0.02,0.67,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -41,7 +41,7 @@ function handles = initGUI(model, parent)
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     peakTableRayleigh = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.45 0.22 0.15], ...
-        'ColumnWidth', {86, 87}, 'ColumnName', {'start','end'}, 'FontSize', 12);
+        'ColumnWidth', {86, 87}, 'ColumnName', {'start','end'}, 'FontSize', 12, 'ColumnEditable', true);
 
     zoomIn = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
         'CData', readTransparent([model.pp '/images/zoomin.png']), 'Position',[0.33,0.92,0.0375,0.055],...

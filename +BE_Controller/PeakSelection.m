@@ -5,6 +5,9 @@ function calibration = PeakSelection(model, view)
     set(view.peakSelection.selectBrillouin, 'Callback', {@selectPeaks, view, model, 'brillouin'});
     set(view.peakSelection.selectRayleigh, 'Callback', {@selectPeaks, view, model, 'rayleigh'});
     
+    set(view.peakSelection.peakTableBrillouin, 'CellEditCallback', {@editPeaks, model, 'brillouin'});
+    set(view.peakSelection.peakTableRayleigh, 'CellEditCallback', {@editPeaks, model, 'rayleigh'});
+    
     set(view.peakSelection.clearBrillouin, 'Callback', {@clearPeaks, model, 'brillouin'});
     set(view.peakSelection.clearRayleigh, 'Callback', {@clearPeaks, model, 'rayleigh'});
     
@@ -79,6 +82,10 @@ end
 
 function clearPeaks(~, ~, model, type)
     model.settings.peakSelection.(type) = [];
+end
+
+function editPeaks(~, table, model, type)
+    model.settings.peakSelection.(type)(table.Indices(1), table.Indices(2)) = table.NewData;
 end
 
 function zoom(src, ~, str, view)
