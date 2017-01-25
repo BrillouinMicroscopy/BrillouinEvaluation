@@ -269,7 +269,10 @@ function showInterpolationPositions(handles, model)
         set(handles.plotBorders, {'XData'}, {[];[]});
         set(handles.plotBorders, {'YData'}, {[];[]});
     end
-    delete(model.handles.plotPositions);
+    try
+        delete(model.handles.plotPositions);
+    catch
+    end
     model.handles.plotPositions = plot(handles.axesImage, positions.x, positions.y, 'color', 'yellow');
 end
 

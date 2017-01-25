@@ -163,7 +163,7 @@ function plotData (handles, model, location)
     dimension = sum(dimensions > 1);
     
     %% only update cdata for live preview
-    if model.displaySettings.evaluation.preview
+    if model.displaySettings.evaluation.preview && model.status.evaluation.evaluate
         try
             switch dimension
                 case 1
@@ -255,10 +255,13 @@ function plotData (handles, model, location)
             title(cb,labels.dataLabel, 'interpreter', 'latex');
             box(ax, 'on');
             if model.displaySettings.evaluation.autoscale
-                model.displaySettings.evaluation.floor = min(data(:));
-                model.displaySettings.evaluation.cap = max(data(:));
+                [floor, cap] = checkCaxis(min(data(:)), max(data(:)));
+                model.displaySettings.evaluation.floor = floor;
+                model.displaySettings.evaluation.cap = cap;
+                caxis(ax, 'auto');
+            else
+                caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
             end
-            caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
             zoom(ax, 'reset');
             view(ax, [az el]);
         case 3
@@ -283,17 +286,22 @@ function plotData (handles, model, location)
             title(cb,labels.dataLabel, 'interpreter', 'latex');
             box(ax, 'on');
             if model.displaySettings.evaluation.autoscale
-                model.displaySettings.evaluation.floor = min(data(:));
-                model.displaySettings.evaluation.cap = max(data(:));
-                if model.displaySettings.evaluation.floor >= model.displaySettings.evaluation.cap
-                    model.displaySettings.evaluation.floor = 0.95*model.displaySettings.evaluation.floor;
-                end
+                [floor, cap] = checkCaxis(min(data(:)), max(data(:)));
+                model.displaySettings.evaluation.floor = floor;
+                model.displaySettings.evaluation.cap = cap;
                 caxis(ax, 'auto');
             else
                 caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
             end
             zoom(ax, 'reset');
             view(ax, [az el]);
+    end
+end
+
+function [floor, cap] = checkCaxis(floor, cap)
+    if floor >= cap
+        floor = floor - 0.05*abs(floor);
+        cap = cap + 0.05*abs(cap);
     end
 end
 

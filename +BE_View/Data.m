@@ -75,6 +75,20 @@ function onFileLoad(handles, model)
         set(handles.resolutionY, 'String', model.file.resolutionY);
         set(handles.resolutionZ, 'String', model.file.resolutionZ);
         set(handles.comment,  'String', model.file.comment);
+        delete(model.handles.plotPositions);
+%         delete(model.handles.results);
+        model.handles = struct( ...
+            'resutls', NaN, ...
+            'plotPositions', NaN ...
+        );
+        model.results = struct( ...
+            'BrillouinShift', NaN, ...      % [GHz]  the Brillouin shift
+            'peaksBrillouin_pos', NaN, ...  % [pix]  the position of the Brillouin peak(s) in the spectrum
+            'peaksBrillouin_int', NaN, ...  % [a.u.] the intensity of the Brillouin peak(s)
+            'peaksBrillouin_fwhm', NaN, ... % [pix]  the FWHM of the Brillouin peak
+            'peaksRayleigh_pos', NaN, ...   % [pix]  the position of the Rayleigh peak(s) in the spectrum
+            'intensity', NaN ...            % [a.u.] the overall intensity of the image
+        );
     else
         set(handles.filename, 'String', '');
         set(handles.date, 'String', '');
