@@ -157,19 +157,25 @@ function plotData(handles, model)
     ind = model.settings.peakSelection.rayleigh;
     for jj = 1:size(ind,1)
         ix = ind(jj,1):ind(jj,2);
-        plot(ax, ix, data(ix), 'color', [1, 0, 0, 0.4], 'linewidth', 5);
+        if ind(jj,1) > 0 && ind(jj,2) <= length(data)
+            plot(ax, ix, data(ix), 'color', [1, 0, 0, 0.4], 'linewidth', 5);
+        end
     end
     ind = model.settings.peakSelection.brillouin;
     for jj = 1:size(ind,1)
         ix = ind(jj,1):ind(jj,2);
-        plot(ax, ix, data(ix), 'color', [0, 0, 1, 0.4], 'linewidth', 5);
+        if ind(jj,1) > 0 && ind(jj,2) <= length(data)
+            plot(ax, ix, data(ix), 'color', [0, 0, 1, 0.4], 'linewidth', 5);
+        end
     end
-    if model.displaySettings.peakSelection.autoscale
-        model.displaySettings.peakSelection.floor = min(data(:));
-        model.displaySettings.peakSelection.cap = max(data(:));
+    if ~isempty(data)
+        if model.displaySettings.peakSelection.autoscale
+            model.displaySettings.peakSelection.floor = min(data(:));
+            model.displaySettings.peakSelection.cap = max(data(:));
+        end
+        ylim(ax, [model.displaySettings.peakSelection.floor model.displaySettings.peakSelection.cap]);
+        xlim(ax, [1 size(data,2)]);
     end
-    ylim(ax, [model.displaySettings.peakSelection.floor model.displaySettings.peakSelection.cap]);
-    xlim(ax, [1 size(data,2)]);
     zoom(ax, 'reset');
 end
 
