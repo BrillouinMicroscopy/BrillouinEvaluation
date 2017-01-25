@@ -11,6 +11,8 @@ function handles = PeakSelection(parent, model)
         @(o,e) onSettings(handles, e.AffectedObject));
     addlistener(model, 'displaySettings', 'PostSet', ...
         @(o,e) onDisplaySettings(handles, e.AffectedObject));
+    addlistener(model, 'status', 'PostSet', ...
+        @(o,e) onStatus(handles, e.AffectedObject));
 end
 
 function handles = initGUI(model, parent)
@@ -132,9 +134,21 @@ function initView(handles, model)
     set(handles.floor, 'String', model.displaySettings.peakSelection.floor);
 end
 
+function onStatus(handles, model)
+    buttons = {'Brillouin', 'Rayleigh'};
+    for jj = 1:length(buttons)
+        if model.status.peakSelection.(['select' buttons{jj}])
+            label = 'Done';
+        else
+            label = 'Select';
+        end
+        set(handles.(['select' buttons{jj}]), 'String', label);
+    end
+end
+
 function onSettings(handles, model)
-    handles.peakTableBrillouin.Data = model.settings.peakSelection.brillouin;
-    handles.peakTableRayleigh.Data = model.settings.peakSelection.rayleigh;
+    handles.peakTableBrillouin.Data = model.settings.peakSelection.Brillouin;
+    handles.peakTableRayleigh.Data = model.settings.peakSelection.Rayleigh;
     plotData(handles, model);
 end
 
@@ -154,14 +168,14 @@ function plotData(handles, model)
     hold(ax, 'off');
     model.handles.plotSpectrum = plot(ax, data);
     hold(ax, 'on');
-    ind = model.settings.peakSelection.rayleigh;
+    ind = model.settings.peakSelection.Rayleigh;
     for jj = 1:size(ind,1)
         ix = ind(jj,1):ind(jj,2);
         if ind(jj,1) > 0 && ind(jj,2) <= length(data)
             plot(ax, ix, data(ix), 'color', [1, 0, 0, 0.4], 'linewidth', 5);
         end
     end
-    ind = model.settings.peakSelection.brillouin;
+    ind = model.settings.peakSelection.Brillouin;
     for jj = 1:size(ind,1)
         ix = ind(jj,1):ind(jj,2);
         if ind(jj,1) > 0 && ind(jj,2) <= length(data)

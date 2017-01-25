@@ -2,14 +2,14 @@ function calibration = PeakSelection(model, view)
 %% CALIBRATION Controller
 
     %% callbacks Calibration
-    set(view.peakSelection.selectBrillouin, 'Callback', {@selectPeaks, view, model, 'brillouin'});
-    set(view.peakSelection.selectRayleigh, 'Callback', {@selectPeaks, view, model, 'rayleigh'});
+    set(view.peakSelection.selectBrillouin, 'Callback', {@selectPeaks, view, model, 'Brillouin'});
+    set(view.peakSelection.selectRayleigh, 'Callback', {@selectPeaks, view, model, 'Rayleigh'});
     
-    set(view.peakSelection.peakTableBrillouin, 'CellEditCallback', {@editPeaks, model, 'brillouin'});
-    set(view.peakSelection.peakTableRayleigh, 'CellEditCallback', {@editPeaks, model, 'rayleigh'});
+    set(view.peakSelection.peakTableBrillouin, 'CellEditCallback', {@editPeaks, model, 'Brillouin'});
+    set(view.peakSelection.peakTableRayleigh, 'CellEditCallback', {@editPeaks, model, 'Rayleigh'});
     
-    set(view.peakSelection.clearBrillouin, 'Callback', {@clearPeaks, model, 'brillouin'});
-    set(view.peakSelection.clearRayleigh, 'Callback', {@clearPeaks, model, 'rayleigh'});
+    set(view.peakSelection.clearBrillouin, 'Callback', {@clearPeaks, model, 'Brillouin'});
+    set(view.peakSelection.clearRayleigh, 'Callback', {@clearPeaks, model, 'Rayleigh'});
     
     set(view.peakSelection.zoomIn, 'Callback', {@zoom, 'in', view});
     set(view.peakSelection.zoomOut, 'Callback', {@zoom, 'out', view});
@@ -29,11 +29,14 @@ function calibration = PeakSelection(model, view)
 end
 
 function selectPeaks(~, ~, view, model, type)
-    if ~model.settings.peakSelection.selecting
+    model.status.peakSelection.(['select' type]) = ~model.status.peakSelection.(['select' type]);
+    if model.status.peakSelection.(['select' type])
         switch type
-            case 'brillouin'
+            case 'Brillouin'
+                model.status.peakSelection.selectRayleigh = 0;
                 color = [0 0 1];
-            case 'rayleigh'
+            case 'Rayleigh'
+                model.status.peakSelection.selectBrillouin = 0;
                 color = [1 0 0];
         end
         set(view.peakSelection.brushHandle, 'Enable', 'on', 'color', color);
@@ -44,15 +47,7 @@ function selectPeaks(~, ~, view, model, type)
         xd = get(model.handles.plotSpectrum, 'XData');
         ind = xd(brushed);
         model.settings.peakSelection.(type) = vertcat(model.settings.peakSelection.(type), findBorders(ind));
-        
-%         yd = get(model.handles.plotSpectrum, 'YData');
-%         brushed_x = xd(logical(brush));
-%         brushed_y = yd(logical(brush));
-%         disp(brushed);
     end
-    
-    model.settings.peakSelection.selecting = ~model.settings.peakSelection.selecting;
-
 end
 
 function borders = findBorders(ind)

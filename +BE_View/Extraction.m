@@ -11,6 +11,8 @@ function handles = Extraction(parent, model)
         @(o,e) onFileLoad(handles, e.AffectedObject));
     addlistener(model, 'settings', 'PostSet', ...
         @(o,e) onSettingsChange(handles, e.AffectedObject));
+    addlistener(model, 'status', 'PostSet', ...
+        @(o,e) onStatus(handles, e.AffectedObject));
 end
 
 function handles = initGUI(model, parent)
@@ -199,6 +201,15 @@ function onFileLoad(handles, model)
         end
         zoom(handles.axesImage,'reset');
     end
+end
+
+function onStatus(handles, model)
+    if model.status.extraction.selectPeaks
+        label = 'Done';
+    else
+        label = 'Select';
+    end
+    set(handles.selectPeaks, 'String', label);
 end
 
 function onSettingsChange(handles, model)

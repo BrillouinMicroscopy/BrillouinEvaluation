@@ -29,11 +29,22 @@ function extraction = Extraction(model, view)
 end
 
 function selectPeaks(~, ~, view, model)
-    set(view.figure,'KeyPressFcn',{@finishPeaks, view});
-    set(view.extraction.selectPeaks, 'KeyPressFcn', {@finishPeaks, view});
-    set(view.figure,'WindowButtonMotionFcn',{@changepointer, view});
-    set(view.extraction.axesImage,'ButtonDownFcn',{@getpoints, view, model});
-    set(view.extraction.imageCamera,'ButtonDownFcn',{@getpoints, view, model});
+    model.status.extraction.selectPeaks = ~model.status.extraction.selectPeaks;
+    if model.status.extraction.selectPeaks
+        set(view.figure,'KeyPressFcn',{@finishPeaks, view, model});
+        set(view.figure,'WindowButtonMotionFcn',{@changepointer, view});
+        set(view.extraction.selectPeaks, 'KeyPressFcn', {@finishPeaks, view, model});
+        set(view.extraction.axesImage,'ButtonDownFcn',{@getpoints, view, model});
+        set(view.extraction.imageCamera,'ButtonDownFcn',{@getpoints, view, model});
+    else
+        set(view.figure,'KeyPressFcn',[]);
+        set(view.figure,'WindowButtonMotionFcn',[]);
+        set(view.extraction.selectPeaks, 'KeyPressFcn', []);
+        set(view.extraction.axesImage,'ButtonDownFcn',[]);
+        set(view.extraction.imageCamera,'ButtonDownFcn',[]);
+        set(view.figure,'Pointer','arrow');
+        
+    end
 end
 
 function changepointer(~, ~, view)
@@ -53,14 +64,16 @@ function changepointer(~, ~, view)
     end
 end
 
-function finishPeaks(~, ~, view)
+function finishPeaks(~, ~, view, model)
     val=double(get(view.figure,'CurrentCharacter'));
     if val == 13 || val == 27
-        set(view.figure,'Pointer','arrow');
+        model.status.extraction.selectPeaks = 0;
+        set(view.figure,'KeyPressFcn',[]);
         set(view.figure,'WindowButtonMotionFcn',[]);
+        set(view.extraction.selectPeaks, 'KeyPressFcn', []);
         set(view.extraction.axesImage,'ButtonDownFcn',[]);
         set(view.extraction.imageCamera,'ButtonDownFcn',[]);
-        set(view.figure,'KeyPressFcn',[]);
+        set(view.figure,'Pointer','arrow');
     end
 end
 
