@@ -11,9 +11,9 @@ function extraction = Extraction(model, view)
     
     set(view.extraction.width, 'Callback', {@changeSettings, view, model});
     
-    set(view.extraction.zoomIn, 'Callback', {@zoom, 'in', view});
-    set(view.extraction.zoomOut, 'Callback', {@zoom, 'out', view});
-    set(view.extraction.panButton, 'Callback', {@pan, view});
+    set(view.extraction.zoomIn, 'Callback', {@zoom, 'in', view, model});
+    set(view.extraction.zoomOut, 'Callback', {@zoom, 'out', view, model});
+    set(view.extraction.panButton, 'Callback', {@pan, view, model});
     
     set(view.extraction.showBorders, 'Callback', {@showGraphs, model});
     set(view.extraction.showCenter, 'Callback', {@showGraphs, model});
@@ -34,6 +34,11 @@ end
 
 function selectPeaks(~, ~, view, model)
     model.status.extraction.selectPeaks = ~model.status.extraction.selectPeaks;
+    set(view.extraction.panButton,'UserData',0);
+    set(view.extraction.panHandle,'Enable','off');
+    set(view.extraction.zoomHandle,'Enable','off','Direction','in');
+    set(view.extraction.zoomOut,'UserData',0);
+    set(view.extraction.zoomIn,'UserData',0);
     if model.status.extraction.selectPeaks
         set(view.figure,'KeyPressFcn',{@finishPeaks, view, model});
         set(view.figure,'WindowButtonMotionFcn',{@changepointer, view});
@@ -288,34 +293,47 @@ function getInterpolationPositions(model)
     model.parameters.extraction = extraction;
 end
 
-function zoom(src, ~, str, view)
-switch get(src, 'UserData')
-    case 0
-        set(view.extraction.panButton,'UserData',0);
-        set(view.extraction.panHandle,'Enable','off');
-        switch str
-            case 'in'
-                set(view.extraction.zoomHandle,'Enable','on','Direction','in');
-                set(view.extraction.zoomIn,'UserData',1);
-                set(view.extraction.zoomOut,'UserData',0);
-            case 'out'
-                set(view.extraction.zoomHandle,'Enable','on','Direction','out');
-                set(view.extraction.zoomOut,'UserData',1);
-                set(view.extraction.zoomIn,'UserData',0);
-        end
-    case 1
-        set(view.extraction.zoomHandle,'Enable','off','Direction','in');
-        set(view.extraction.zoomOut,'UserData',0);
-        set(view.extraction.zoomIn,'UserData',0);
-end
-        
+function zoom(src, ~, str, view, model)
+    switch get(src, 'UserData')
+        case 0
+            model.status.extraction.selectPeaks = 0;
+            set(view.figure,'KeyPressFcn',[]);
+            set(view.figure,'WindowButtonMotionFcn',[]);
+            set(view.extraction.selectPeaks, 'KeyPressFcn', []);
+            set(view.extraction.axesImage,'ButtonDownFcn',[]);
+            set(view.extraction.imageCamera,'ButtonDownFcn',[]);
+            set(view.figure,'Pointer','arrow');
+            set(view.extraction.panButton,'UserData',0);
+            set(view.extraction.panHandle,'Enable','off');
+            switch str
+                case 'in'
+                    set(view.extraction.zoomHandle,'Enable','on','Direction','in');
+                    set(view.extraction.zoomIn,'UserData',1);
+                    set(view.extraction.zoomOut,'UserData',0);
+                case 'out'
+                    set(view.extraction.zoomHandle,'Enable','on','Direction','out');
+                    set(view.extraction.zoomOut,'UserData',1);
+                    set(view.extraction.zoomIn,'UserData',0);
+            end
+        case 1
+            set(view.extraction.zoomHandle,'Enable','off','Direction','in');
+            set(view.extraction.zoomOut,'UserData',0);
+            set(view.extraction.zoomIn,'UserData',0);
+    end
 end
 
-function pan(src, ~, view)
+function pan(src, ~, view, model)
     set(view.extraction.zoomOut,'UserData',0);
     set(view.extraction.zoomIn,'UserData',0);
     switch get(src, 'UserData')
         case 0
+            model.status.extraction.selectPeaks = 0;
+            set(view.figure,'KeyPressFcn',[]);
+            set(view.figure,'WindowButtonMotionFcn',[]);
+            set(view.extraction.selectPeaks, 'KeyPressFcn', []);
+            set(view.extraction.axesImage,'ButtonDownFcn',[]);
+            set(view.extraction.imageCamera,'ButtonDownFcn',[]);
+            set(view.figure,'Pointer','arrow');
             set(view.extraction.panButton,'UserData',1);
             set(view.extraction.panHandle,'Enable','on');
         case 1
