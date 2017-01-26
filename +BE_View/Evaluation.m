@@ -27,7 +27,7 @@ function handles = initGUI(model, parent)
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     plotTypes = uicontrol('Parent', parent, 'Style','popup', 'Units', 'normalized','Position',[0.02 0.85,0.22,0.055],...
-        'String',model.displaySettings.evaluation.types,'FontSize', 11, 'HorizontalAlignment', 'left');
+        'String',model.labels.evaluation.types,'FontSize', 11, 'HorizontalAlignment', 'left');
     
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Live preview (2x slower)', 'Units', 'normalized',...
         'Position', [0.02,0.8,0.19,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -134,7 +134,7 @@ function initView(handles, model)
 end
 
 function onResults(handles, model)
-    plotData(handles, model, 'int');
+    plotData(handles, model, 'int', 0);
 end
 
 function onStatus(handles, model)
@@ -150,10 +150,15 @@ function onDisplaySettings(handles, model)
     set(handles.autoscale, 'Value', model.displaySettings.evaluation.autoscale);
     set(handles.cap, 'String', model.displaySettings.evaluation.cap);
     set(handles.floor, 'String', model.displaySettings.evaluation.floor);
-    plotData(handles, model, 'int');
+    if model.displaySettings.evaluation.autoscale
+        caxis(handles.axesImage,'auto');
+    else
+        caxis(handles.axesImage,[model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
+    end
+    plotData(handles, model, 'int', 1);
 end
 
-function plotData (handles, model, location)
+function plotData (handles, model, location, full)
     
     data = model.results.(model.displaySettings.evaluation.type);
     data = mean(data,4);
@@ -163,7 +168,7 @@ function plotData (handles, model, location)
     dimension = sum(dimensions > 1);
     
     %% only update cdata for live preview
-    if model.displaySettings.evaluation.preview && model.status.evaluation.evaluate
+    if model.displaySettings.evaluation.preview && model.status.evaluation.evaluate && ~full
         try
             switch dimension
                 case 1
@@ -190,7 +195,7 @@ function plotData (handles, model, location)
             [az, el] = view(handles.evaluation.axesImage);
     end
 
-    labels = model.displaySettings.evaluation.typesLabels.(model.displaySettings.evaluation.type);
+    labels = model.labels.evaluation.typesLabels.(model.displaySettings.evaluation.type);
     
     %% define possible dimensions and their labels
     dims = {'Y', 'X', 'Z'};
@@ -229,10 +234,12 @@ function plotData (handles, model, location)
             ylabel(ax, labels.dataLabel, 'interpreter', 'latex');
             box(ax, 'on');
             if model.displaySettings.evaluation.autoscale
-                model.displaySettings.evaluation.floor = min(data(:));
-                model.displaySettings.evaluation.cap = max(data(:));
+%                 model.displaySettings.evaluation.floor = min(data(:));
+%                 model.displaySettings.evaluation.cap = max(data(:));
+                ylim(ax, 'auto');
+            else
+                ylim(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
             end
-            ylim(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
             zoom(ax, 'reset');
         case 2
             %% 2D data
@@ -255,9 +262,9 @@ function plotData (handles, model, location)
             title(cb,labels.dataLabel, 'interpreter', 'latex');
             box(ax, 'on');
             if model.displaySettings.evaluation.autoscale
-                [floor, cap] = checkCaxis(min(data(:)), max(data(:)));
-                model.displaySettings.evaluation.floor = floor;
-                model.displaySettings.evaluation.cap = cap;
+%                 [floor, cap] = checkCaxis(min(data(:)), max(data(:)));
+%                 model.displaySettings.evaluation.floor = floor;
+%                 model.displaySettings.evaluation.cap = cap;
                 caxis(ax, 'auto');
             else
                 caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
@@ -286,9 +293,9 @@ function plotData (handles, model, location)
             title(cb,labels.dataLabel, 'interpreter', 'latex');
             box(ax, 'on');
             if model.displaySettings.evaluation.autoscale
-                [floor, cap] = checkCaxis(min(data(:)), max(data(:)));
-                model.displaySettings.evaluation.floor = floor;
-                model.displaySettings.evaluation.cap = cap;
+%                 [floor, cap] = checkCaxis(min(data(:)), max(data(:)));
+%                 model.displaySettings.evaluation.floor = floor;
+%                 model.displaySettings.evaluation.cap = cap;
                 caxis(ax, 'auto');
             else
                 caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
@@ -298,12 +305,12 @@ function plotData (handles, model, location)
     end
 end
 
-function [floor, cap] = checkCaxis(floor, cap)
-    if floor >= cap
-        floor = floor - 0.05*abs(floor);
-        cap = cap + 0.05*abs(cap);
-    end
-end
+% function [floor, cap] = checkCaxis(floor, cap)
+%     if floor >= cap
+%         floor = floor - 0.05*abs(floor);
+%         cap = cap + 0.05*abs(cap);
+%     end
+% end
 
 function img = readTransparent(file)
 	img = imread(file);

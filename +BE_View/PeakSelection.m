@@ -7,7 +7,7 @@ function handles = PeakSelection(parent, model)
 
     % observe on model changes and update view accordingly
     % (tie listener to model object lifecycle)
-    addlistener(model, 'settings', 'PostSet', ...
+    addlistener(model, 'parameters', 'PostSet', ...
         @(o,e) onSettings(handles, e.AffectedObject));
     addlistener(model, 'displaySettings', 'PostSet', ...
         @(o,e) onDisplaySettings(handles, e.AffectedObject));
@@ -147,8 +147,8 @@ function onStatus(handles, model)
 end
 
 function onSettings(handles, model)
-    handles.peakTableBrillouin.Data = model.settings.peakSelection.Brillouin;
-    handles.peakTableRayleigh.Data = model.settings.peakSelection.Rayleigh;
+    handles.peakTableBrillouin.Data = model.parameters.peakSelection.Brillouin;
+    handles.peakTableRayleigh.Data = model.parameters.peakSelection.Rayleigh;
     plotData(handles, model);
 end
 
@@ -156,7 +156,12 @@ function onDisplaySettings(handles, model)
     set(handles.autoscale, 'Value', model.displaySettings.peakSelection.autoscale);
     set(handles.cap, 'String', model.displaySettings.peakSelection.cap);
     set(handles.floor, 'String', model.displaySettings.peakSelection.floor);
-    plotData(handles, model);
+    if model.displaySettings.peakSelection.autoscale
+        ylim(handles.axesImage,'auto');
+    else
+        ylim(handles.axesImage, [model.displaySettings.peakSelection.floor model.displaySettings.peakSelection.cap]);
+    end
+%     plotData(handles, model);
 end
 
 function plotData(handles, model)
@@ -164,33 +169,33 @@ function plotData(handles, model)
     imgs = model.file.readPayloadData(1, 1, 1, 'data');
     imgs = medfilt1(imgs,3);
     img = imgs(:,:,1);
-    data = getIntensity1D(img, model.settings.extraction.interpolationPositions);
-    hold(ax, 'off');
-    model.handles.plotSpectrum = plot(ax, data);
-    hold(ax, 'on');
-    ind = model.settings.peakSelection.Rayleigh;
-    for jj = 1:size(ind,1)
-        ix = ind(jj,1):ind(jj,2);
-        if ind(jj,1) > 0 && ind(jj,2) <= length(data)
-            plot(ax, ix, data(ix), 'color', [1, 0, 0, 0.4], 'linewidth', 5);
+    data = getIntensity1D(img, model.parameters.extraction.interpolationPositions);
+    if ~isempty(data);
+        hold(ax, 'off');
+        model.handles.plotSpectrum = plot(ax, data);
+        hold(ax, 'on');
+        ind = model.parameters.peakSelection.Rayleigh;
+        for jj = 1:size(ind,1)
+            ix = ind(jj,1):ind(jj,2);
+            if ind(jj,1) > 0 && ind(jj,2) <= length(data)
+                plot(ax, ix, data(ix), 'color', [1, 0, 0, 0.4], 'linewidth', 5);
+            end
         end
-    end
-    ind = model.settings.peakSelection.Brillouin;
-    for jj = 1:size(ind,1)
-        ix = ind(jj,1):ind(jj,2);
-        if ind(jj,1) > 0 && ind(jj,2) <= length(data)
-            plot(ax, ix, data(ix), 'color', [0, 0, 1, 0.4], 'linewidth', 5);
+        ind = model.parameters.peakSelection.Brillouin;
+        for jj = 1:size(ind,1)
+            ix = ind(jj,1):ind(jj,2);
+            if ind(jj,1) > 0 && ind(jj,2) <= length(data)
+                plot(ax, ix, data(ix), 'color', [0, 0, 1, 0.4], 'linewidth', 5);
+            end
         end
-    end
-    if ~isempty(data)
         if model.displaySettings.peakSelection.autoscale
-            model.displaySettings.peakSelection.floor = min(data(:));
-            model.displaySettings.peakSelection.cap = max(data(:));
+            ylim(ax, 'auto');
+        else
+            ylim(ax, [model.displaySettings.peakSelection.floor model.displaySettings.peakSelection.cap]);
         end
-        ylim(ax, [model.displaySettings.peakSelection.floor model.displaySettings.peakSelection.cap]);
         xlim(ax, [1 size(data,2)]);
+        zoom(ax, 'reset');
     end
-    zoom(ax, 'reset');
 end
 
 function img = readTransparent(file)

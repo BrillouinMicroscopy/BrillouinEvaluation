@@ -9,8 +9,10 @@ function handles = Extraction(parent, model)
     % (tie listener to model object lifecycle)
     addlistener(model, 'file', 'PostSet', ...
         @(o,e) onFileLoad(handles, e.AffectedObject));
-    addlistener(model, 'settings', 'PostSet', ...
+    addlistener(model, 'parameters', 'PostSet', ...
         @(o,e) onSettingsChange(handles, e.AffectedObject));
+    addlistener(model, 'displaySettings', 'PostSet', ...
+        @(o,e) onDisplaySettings(handles, e.AffectedObject));
     addlistener(model, 'status', 'PostSet', ...
         @(o,e) onStatus(handles, e.AffectedObject));
 end
@@ -182,22 +184,29 @@ function initView(handles, model)
     onSettingsChange(handles, model);
 end
 
+function onDisplaySettings(handles, model)
+    set(handles.autoscale, 'Value', model.displaySettings.extraction.autoscale);
+    set(handles.cap, 'String', model.displaySettings.extraction.cap);
+    set(handles.floor, 'String', model.displaySettings.extraction.floor);
+    if model.displaySettings.extraction.autoscale
+        caxis(handles.axesImage,'auto');
+    else
+        caxis(handles.axesImage,[model.displaySettings.extraction.floor model.displaySettings.extraction.cap]);
+    end
+end
+
 function onFileLoad(handles, model)
     if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
         img = model.file.readPayloadData(1, 1, 1, 'data');
-        img = img(:,:,model.settings.extraction.imageNr);
+        img = img(:,:,model.parameters.extraction.imageNr);
         handles.imageCamera.CData = img;
         colorbar(handles.axesImage);
         axis(handles.axesImage, [0.5 size(img,2)+0.5 0.5 size(img,1)+0.5]);
-        
-        % set start values for spectrum axis fitting
-        % probably a better algorithm needed
-        model.settings.extraction.circleStart = [1, size(img,1), mean(size(img))];
 
-        if model.settings.extraction.autoscale
+        if model.displaySettings.extraction.autoscale
             caxis(handles.axesImage,'auto');
         else
-            caxis(handles.axesImage,[model.settings.extraction.floor model.settings.extraction.cap]);
+            caxis(handles.axesImage,[model.displaySettings.extraction.floor model.displaySettings.extraction.cap]);
         end
         zoom(handles.axesImage,'reset');
     end
@@ -213,24 +222,24 @@ function onStatus(handles, model)
 end
 
 function onSettingsChange(handles, model)
-    if model.settings.extraction.autoscale
+    if model.displaySettings.extraction.autoscale
         caxis(handles.axesImage,'auto');
     else
-        caxis(handles.axesImage,[model.settings.extraction.floor model.settings.extraction.cap]);
+        caxis(handles.axesImage,[model.displaySettings.extraction.floor model.displaySettings.extraction.cap]);
     end
-    set(handles.autoscale, 'Value', model.settings.extraction.autoscale);
-    set(handles.cap, 'String', model.settings.extraction.cap);
-    set(handles.floor, 'String', model.settings.extraction.floor);
+    set(handles.autoscale, 'Value', model.displaySettings.extraction.autoscale);
+    set(handles.cap, 'String', model.displaySettings.extraction.cap);
+    set(handles.floor, 'String', model.displaySettings.extraction.floor);
     
-    set(handles.width, 'String', model.settings.extraction.width);
+    set(handles.width, 'String', model.parameters.extraction.width);
     
-    set(handles.extractionAxisGroup,'SelectedObject',findall(handles.extractionAxis, 'String', model.settings.extraction.extractionAxis));
-    set(handles.interpolationDirectionGroup,'SelectedObject',findall(handles.interpolationDirection, 'String', model.settings.extraction.interpolationDirection));
+    set(handles.extractionAxisGroup,'SelectedObject',findall(handles.extractionAxis, 'String', model.parameters.extraction.extractionAxis));
+    set(handles.interpolationDirectionGroup,'SelectedObject',findall(handles.interpolationDirection, 'String', model.parameters.extraction.interpolationDirection));
     
-    if ~sum(isnan(model.settings.extraction.peaks.x)) && ~sum(isnan(model.settings.extraction.peaks.y))
-        handles.peakTable.Data = transpose([model.settings.extraction.peaks.x; model.settings.extraction.peaks.y]);
-        handles.plotPeaks.XData = model.settings.extraction.peaks.x;
-        handles.plotPeaks.YData = model.settings.extraction.peaks.y;
+    if ~sum(isnan(model.parameters.extraction.peaks.x)) && ~sum(isnan(model.parameters.extraction.peaks.y))
+        handles.peakTable.Data = transpose([model.parameters.extraction.peaks.x; model.parameters.extraction.peaks.y]);
+        handles.plotPeaks.XData = model.parameters.extraction.peaks.x;
+        handles.plotPeaks.YData = model.parameters.extraction.peaks.y;
 %         fitSpectrum(model);
 %         if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
 %             getInterpolationPositions(handles, model);
@@ -248,9 +257,9 @@ function showInterpolationPositions(handles, model)
     else
         return;
     end
-    centers = cleanArray(model.settings.extraction.interpolationCenters, img);
-    borders = cleanArray(model.settings.extraction.interpolationBorders, img);
-    positions = cleanArray(model.settings.extraction.interpolationPositions, img);
+    centers = cleanArray(model.parameters.extraction.interpolationCenters, img);
+    borders = cleanArray(model.parameters.extraction.interpolationBorders, img);
+    positions = cleanArray(model.parameters.extraction.interpolationPositions, img);
     
     function arr = cleanArray(arr, img)
         arr.x(arr.x > size(img,2)) = NaN;

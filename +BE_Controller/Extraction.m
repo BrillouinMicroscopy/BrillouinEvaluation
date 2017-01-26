@@ -16,13 +16,13 @@ function extraction = Extraction(model, view)
     set(view.extraction.panButton, 'Callback', {@pan, view});
     
     set(view.extraction.autoscale, 'Callback', {@toggleAutoscale, model, view});
-    set(view.extraction.cap, 'Callback', {@setCameraParameters, model});
-    set(view.extraction.floor, 'Callback', {@setCameraParameters, model});
+    set(view.extraction.cap, 'Callback', {@setClim, model});
+    set(view.extraction.floor, 'Callback', {@setClim, model});
     
-    set(view.extraction.increaseFloor, 'Callback', {@increaseClim, model});
-    set(view.extraction.decreaseFloor, 'Callback', {@decreaseClim, model});
-    set(view.extraction.increaseCap, 'Callback', {@increaseClim, model});
-    set(view.extraction.decreaseCap, 'Callback', {@decreaseClim, model});
+    set(view.extraction.increaseFloor, 'Callback', {@changeClim, model, 1});
+    set(view.extraction.decreaseFloor, 'Callback', {@changeClim, model, -1});
+    set(view.extraction.increaseCap, 'Callback', {@changeClim, model, 1});
+    set(view.extraction.decreaseCap, 'Callback', {@changeClim, model, -1});
     
     extraction = struct( ...
     );
@@ -43,7 +43,6 @@ function selectPeaks(~, ~, view, model)
         set(view.extraction.axesImage,'ButtonDownFcn',[]);
         set(view.extraction.imageCamera,'ButtonDownFcn',[]);
         set(view.figure,'Pointer','arrow');
-        
     end
 end
 
@@ -80,11 +79,11 @@ end
 function getpoints(~, ~, view, model)
     % manually select the peaks of the spectrum
     cp = get(view.extraction.axesImage,'CurrentPoint');
-    x = model.settings.extraction.peaks.x;
+    x = model.parameters.extraction.peaks.x;
     x = [x cp(1,1)];
-    y = model.settings.extraction.peaks.y;
+    y = model.parameters.extraction.peaks.y;
     y = [y cp(1,2)];
-    model.settings.extraction.peaks = struct( ...
+    model.parameters.extraction.peaks = struct( ...
         'x', x, ...
         'y', y ...
     );
@@ -92,28 +91,30 @@ function getpoints(~, ~, view, model)
 end
 
 function clearPeaks(~, ~, model)
-    model.settings.extraction.peaks = struct( ...
+    extraction = model.parameters.extraction;
+    extraction.peaks = struct( ...
         'x', [], ...
         'y', [] ...
     );
-    model.settings.extraction.interpolationCenters = struct( ...
+    extraction.interpolationCenters = struct( ...
         'x', [], ...        % [pix] x-position
         'y', [] ...         % [pix] y-position
     );
-    model.settings.extraction.interpolationBorders = struct( ...
+    extraction.interpolationBorders = struct( ...
         'x', [], ...        % [pix] x-position
         'y', [] ...         % [pix] y-position
     );
-    model.settings.extraction.interpolationPositions = struct( ...
+    extraction.interpolationPositions = struct( ...
         'x', [], ...        % [pix] x-position
         'y', [] ...         % [pix] y-position
     );
+    model.parameters.extraction = extraction;
 end
 
 function optimizePeaks(~, ~, model)
     if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
         img = model.file.readPayloadData(1, 1, 1, 'data');
-        img = img(:,:,model.settings.extraction.imageNr);
+        img = img(:,:,model.parameters.extraction.imageNr);
         r=10;
         % do a median filtering to prevent finding maxixums which are none,
         % reduce radius if medfilt2 is not possible (license checkout
@@ -123,7 +124,7 @@ function optimizePeaks(~, ~, model)
         catch
             r = 4;
         end
-        peaks = model.settings.extraction.peaks;
+        peaks = model.parameters.extraction.peaks;
         siz=size(img);
         for jj = 1:length(peaks.x)
             cx=peaks.x(jj);
@@ -135,7 +136,7 @@ function optimizePeaks(~, ~, model)
             [~, ind] = max(tmp(:));
             [peaks.y(jj),peaks.x(jj)] = ind2sub(siz,ind);
         end
-        model.settings.extraction.peaks = peaks;
+        model.parameters.extraction.peaks = peaks;
     end
     fitSpectrum(model);
 end
@@ -143,7 +144,7 @@ end
 function changeSettings(~, ~, view, model)
     % create a copy of the struct, otherwise model is reset after first
     % value has been changed
-    extraction = model.settings.extraction;
+    extraction = model.parameters.extraction;
     
     % set new values
     extractionAxis = get(view.extraction.extractionAxisGroup,'SelectedObject');
@@ -154,22 +155,22 @@ function changeSettings(~, ~, view, model)
     
     extraction.width = str2double(get(view.extraction.width, 'String'));
     
-    model.settings.extraction = extraction;
+    model.parameters.extraction = extraction;
     getInterpolationPositions(model);
 end
 
 function fitSpectrum(model)
 
-    newxb = model.settings.extraction.peaks.x;
-    newdata2b = model.settings.extraction.peaks.y;
-    circleStart = model.settings.extraction.circleStart;
+    newxb = model.parameters.extraction.peaks.x;
+    newdata2b = model.parameters.extraction.peaks.y;
+    circleStart = model.parameters.extraction.circleStart;
     
     if ~sum(isnan(newxb)) && ~sum(isnan(newdata2b)) && ~sum(isnan(circleStart))
 
         model2b = @(params) circleError(params, newxb, newdata2b, -1);
         [estimates2b, ~, ~, ~] = fitCircle(model2b, newxb, circleStart);
 
-        model.settings.extraction.circleFit = estimates2b;
+        model.parameters.extraction.circleFit = estimates2b;
     end
     
     getInterpolationPositions(model);
@@ -205,16 +206,16 @@ function getInterpolationPositions(model)
 %% calculate positions of the interpolation positions
     if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
         img = model.file.readPayloadData(1, 1, 1, 'data');
-        img = img(:,:,model.settings.extraction.imageNr);
+        img = img(:,:,model.parameters.extraction.imageNr);
     else
         return;
     end
-    params = model.settings.extraction.circleFit;
-    width = model.settings.extraction.width;
+    params = model.parameters.extraction.circleFit;
+    width = model.parameters.extraction.width;
     
     centers.x = 1:size(img,2);
     centers.y = 1:size(img,1);
-    switch model.settings.extraction.extractionAxis
+    switch model.parameters.extraction.extractionAxis
         case 'x'
             centers.y = circle(params, centers.x, -1);
         case 'y'
@@ -251,7 +252,7 @@ function getInterpolationPositions(model)
     borders.x = NaN(2,length(centers.x));
     borders.y = NaN(2,length(centers.x));
     
-    switch model.settings.extraction.interpolationDirection
+    switch model.parameters.extraction.interpolationDirection
         case 'f'
             %% correct way to average the spectrum
             borders.x = [1; 1] * centers.x + [-1; 1] .* width/2 * cos(alpha);
@@ -276,18 +277,11 @@ function getInterpolationPositions(model)
     positions.x = repmat(borders.x(1,:),width,1) + repmat(diff(borders.x,1,1),width,1)./(width-1) .* steps;
     positions.y = repmat(borders.y(1,:),width,1) + repmat(diff(borders.y,1,1),width,1)./(width-1) .* steps;
     
-    model.settings.extraction.interpolationCenters = centers;
-    model.settings.extraction.interpolationBorders = borders;
-    model.settings.extraction.interpolationPositions = positions;
-end
-
-function setCameraParameters(UIControl, ~, model)
-    field = get(UIControl, 'Tag');
-    model.settings.extraction.(field) = str2double(get(UIControl, 'String'));
-end
-
-function toggleAutoscale(~, ~, model, view)
-    model.settings.extraction.autoscale = get(view.extraction.autoscale, 'Value');
+    extraction = model.parameters.extraction;
+    extraction.interpolationCenters = centers;
+    extraction.interpolationBorders = borders;
+    extraction.interpolationPositions = positions;
+    model.parameters.extraction = extraction;
 end
 
 function zoom(src, ~, str, view)
@@ -326,16 +320,23 @@ function pan(src, ~, view)
     end
 end
 
-function decreaseClim(UIControl, ~, model)
-    model.settings.extraction.autoscale = 0;
+function setClim(UIControl, ~, model)
+    extraction = model.displaySettings.extraction;
     field = get(UIControl, 'Tag');
-    dif = abs(0.1*(model.settings.extraction.cap - model.settings.extraction.floor));
-    model.settings.extraction.(field) = model.settings.extraction.(field) - dif;
+    extraction.(field) = str2double(get(UIControl, 'String'));
+    extraction.autoscale = 0;
+    model.displaySettings.extraction = extraction;
 end
 
-function increaseClim(UIControl, ~, model)
-    model.settings.extraction.autoscale = 0;
+function toggleAutoscale(~, ~, model, view)
+    model.displaySettings.extraction.autoscale = get(view.extraction.autoscale, 'Value');
+end
+
+function changeClim(UIControl, ~, model, sign)
+    extraction = model.displaySettings.extraction;
     field = get(UIControl, 'Tag');
-    dif = abs(0.1*(model.settings.extraction.cap - model.settings.extraction.floor));
-    model.settings.extraction.(field) = model.settings.extraction.(field) + dif;
+    dif = abs(0.1*(extraction.cap - extraction.floor));
+    extraction.autoscale = 0;
+    extraction.(field) = extraction.(field) + sign * dif;
+    model.displaySettings.extraction = extraction;
 end

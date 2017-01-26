@@ -16,13 +16,13 @@ function calibration = PeakSelection(model, view)
     set(view.peakSelection.panButton, 'Callback', {@pan, view});
     
     set(view.peakSelection.autoscale, 'Callback', {@toggleAutoscale, model, view});
-    set(view.peakSelection.cap, 'Callback', {@setCameraParameters, model});
-    set(view.peakSelection.floor, 'Callback', {@setCameraParameters, model});
+    set(view.peakSelection.cap, 'Callback', {@setClim, model});
+    set(view.peakSelection.floor, 'Callback', {@setClim, model});
     
-    set(view.peakSelection.increaseFloor, 'Callback', {@increaseClim, model});
-    set(view.peakSelection.decreaseFloor, 'Callback', {@decreaseClim, model});
-    set(view.peakSelection.increaseCap, 'Callback', {@increaseClim, model});
-    set(view.peakSelection.decreaseCap, 'Callback', {@decreaseClim, model});
+    set(view.peakSelection.increaseFloor, 'Callback', {@changeClim, model, 1});
+    set(view.peakSelection.decreaseFloor, 'Callback', {@changeClim, model, -1});
+    set(view.peakSelection.increaseCap, 'Callback', {@changeClim, model, 1});
+    set(view.peakSelection.decreaseCap, 'Callback', {@changeClim, model, -1});
     
     calibration = struct( ...
     );
@@ -46,7 +46,7 @@ function selectPeaks(~, ~, view, model, type)
         
         xd = get(model.handles.plotSpectrum, 'XData');
         ind = xd(brushed);
-        model.settings.peakSelection.(type) = vertcat(model.settings.peakSelection.(type), findBorders(ind));
+        model.parameters.peakSelection.(type) = vertcat(model.parameters.peakSelection.(type), findBorders(ind));
     end
 end
 
@@ -76,11 +76,11 @@ function borders = findBorders(ind)
 end
 
 function clearPeaks(~, ~, model, type)
-    model.settings.peakSelection.(type) = [];
+    model.parameters.peakSelection.(type) = [];
 end
 
 function editPeaks(~, table, model, type)
-    model.settings.peakSelection.(type)(table.Indices(1), table.Indices(2)) = table.NewData;
+    model.parameters.peakSelection.(type)(table.Indices(1), table.Indices(2)) = table.NewData;
 end
 
 function zoom(src, ~, str, view)
@@ -119,25 +119,23 @@ function pan(src, ~, view)
     end
 end
 
-function setCameraParameters(UIControl, ~, model)
+function setClim(UIControl, ~, model)
+    peakSelection = model.displaySettings.peakSelection;
     field = get(UIControl, 'Tag');
-    model.displaySettings.peakSelection.(field) = str2double(get(UIControl, 'String'));
+    peakSelection.(field) = str2double(get(UIControl, 'String'));
+    peakSelection.autoscale = 0;
+    model.displaySettings.peakSelection = peakSelection;
 end
 
 function toggleAutoscale(~, ~, model, view)
     model.displaySettings.peakSelection.autoscale = get(view.peakSelection.autoscale, 'Value');
 end
 
-function decreaseClim(UIControl, ~, model)
-    model.displaySettings.peakSelection.autoscale = 0;
+function changeClim(UIControl, ~, model, sign)
+    peakSelection = model.displaySettings.peakSelection;
     field = get(UIControl, 'Tag');
-    dif = abs(0.1*(model.displaySettings.peakSelection.cap - model.displaySettings.peakSelection.floor));
-    model.displaySettings.peakSelection.(field) = model.displaySettings.peakSelection.(field) - dif;
-end
-
-function increaseClim(UIControl, ~, model)
-    model.displaySettings.peakSelection.autoscale = 0;
-    field = get(UIControl, 'Tag');
-    dif = abs(0.1*(model.displaySettings.peakSelection.cap - model.displaySettings.peakSelection.floor));
-    model.displaySettings.peakSelection.(field) = model.displaySettings.peakSelection.(field) + dif;
+    dif = abs(0.1*(peakSelection.cap - peakSelection.floor));
+    peakSelection.autoscale = 0;
+    peakSelection.(field) = peakSelection.(field) + sign * dif;
+    model.displaySettings.peakSelection = peakSelection;
 end

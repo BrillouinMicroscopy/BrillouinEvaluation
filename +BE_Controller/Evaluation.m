@@ -15,13 +15,13 @@ function acquisition = Evaluation(model, view)
     set(view.evaluation.plotTypes, 'Callback', {@selectPlotType, model});
     
     set(view.evaluation.autoscale, 'Callback', {@toggleAutoscale, model, view});
-    set(view.evaluation.cap, 'Callback', {@setCameraParameters, model});
-    set(view.evaluation.floor, 'Callback', {@setCameraParameters, model});
+    set(view.evaluation.cap, 'Callback', {@setClim, model});
+    set(view.evaluation.floor, 'Callback', {@setClim, model});
     
-    set(view.evaluation.increaseFloor, 'Callback', {@increaseClim, model});
-    set(view.evaluation.decreaseFloor, 'Callback', {@decreaseClim, model});
-    set(view.evaluation.increaseCap, 'Callback', {@increaseClim, model});
-    set(view.evaluation.decreaseCap, 'Callback', {@decreaseClim, model});
+    set(view.evaluation.increaseFloor, 'Callback', {@changeClim, model, 1});
+    set(view.evaluation.decreaseFloor, 'Callback', {@changeClim, model, -1});
+    set(view.evaluation.increaseCap, 'Callback', {@changeClim, model, 1});
+    set(view.evaluation.decreaseCap, 'Callback', {@changeClim, model, -1});
         
     acquisition = struct( ...
     ); 
@@ -39,17 +39,17 @@ function evaluate(view, model)
     
     totalPoints = (model.parameters.resolution.X*model.parameters.resolution.Y*model.parameters.resolution.Z);
     
-    ind_Rayleigh = model.settings.peakSelection.Rayleigh(1,1):model.settings.peakSelection.Rayleigh(1,2);
-    ind_Brillouin = model.settings.peakSelection.Brillouin(1,1):model.settings.peakSelection.Brillouin(1,2);
+    ind_Rayleigh = model.parameters.peakSelection.Rayleigh(1,1):model.parameters.peakSelection.Rayleigh(1,2);
+    ind_Brillouin = model.parameters.peakSelection.Brillouin(1,1):model.parameters.peakSelection.Brillouin(1,2);
     
     nrPeaks = 1;
     parameters.peaks = [6 20];
     
     imgs = model.file.readPayloadData(1, 1, 1, 'data');
     img = imgs(:,:,1);
-    spectrum = getIntensity1D(img, model.settings.extraction.interpolationPositions);
+    spectrum = getIntensity1D(img, model.parameters.extraction.interpolationPositions);
     spectrumSection = spectrum(ind_Rayleigh);
-    [initRayleighPos, ~, ~] = fitLorentzDistribution(spectrumSection, model.settings.fitting.fwhm, nrPeaks, parameters.peaks, 0);
+    [initRayleighPos, ~, ~] = fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
     intensity = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
     peaksBrillouin_pos = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrPeaks);
     peaksBrillouin_fwhm = peaksBrillouin_pos;
@@ -81,12 +81,12 @@ function evaluate(view, model)
                     uu = uu + 1;
                     try 
                         img = imgs(:,:,mm);
-                        spectrum = getIntensity1D(img, model.settings.extraction.interpolationPositions);
+                        spectrum = getIntensity1D(img, model.parameters.extraction.interpolationPositions);
                         %%
                         intensity(kk, jj, ll, mm) = sum(img(:));
 
                         spectrumSection = spectrum(ind_Rayleigh);
-                        [peakPos, ~, ~] = fitLorentzDistribution(spectrumSection, model.settings.fitting.fwhm, nrPeaks, parameters.peaks, 0);
+                        [peakPos, ~, ~] = fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
                         peaksRayleigh_pos(kk, jj, ll, mm, :) = peakPos + min(ind_Rayleigh(:));
 
                         shift = round(peakPos - initRayleighPos);
@@ -97,7 +97,7 @@ function evaluate(view, model)
                         [~, ind] = max(spectrumSection);
                         peaksBrillouin_max(kk, jj, ll, mm) = ind + min(secInd(:));
 
-                        [peakPos, fwhm, int, ~, thres] = fitLorentzDistribution(spectrumSection, model.settings.fitting.fwhm, nrPeaks, parameters.peaks, 0);
+                        [peakPos, fwhm, int, ~, thres] = fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
                         peaksBrillouin_fwhm(kk, jj, ll, mm, :) = fwhm;
                         peaksBrillouin_pos(kk, jj, ll, mm, :) = peakPos + min(secInd(:));
                         peaksBrillouin_int(kk, jj, ll, mm, :) = int - thres;
@@ -131,6 +131,7 @@ function evaluate(view, model)
     if ~model.displaySettings.evaluation.preview
         brillouinShift = (peaksRayleigh_pos-peaksBrillouin_pos);
         model.results = struct( ...
+            'type', 'BrillouinShift', ...   % result to show
             'BrillouinShift',       brillouinShift, ...      % [GHz]  the Brillouin shift
             'peaksBrillouin_pos',   peaksBrillouin_pos, ...  % [pix]  the position of the Brillouin peak(s) in the spectrum
             'peaksBrillouin_int',   peaksBrillouin_int, ...  % [a.u.] the intensity of the Brillouin peak(s)
@@ -197,27 +198,25 @@ function rotate3d(src, ~, view)
     end
 end
 
-function setCameraParameters(UIControl, ~, model)
+function setClim(UIControl, ~, model)
+    evaluation = model.displaySettings.evaluation;
     field = get(UIControl, 'Tag');
-    model.displaySettings.evaluation.(field) = str2double(get(UIControl, 'String'));
+    evaluation.(field) = str2double(get(UIControl, 'String'));
+    evaluation.autoscale = 0;
+    model.displaySettings.evaluation = evaluation;
 end
 
 function toggleAutoscale(~, ~, model, view)
     model.displaySettings.evaluation.autoscale = get(view.evaluation.autoscale, 'Value');
 end
 
-function decreaseClim(UIControl, ~, model)
-    model.displaySettings.evaluation.autoscale = 0;
+function changeClim(UIControl, ~, model, sign)
+    evaluation = model.displaySettings.evaluation;
     field = get(UIControl, 'Tag');
-    dif = abs(0.1*(model.displaySettings.evaluation.cap - model.displaySettings.evaluation.floor));
-    model.displaySettings.evaluation.(field) = model.displaySettings.evaluation.(field) - dif;
-end
-
-function increaseClim(UIControl, ~, model)
-    model.displaySettings.evaluation.autoscale = 0;
-    field = get(UIControl, 'Tag');
-    dif = abs(0.1*(model.displaySettings.evaluation.cap - model.displaySettings.evaluation.floor));
-    model.displaySettings.evaluation.(field) = model.displaySettings.evaluation.(field) + dif;
+    dif = abs(0.1*(evaluation.cap - evaluation.floor));
+    evaluation.autoscale = 0;
+    evaluation.(field) = evaluation.(field) + sign * dif;
+    model.displaySettings.evaluation = evaluation;
 end
 
 function selectPlotType(src, ~, model)

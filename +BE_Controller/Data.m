@@ -30,6 +30,12 @@ function load(~, ~, model)
         model.parameters.positions.X = model.file.positionsX;
         model.parameters.positions.Y = model.file.positionsY;
         model.parameters.positions.Z = model.file.positionsZ;
+        
+        % set start values for spectrum axis fitting
+        % probably a better algorithm needed
+        img = model.file.readPayloadData(1, 1, 1, 'data');
+        img = img(:,:,model.parameters.extraction.imageNr);
+        model.parameters.extraction.circleStart = [1, size(img,1), mean(size(img))];
     end
 end
 
