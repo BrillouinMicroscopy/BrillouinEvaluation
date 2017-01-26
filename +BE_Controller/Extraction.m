@@ -15,6 +15,10 @@ function extraction = Extraction(model, view)
     set(view.extraction.zoomOut, 'Callback', {@zoom, 'out', view});
     set(view.extraction.panButton, 'Callback', {@pan, view});
     
+    set(view.extraction.showBorders, 'Callback', {@showGraphs, model});
+    set(view.extraction.showCenter, 'Callback', {@showGraphs, model});
+    set(view.extraction.showPositions, 'Callback', {@showGraphs, model});
+    
     set(view.extraction.autoscale, 'Callback', {@toggleAutoscale, model, view});
     set(view.extraction.cap, 'Callback', {@setClim, model});
     set(view.extraction.floor, 'Callback', {@setClim, model});
@@ -318,6 +322,11 @@ function pan(src, ~, view)
             set(view.extraction.panButton,'UserData',0);
             set(view.extraction.panHandle,'Enable','off');
     end
+end
+
+function showGraphs(src, ~, model)
+    tag = get(src, 'Tag');
+    model.displaySettings.extraction.(['show' tag]) = get(src, 'Value');
 end
 
 function setClim(UIControl, ~, model)

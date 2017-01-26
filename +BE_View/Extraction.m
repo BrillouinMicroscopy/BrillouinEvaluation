@@ -75,6 +75,27 @@ function handles = initGUI(model, parent)
     interpolationDirection(3) = uicontrol(interpolationDirectionGroup,'Style','radiobutton',...
         'String','f',...
         'Position',[10 8 70 15]);
+    
+    plotSelection = uipanel('Parent', parent, 'Title', 'Show graphs', 'FontSize', 11,...
+             'Position', [.02 .04 .22 .16]);
+    
+    uicontrol('Parent', plotSelection, 'Style', 'text', 'String', 'Fit borders', 'Units', 'normalized',...
+        'Position', [0.02,0.75,0.8,0.2], 'FontSize', 11, 'HorizontalAlignment', 'left');
+
+    showBorders = uicontrol('Parent', plotSelection, 'Style', 'checkbox', 'Units', 'normalized',...
+        'Position', [0.85,0.725,0.1,0.2], 'FontSize', 11, 'HorizontalAlignment', 'left', 'tag', 'Borders');
+    
+    uicontrol('Parent', plotSelection, 'Style', 'text', 'String', 'Fit center', 'Units', 'normalized',...
+        'Position', [0.02,0.45,0.9,0.2], 'FontSize', 11, 'HorizontalAlignment', 'left');
+
+    showCenter = uicontrol('Parent', plotSelection, 'Style', 'checkbox', 'Units', 'normalized',...
+        'Position', [0.85,0.425,0.1,0.2], 'FontSize', 11, 'HorizontalAlignment', 'left', 'tag', 'Center');
+    
+    uicontrol('Parent', plotSelection, 'Style', 'text', 'String', 'Interpolation positions', 'Units', 'normalized',...
+        'Position', [0.02,0.15,0.9,0.2], 'FontSize', 11, 'HorizontalAlignment', 'left');
+
+    showPositions = uicontrol('Parent', plotSelection, 'Style', 'checkbox', 'Units', 'normalized',...
+        'Position', [0.85,0.125,0.1,0.2], 'FontSize', 11, 'HorizontalAlignment', 'left', 'tag', 'Positions');
 
     zoomIn = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
         'CData', readTransparent([model.pp '/images/zoomin.png']), 'Position',[0.33,0.92,0.0375,0.055],...
@@ -174,7 +195,10 @@ function handles = initGUI(model, parent)
         'extractionAxis', extractionAxis, ...
         'interpolationDirectionGroup', interpolationDirectionGroup, ...
         'interpolationDirection', interpolationDirection, ...
-        'width', width ...
+        'width', width, ...
+        'showBorders', showBorders, ...
+        'showCenter', showCenter, ...
+        'showPositions', showPositions ...
 	);
 end
 
@@ -193,6 +217,21 @@ function onDisplaySettings(handles, model)
     else
         caxis(handles.axesImage,[model.displaySettings.extraction.floor model.displaySettings.extraction.cap]);
     end
+    if model.displaySettings.extraction.showBorders
+        set(handles.plotBorders, 'Visible', 'on');
+    else
+        set(handles.plotBorders, 'Visible', 'off');
+    end
+    if model.displaySettings.extraction.showCenter
+        set(handles.plotCenters, 'Visible', 'on');
+    else
+        set(handles.plotCenters, 'Visible', 'off');
+    end
+    if model.displaySettings.extraction.showPositions
+        set(model.handles.plotPositions, 'Visible', 'on');
+    else
+        set(model.handles.plotPositions, 'Visible', 'off');
+    end
 end
 
 function onFileLoad(handles, model)
@@ -210,6 +249,9 @@ function onFileLoad(handles, model)
         end
         zoom(handles.axesImage,'reset');
     end
+    set(handles.showBorders, 'Value', model.displaySettings.extraction.showBorders);
+    set(handles.showCenter, 'Value', model.displaySettings.extraction.showCenter);
+    set(handles.showPositions, 'Value', model.displaySettings.extraction.showPositions);
 end
 
 function onStatus(handles, model)
