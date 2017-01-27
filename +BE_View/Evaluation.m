@@ -25,10 +25,10 @@ function handles = initGUI(model, parent)
     newFig = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...
         'String','Open figure','Position',[0.14,0.92,0.1,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
-    
+
     plotTypes = uicontrol('Parent', parent, 'Style','popup', 'Units', 'normalized','Position',[0.02 0.85,0.22,0.055],...
         'String',model.labels.evaluation.types,'FontSize', 11, 'HorizontalAlignment', 'left');
-    
+
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Live preview (2x slower)', 'Units', 'normalized',...
         'Position', [0.02,0.8,0.19,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
@@ -39,19 +39,19 @@ function handles = initGUI(model, parent)
         'CData', readTransparent([model.pp '/images/zoomin.png']), 'Position',[0.33,0.92,0.0375,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     set(zoomIn, 'UserData', 0);
-    
+
     zoomOut = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
         'CData', readTransparent([model.pp '/images/zoomout.png']), 'Position',[0.375,0.92,0.0375,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     set(zoomOut, 'UserData', 0);
-    
+
     panButton = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
         'CData', readTransparent([model.pp '/images/pan.png']), 'Position',[0.42,0.92,0.0375,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     set(panButton, 'UserData', 0);
-    
+
     rotate3dButton = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
-        'CData', readTransparent([model.pp '/images/pan.png']), 'Position',[0.465,0.92,0.0375,0.055],...
+        'CData', readTransparent([model.pp '/images/rotate.png']), 'Position',[0.465,0.92,0.0375,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     set(rotate3dButton, 'UserData', 0);
 
@@ -88,7 +88,7 @@ function handles = initGUI(model, parent)
     decreaseCap = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
         'CData', readTransparent([model.pp '/images/down.png']), 'Position',[0.92,0.92,0.0325,0.0275],...
         'FontSize', 11, 'HorizontalAlignment', 'left', 'Tag', 'cap');
-    
+
     axesImage = axes('Parent', parent, 'Position', [0.33 .085 .65 .8]);
     axis(axesImage, 'equal');
     box(axesImage, 'on');
@@ -96,13 +96,13 @@ function handles = initGUI(model, parent)
     zoomHandle = zoom;
     panHandle = pan;
     rotate3dHandle = rotate3d;
-    
+
     progressBar = javax.swing.JProgressBar;
     javacomponent(progressBar,[19,20,208,30],parent);
     progressBar.setValue(0);
     progressBar.setStringPainted(true);
     progressBar.setString('0%');
-    
+
     %% Return handles
     handles = struct(...
         'evaluate', evaluate, ...
@@ -159,14 +159,14 @@ function onDisplaySettings(handles, model)
 end
 
 function plotData (handles, model, location, full)
-    
+
     data = model.results.(model.displaySettings.evaluation.type);
     data = mean(data,4);
-    
+
     %% find non-singleton dimensions
     dimensions = size(data);
     dimension = sum(dimensions > 1);
-    
+
     %% only update cdata for live preview
     if model.displaySettings.evaluation.preview && model.status.evaluation.evaluate && ~full
         try
@@ -184,7 +184,7 @@ function plotData (handles, model, location, full)
         catch
         end
     end
-    
+
     switch location
         case 'int'
             ax = handles.axesImage;
@@ -196,11 +196,11 @@ function plotData (handles, model, location, full)
     end
 
     labels = model.labels.evaluation.typesLabels.(model.displaySettings.evaluation.type);
-    
+
     %% define possible dimensions and their labels
     dims = {'Y', 'X', 'Z'};
     dimslabel = {'y', 'x', 'z'};
-    
+
     nsdims = cell(dimension,1);
     nsdimslabel = cell(dimension,1);
     ind = 0;
@@ -211,7 +211,7 @@ function plotData (handles, model, location, full)
             nsdimslabel{ind} = dimslabel{jj};
         end
     end
-    
+
     %% calculate zero mean positions
     for jj = 1:length(dims)
         positions.([dims{jj} '_zm']) = model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
@@ -318,7 +318,7 @@ function img = readTransparent(file)
     index1 = img(:,:,1) == 1;
     index2 = img(:,:,2) == 1;
     index3 = img(:,:,3) == 1;
-    
+
     indexWhite = index1+index2+index3==3;
     for idx = 1 : 3
        rgb = img(:,:,idx);     % extract part of the image
