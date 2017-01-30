@@ -226,7 +226,7 @@ function plotData (handles, model, location, full)
             %% 1D data
             d = squeeze(data);
             p = squeeze(positions.([nsdims{1} '_zm']));
-            hold(ax,'on');
+            hold(ax,'off');
             model.handles.results = plot(ax,p,d);
             title(ax,labels.titleString);
             xlim([min(p(:)), max(p(:))]);
