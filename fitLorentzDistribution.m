@@ -1,4 +1,4 @@
-function [peakPos, peakFWHM, peakInt, fittedCurve, thres] = fitLorentzDistribution(intensity, fwhm, nrPeaks, borders, debug)
+function [peakPos, peakFWHM, peakInt, fittedCurve, thres, deviation] = fitLorentzDistribution(intensity, fwhm, nrPeaks, borders, debug)
 %% FITLORENTZDISTRIBUTION
 %   This function will fit a Lorentzian distribution with the requested
 %   number of peaks to a given 1-D intensity distribution
@@ -37,7 +37,7 @@ switch nrPeaks
         start = [maxima(1, 1), fwhm, maxima(2, 1)];
         x = 1:1:length(intensity);
         % fitting
-        [params, ~, ~, fittedCurve]  = Utils.FittingScripts.nfit_1peaks(x, intensity, start, thres);
+        [params, ~, ~, fittedCurve, deviation]  = Utils.FittingScripts.nfit_1peaks(x, intensity, start, thres);
 
         peakPos = params(1);
         peakFWHM = params(2);
@@ -47,7 +47,7 @@ switch nrPeaks
         start = [maxima(1, 1), maxima(1, 2), fwhm, fwhm, maxima(2, 1), maxima(2, 2)];
         x = 1:1:length(intensity);
         % fitting
-        [params, ~, ~, fittedCurve]  = Utils.FittingScripts.nfit_2peaks(x, intensity, start, thres);
+        [params, ~, ~, fittedCurve, deviation]  = Utils.FittingScripts.nfit_2peaks(x, intensity, start, thres);
 
         peakPos = params(1:2);
         peakFWHM = params(3:4);
@@ -63,14 +63,14 @@ switch nrPeaks
             ind = borders + [1 -1] * round((1-0.70)/2*diff(borders));
             ind = ind(1):ind(2);
             %fit
-            [params_B, ~, ~, ~]  = Utils.FittingScripts.nfit_2peaks(x(ind), intensity(ind), start, thres);
+            [params_B, ~, ~, ~, deviation]  = Utils.FittingScripts.nfit_2peaks(x(ind), intensity(ind), start, thres);
             
             % fit Rayleigh peak
             % construct start parameter array
             start = [maxima(1, 1), maxima(1, 4), fwhm, fwhm, maxima(2, 1), maxima(2, 4)];
             x = 1:1:length(intensity);
             % fit
-            [params_R, ~, ~, ~]  = Utils.FittingScripts.nfit_2peaks(x, intensity, start, thres);
+            [params_R, ~, ~, ~, ~]  = Utils.FittingScripts.nfit_2peaks(x, intensity, start, thres);
             
             % construct parameter array as 4 peak fits returns it
             params = [params_R(1), params_B(1), params_B(2), params_R(2),...
@@ -82,7 +82,7 @@ switch nrPeaks
             % start parameters
             start = [maxima(1, 1:4), fwhm, fwhm, fwhm, fwhm, maxima(2, 1:4)];
             x = 1:1:length(intensity);
-            [params, ~, ~, fittedCurve] = Utils.FittingScripts.nfit_4peaks(x, intensity, start, thres);
+            [params, ~, ~, fittedCurve, deviation] = Utils.FittingScripts.nfit_4peaks(x, intensity, start, thres);
         end
         peakPos = params(1:4);
         peakFWHM = params(5:8);

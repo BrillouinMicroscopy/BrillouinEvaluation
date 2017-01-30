@@ -52,6 +52,7 @@ function evaluate(view, model)
     [initRayleighPos, ~, ~] = fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
     intensity = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
     peaksBrillouin_pos = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrPeaks);
+    peaksBrillouin_dev = peaksBrillouin_pos;
     peaksBrillouin_fwhm = peaksBrillouin_pos;
     peaksBrillouin_max = peaksBrillouin_pos;
     peaksBrillouin_int = peaksBrillouin_pos;
@@ -97,8 +98,9 @@ function evaluate(view, model)
                         [~, ind] = max(spectrumSection);
                         peaksBrillouin_max(kk, jj, ll, mm) = ind + min(secInd(:));
 
-                        [peakPos, fwhm, int, ~, thres] = fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
+                        [peakPos, fwhm, int, ~, thres, deviation] = fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
                         peaksBrillouin_fwhm(kk, jj, ll, mm, :) = fwhm;
+                        peaksBrillouin_dev(kk, jj, ll, mm, :) = deviation;
                         peaksBrillouin_pos(kk, jj, ll, mm, :) = peakPos + min(secInd(:));
                         peaksBrillouin_int(kk, jj, ll, mm, :) = int - thres;
                         
@@ -112,6 +114,7 @@ function evaluate(view, model)
                     model.results = struct( ...
                         'BrillouinShift',       brillouinShift, ...      % [GHz]  the Brillouin shift
                         'peaksBrillouin_pos',   peaksBrillouin_pos, ...  % [pix]  the position of the Brillouin peak(s) in the spectrum
+                        'peaksBrillouin_dev',   peaksBrillouin_dev, ...  % [pix]  the deviation of the Brillouin fit
                         'peaksBrillouin_int',   peaksBrillouin_int, ...  % [a.u.] the intensity of the Brillouin peak(s)
                         'peaksBrillouin_fwhm',  peaksBrillouin_fwhm, ... % [pix]  the FWHM of the Brillouin peak
                         'peaksRayleigh_pos',    peaksRayleigh_pos, ...   % [pix]  the position of the Rayleigh peak(s) in the spectrum
@@ -134,6 +137,7 @@ function evaluate(view, model)
             'type', 'BrillouinShift', ...   % result to show
             'BrillouinShift',       brillouinShift, ...      % [GHz]  the Brillouin shift
             'peaksBrillouin_pos',   peaksBrillouin_pos, ...  % [pix]  the position of the Brillouin peak(s) in the spectrum
+            'peaksBrillouin_dev',   peaksBrillouin_dev, ...  % [pix]  the deviation of the Brillouin fit
             'peaksBrillouin_int',   peaksBrillouin_int, ...  % [a.u.] the intensity of the Brillouin peak(s)
             'peaksBrillouin_fwhm',  peaksBrillouin_fwhm, ... % [pix]  the FWHM of the Brillouin peak
             'peaksRayleigh_pos',    peaksRayleigh_pos, ...   % [pix]  the position of the Rayleigh peak(s) in the spectrum
