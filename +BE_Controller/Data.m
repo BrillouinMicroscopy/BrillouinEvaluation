@@ -16,7 +16,7 @@ function load(~, ~, model)
     filePath = [PathName FileName];
     if ~isequal(PathName,0) && exist(filePath, 'file')
         model.filename = FileName;
-        model.file = Utils.HDF5Storage.h5bmread(filePath);
+        model.file = BE_Utils.HDF5Storage.h5bmread(filePath);
         
         model.parameters.date = model.file.date;
         model.parameters.comment = model.file.comment;

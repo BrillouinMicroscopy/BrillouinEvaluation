@@ -121,7 +121,7 @@ function clearPeaks(~, ~, model)
 end
 
 function optimizePeaks(~, ~, model)
-    if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
+    if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         img = model.file.readPayloadData(1, 1, 1, 'data');
         img = img(:,:,model.parameters.extraction.imageNr);
         r=10;
@@ -213,7 +213,7 @@ end
 function getInterpolationPositions(model)
 
 %% calculate positions of the interpolation positions
-    if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
+    if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         img = model.file.readPayloadData(1, 1, 1, 'data');
         img = img(:,:,model.parameters.extraction.imageNr);
     else

@@ -235,7 +235,7 @@ function onDisplaySettings(handles, model)
 end
 
 function onFileLoad(handles, model)
-    if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
+    if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         img = model.file.readPayloadData(1, 1, 1, 'data');
         img = img(:,:,model.parameters.extraction.imageNr);
         handles.imageCamera.CData = img;
@@ -283,7 +283,7 @@ function onSettingsChange(handles, model)
         handles.plotPeaks.XData = model.parameters.extraction.peaks.x;
         handles.plotPeaks.YData = model.parameters.extraction.peaks.y;
 %         fitSpectrum(model);
-%         if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
+%         if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
 %             getInterpolationPositions(handles, model);
 %         end
     else
@@ -294,7 +294,7 @@ end
 
 function showInterpolationPositions(handles, model)
 %% clean data for plotting to not show values outside the image
-    if isa(model.file, 'Utils.HDF5Storage.h5bm') && isvalid(model.file)
+    if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         img = model.file.readPayloadData(1, 1, 1, 'data');
     else
         return;

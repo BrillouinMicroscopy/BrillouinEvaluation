@@ -68,7 +68,7 @@ function initView(handles, model)
 end
 
 function onFileLoad(handles, model)
-    if isa(model.file,'Utils.HDF5Storage.h5bm') && isvalid(model.file)
+    if isa(model.file,'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         set(handles.filename, 'String', model.filename);
         set(handles.date, 'String', model.file.date);
         set(handles.resolutionX, 'String', model.file.resolutionX);

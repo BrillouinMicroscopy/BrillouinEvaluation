@@ -84,7 +84,7 @@ if ~exist(save_path, 'dir')
     mkdir(save_path);
 end
 loadFile = [load_path filesep filename '.h5'];
-file = Utils.HDF5Storage.h5bmread(loadFile);
+file = BE_Utils.HDF5Storage.h5bmread(loadFile);
 
 % get the resolution
 resolution.X = file.resolutionX;
