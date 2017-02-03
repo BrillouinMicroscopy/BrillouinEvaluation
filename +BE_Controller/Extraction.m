@@ -14,6 +14,7 @@ function extraction = Extraction(model, view)
     set(view.extraction.zoomIn, 'Callback', {@zoom, 'in', view, model});
     set(view.extraction.zoomOut, 'Callback', {@zoom, 'out', view, model});
     set(view.extraction.panButton, 'Callback', {@pan, view, model});
+    set(view.extraction.cursorButton, 'Callback', {@cursor, view});
     
     set(view.extraction.showBorders, 'Callback', {@showGraphs, model});
     set(view.extraction.showCenter, 'Callback', {@showGraphs, model});
@@ -36,6 +37,8 @@ function selectPeaks(~, ~, view, model)
     model.status.extraction.selectPeaks = ~model.status.extraction.selectPeaks;
     set(view.extraction.panButton,'UserData',0);
     set(view.extraction.panHandle,'Enable','off');
+    set(view.extraction.cursorButton,'UserData',0);
+    set(view.extraction.cursorHandle,'Enable','off');
     set(view.extraction.zoomHandle,'Enable','off','Direction','in');
     set(view.extraction.zoomOut,'UserData',0);
     set(view.extraction.zoomIn,'UserData',0);
@@ -305,6 +308,8 @@ function zoom(src, ~, str, view, model)
             set(view.figure,'Pointer','arrow');
             set(view.extraction.panButton,'UserData',0);
             set(view.extraction.panHandle,'Enable','off');
+            set(view.extraction.cursorButton,'UserData',0);
+            set(view.extraction.cursorHandle,'Enable','off');
             switch str
                 case 'in'
                     set(view.extraction.zoomHandle,'Enable','on','Direction','in');
@@ -323,8 +328,11 @@ function zoom(src, ~, str, view, model)
 end
 
 function pan(src, ~, view, model)
+    set(view.extraction.zoomHandle,'Enable','off','Direction','in');
+    set(view.extraction.cursorHandle,'Enable','off');
     set(view.extraction.zoomOut,'UserData',0);
     set(view.extraction.zoomIn,'UserData',0);
+    set(view.extraction.cursorButton,'UserData',0);
     switch get(src, 'UserData')
         case 0
             model.status.extraction.selectPeaks = 0;
@@ -339,6 +347,22 @@ function pan(src, ~, view, model)
         case 1
             set(view.extraction.panButton,'UserData',0);
             set(view.extraction.panHandle,'Enable','off');
+    end
+end
+
+function cursor(src, ~, view)
+    set(view.extraction.zoomHandle,'Enable','off','Direction','in');
+    set(view.extraction.panHandle,'Enable','off');
+    set(view.extraction.zoomOut,'UserData',0);
+    set(view.extraction.zoomIn,'UserData',0);
+    set(view.extraction.panButton,'UserData',0);
+    switch get(src, 'UserData')
+        case 0
+            set(view.extraction.cursorButton,'UserData',1);
+            set(view.extraction.cursorHandle,'Enable','on');
+        case 1
+            set(view.extraction.cursorButton,'UserData',0);
+            set(view.extraction.cursorHandle,'Enable','off');
     end
 end
 

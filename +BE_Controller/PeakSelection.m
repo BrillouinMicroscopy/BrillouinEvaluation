@@ -14,6 +14,7 @@ function calibration = PeakSelection(model, view)
     set(view.peakSelection.zoomIn, 'Callback', {@zoom, 'in', view});
     set(view.peakSelection.zoomOut, 'Callback', {@zoom, 'out', view});
     set(view.peakSelection.panButton, 'Callback', {@pan, view});
+    set(view.peakSelection.cursorButton, 'Callback', {@cursor, view});
     
     set(view.peakSelection.autoscale, 'Callback', {@toggleAutoscale, model, view});
     set(view.peakSelection.cap, 'Callback', {@setClim, model});
@@ -88,6 +89,8 @@ function zoom(src, ~, str, view)
         case 0
             set(view.peakSelection.panButton,'UserData',0);
             set(view.peakSelection.panHandle,'Enable','off');
+            set(view.peakSelection.cursorButton,'UserData',0);
+            set(view.peakSelection.cursorHandle,'Enable','off');
             switch str
                 case 'in'
                     set(view.peakSelection.zoomHandle,'Enable','on','Direction','in');
@@ -107,8 +110,10 @@ end
 
 function pan(src, ~, view)
     set(view.peakSelection.zoomHandle,'Enable','off','Direction','in');
+    set(view.peakSelection.cursorHandle,'Enable','off');
     set(view.peakSelection.zoomOut,'UserData',0);
     set(view.peakSelection.zoomIn,'UserData',0);
+    set(view.peakSelection.cursorButton,'UserData',0);
     switch get(src, 'UserData')
         case 0
             set(view.peakSelection.panButton,'UserData',1);
@@ -116,6 +121,22 @@ function pan(src, ~, view)
         case 1
             set(view.peakSelection.panButton,'UserData',0);
             set(view.peakSelection.panHandle,'Enable','off');
+    end
+end
+
+function cursor(src, ~, view)
+    set(view.peakSelection.zoomHandle,'Enable','off','Direction','in');
+    set(view.peakSelection.panHandle,'Enable','off');
+    set(view.peakSelection.zoomOut,'UserData',0);
+    set(view.peakSelection.zoomIn,'UserData',0);
+    set(view.peakSelection.panButton,'UserData',0);
+    switch get(src, 'UserData')
+        case 0
+            set(view.peakSelection.cursorButton,'UserData',1);
+            set(view.peakSelection.cursorHandle,'Enable','on');
+        case 1
+            set(view.peakSelection.cursorButton,'UserData',0);
+            set(view.peakSelection.cursorHandle,'Enable','off');
     end
 end
 
