@@ -1,7 +1,7 @@
 function calibration = PeakSelection(model, view)
 %% CALIBRATION Controller
 
-    %% callbacks Calibration
+    %% callbacks PeakSelection
     set(view.peakSelection.selectBrillouin, 'Callback', {@selectPeaks, view, model, 'Brillouin'});
     set(view.peakSelection.selectRayleigh, 'Callback', {@selectPeaks, view, model, 'Rayleigh'});
     

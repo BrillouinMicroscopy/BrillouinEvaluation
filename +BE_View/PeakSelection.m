@@ -1,5 +1,5 @@
 function handles = PeakSelection(parent, model)
-%% CALIBRATION View
+%% PEAKSELECTION View
 
     % build the GUI
     handles = initGUI(model, parent);
