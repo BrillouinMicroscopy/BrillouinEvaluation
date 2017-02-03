@@ -1,7 +1,7 @@
 function constants = getConstants()
 
 % constant parameters
-constants = {};                     % struct with constants
+constants = struct();               % struct with constants
 constants.c         = 299792458;    % [m/s] speed of light
 constants.pixelSize = 6.5e-6;       % [m]   pixel size of the camera
 constants.lambda0   = 780.24e-9;    % [m]   laser wavelength

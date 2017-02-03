@@ -10,13 +10,13 @@ function [VIPAparams] = fitVIPA(peakPos, VIPAstart, constants)
 %              d:   [m]     width of the cavity
 %              n:   [1]     refractive index
 %          theta:   [rad]   angle of the VIPA
-%              F:   [m]     focal length of the lens behind the VIPA
 %             x0:   [m]     offset for fitting
 %             xs:   [1]     scale factor for fitting
 %          order:   [1]     observed order of the VIPA spectrum
 %        iterNum:   [1]     number of iterations for the fit
 %   constants =
 %             c:    [m/s]   speed of light
+%              F:   [m]     focal length of the lens behind the VIPA
 %     pixelSize:    [m]     pixel size of the camera
 %       lambda0:    [m]     laser wavelength
 %     bshiftCal:    [Hz]    calibration shift frequency
@@ -26,7 +26,6 @@ function [VIPAparams] = fitVIPA(peakPos, VIPAstart, constants)
 %             d:    [m]     width of the cavity
 %             n:    [1]     refractive index
 %         theta:    [rad]   angle of the VIPA
-%             F:    [m]     focal length of the lens behind the VIPA
 %            x0:    [m]     offset for fitting
 %            xs:    [1]     scale factor for fitting
 
@@ -101,7 +100,7 @@ for gg = 1:1:VIPAstart.iterNum
             for kk = 1:length(thetaRange)
                 for ll = 1:length(x0Range)
                     for mm = 1:length(xsRange)
-                        VIPAparams = {};
+                        VIPAparams = struct;
                         VIPAparams.d     = dRange(ii);
                         VIPAparams.n     = nRange(jj);
                         VIPAparams.theta = thetaRange(kk);
