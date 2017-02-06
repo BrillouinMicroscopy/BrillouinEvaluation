@@ -18,24 +18,67 @@ function load(~, ~, model)
         model.filename = FileName;
         model.file = BE_Utils.HDF5Storage.h5bmread(filePath);
         
-        model.parameters.date = model.file.date;
-        model.parameters.comment = model.file.comment;
+        parameters = model.parameters;
+        parameters.date = model.file.date;
+        parameters.comment = model.file.comment;
         
         % get the resolution
-        model.parameters.resolution.X = model.file.resolutionX;
-        model.parameters.resolution.Y = model.file.resolutionY;
-        model.parameters.resolution.Z = model.file.resolutionZ;
+        parameters.resolution.X = model.file.resolutionX;
+        parameters.resolution.Y = model.file.resolutionY;
+        parameters.resolution.Z = model.file.resolutionZ;
 
         % get the positions
-        model.parameters.positions.X = model.file.positionsX;
-        model.parameters.positions.Y = model.file.positionsY;
-        model.parameters.positions.Z = model.file.positionsZ;
+        parameters.positions.X = model.file.positionsX;
+        parameters.positions.Y = model.file.positionsY;
+        parameters.positions.Z = model.file.positionsZ;
+        
+        % check for calibration
+        parameters.calibration.hasCalibration = false;
+        jj = 0;
+        testCalibration = true;
+        parameters.calibration.samples = struct();
+        while testCalibration
+            try
+                jj = jj + 1;
+                sample = model.file.readCalibrationData(jj,'sample');
+                if ~isempty(sample)
+                    parameters.calibration.hasCalibration = true;
+                end
+                parameters.calibration.samples.(sample) = struct( ...
+                    'position', jj, ...
+                    'Rayleigh', [], ...
+                    'Brillouin', [], ...
+                    'shift', model.file.readCalibrationData(jj,'shift'), ...
+                    'peaksMeasured', [], ...
+                    'peaksFitted', [] ...
+                );
+            catch
+                testCalibration = false;
+            end
+        end
+        
+        parameters.calibration.samples.measurement = struct( ...
+            'imageNr', struct( ...
+                'x', 1, ...
+                'y', 1, ...
+                'z', 1 ...
+            ), ...
+            'Rayleigh', [47, 85; 255, 284], ...
+            'Brillouin', [151, 162; 206, 222], ...
+            'shift', 5.1, ...
+            'peaksMeasured', [], ...
+            'peaksFitted', [] ...
+        );
+        samples = fields(parameters.calibration.samples);
+        parameters.calibration.selectedValue = 1;
+        parameters.calibration.selected = samples{1};
         
         % set start values for spectrum axis fitting
         % probably a better algorithm needed
         img = model.file.readPayloadData(1, 1, 1, 'data');
         img = img(:,:,model.parameters.extraction.imageNr);
-        model.parameters.extraction.circleStart = [1, size(img,1), mean(size(img))];
+        parameters.extraction.circleStart = [1, size(img,1), mean(size(img))];
+        model.parameters = parameters;
     end
 end
 

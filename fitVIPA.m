@@ -1,4 +1,4 @@
-function [VIPAparams] = fitVIPA(peakPos, VIPAstart, constants)
+function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants)
 %% FITVIPA
 %   this function fits the VIPA parameters to the measured peaks. To
 %   calculate the Parameters, 2 Rayleigh peaks and 2 Brillouin peaks within
@@ -136,14 +136,15 @@ VIPAparams.x0    = x0Range(x0Ind);
 VIPAparams.xs    = xsRange(xsInd);
 VIPAparams.error = ErrorVector(ind);
 
+peakPosFitted = NaN(1,4);
+% position of the two Rayleigh peaks
+[peakPosFitted(1,[1 4]), ~] = peakPosition( VIPAparams, constants, orders, constants.lambda0);
+% position of the Stokes and Anti-Stokes peaks
+[peakPosFitted(2), ~] = peakPosition(VIPAparams, constants, 1, lambdaAS);
+[peakPosFitted(3), ~] = peakPosition(VIPAparams, constants, 2, lambdaS);
+peakPosFitted = peakPosFitted / constants.pixelSize;
 
 %% Plot Results
-% x_F = NaN(1,4);
-% % position of the two Rayleigh peaks
-% [x_F(1,[1 4]), ~] = peakPosition( VIPAparams, constants, orders, constants.lambda0);
-% % position of the Stokes and Anti-Stokes peaks
-% [x_F(2), ~] = peakPosition(VIPAparams, constants, 1, lambdaAS);
-% [x_F(3), ~] = peakPosition(VIPAparams, constants, 2, lambdaS);
 % 
 % figure;
 % hold on

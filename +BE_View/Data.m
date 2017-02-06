@@ -11,7 +11,7 @@ function handles = Data(parent, model)
         @(o,e) onFileLoad(handles, e.AffectedObject));
 end
 
-function handles = initGUI(model, parent)
+function handles = initGUI(~, parent)
 
 file_panel = uipanel('Parent', parent, 'Title', 'File', 'FontSize', 11,...
              'Position', [.02 .03 .4 .95]);
@@ -33,8 +33,10 @@ uicontrol('Parent', file_panel, 'Style','text','String','Resolution y:', 'Units'
            'Position',[0.05,0.7,0.3,0.05], 'FontSize', 11, 'HorizontalAlignment', 'left');
 uicontrol('Parent', file_panel, 'Style','text','String','Resolution z:', 'Units', 'normalized',...
            'Position',[0.05,0.65,0.3,0.05], 'FontSize', 11, 'HorizontalAlignment', 'left');
-uicontrol('Parent', file_panel, 'Style','text','String','Comment:', 'Units', 'normalized',...
+uicontrol('Parent', file_panel, 'Style','text','String','Calibration:', 'Units', 'normalized',...
            'Position',[0.05,0.6,0.3,0.05], 'FontSize', 11, 'HorizontalAlignment', 'left');
+uicontrol('Parent', file_panel, 'Style','text','String','Comment:', 'Units', 'normalized',...
+           'Position',[0.05,0.55,0.3,0.05], 'FontSize', 11, 'HorizontalAlignment', 'left');
        
 filename = uicontrol('Parent', file_panel, 'Style','text', 'Units', 'normalized',...
            'Position',[0.35,0.85,0.6,0.05], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -46,8 +48,10 @@ resolutionY = uicontrol('Parent', file_panel, 'Style','text', 'Units', 'normaliz
            'Position',[0.35,0.7,0.6,0.05], 'FontSize', 11, 'HorizontalAlignment', 'left');
 resolutionZ = uicontrol('Parent', file_panel, 'Style','text', 'Units', 'normalized',...
            'Position',[0.35,0.65,0.6,0.05], 'FontSize', 11, 'HorizontalAlignment', 'left');
+calibration = uicontrol('Parent', file_panel, 'Style','text', 'Units', 'normalized',...
+           'Position',[0.35,0.6,0.6,0.05], 'FontSize', 11, 'HorizontalAlignment', 'left');
 comment = uicontrol('Parent', file_panel, 'Style','edit','Max',2, 'Units', 'normalized',...
-           'Position',[0.05,0.25,0.9,0.35], 'FontSize', 11, 'HorizontalAlignment', 'left', 'Enable', 'inactive');
+           'Position',[0.05,0.20,0.9,0.35], 'FontSize', 11, 'HorizontalAlignment', 'left', 'Enable', 'inactive');
     
     %% Return handles
     handles = struct(...
@@ -58,6 +62,7 @@ comment = uicontrol('Parent', file_panel, 'Style','edit','Max',2, 'Units', 'norm
         'resolutionX', resolutionX, ...
         'resolutionY', resolutionY, ...
         'resolutionZ', resolutionZ, ...
+        'calibration', calibration, ...
         'comment', comment ...
 	);
 end
@@ -74,6 +79,15 @@ function onFileLoad(handles, model)
         set(handles.resolutionX, 'String', model.file.resolutionX);
         set(handles.resolutionY, 'String', model.file.resolutionY);
         set(handles.resolutionZ, 'String', model.file.resolutionZ);
+        % check for calibration
+        try
+            calibration = model.file.readCalibrationData(1,'sample');
+            if ~isempty(calibration)
+                set(handles.calibration, 'String', 'true');
+            end
+        catch
+            set(handles.calibration, 'String', 'false');
+        end
         set(handles.comment,  'String', model.file.comment);
         delete(model.handles.plotPositions);
 %         delete(model.handles.results);
@@ -95,6 +109,7 @@ function onFileLoad(handles, model)
         set(handles.resolutionX, 'String', '');
         set(handles.resolutionY, 'String', '');
         set(handles.resolutionZ, 'String', '');
+        set(handles.calibration, 'String', '');
         set(handles.comment,  'String', '');
     end
 end
