@@ -12,7 +12,6 @@ classdef Model < handle
         status;             % current status of the GUI
         handles;            % structure with handles which need to be set dynamically
         labels;             % labels of the plots
-        sharedFunctions;    % functions shared among views and controllers
     end
 
     methods

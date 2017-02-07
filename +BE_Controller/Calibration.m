@@ -50,7 +50,7 @@ function calibrate(~, ~, model, view)
     end
     imgs = medfilt1(imgs,3);
     img = imgs(:,:,1);
-    data = getIntensity1D(img, model.parameters.extraction.interpolationPositions);
+    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
     
     indRayleigh = calibration.samples.(selectedMeasurement).Rayleigh;
     indBrillouin = calibration.samples.(selectedMeasurement).Brillouin;
@@ -58,12 +58,12 @@ function calibrate(~, ~, model, view)
         peakPos = NaN(1,4);
         for jj = 1:length(indBrillouin)
             spectrumSection = data(indRayleigh(jj,1):indRayleigh(jj,2));
-            [tmp, ~, ~] = fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, 1, [6 20], 0);
+            [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, 1, [6 20], 0);
             peakPos(jj) = tmp+indRayleigh(jj,1)-1;
         end
         for jj = 1:length(indBrillouin)
             spectrumSection = data(indBrillouin(jj,1):indBrillouin(jj,2));
-            [tmp, ~, ~] = fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, 1, [6 20], 0);
+            [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, 1, [6 20], 0);
             peakPos(jj+2) = tmp+indBrillouin(jj,1)-1;
         end
         
@@ -372,10 +372,10 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
 
                             x_F = NaN(1,4);
                             % position of the two Rayleigh peaks
-                            [x_F(1,[1 4]), ~] = peakPosition(VIPAparams, constants, orders, constants.lambda0);
+                            [x_F(1,[1 4]), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, orders, constants.lambda0);
                             % position of the Stokes and Anti-Stokes peaks
-                            [x_F(2), ~] = peakPosition(VIPAparams, constants, 1, lambdaAS);
-                            [x_F(3), ~] = peakPosition(VIPAparams, constants, 2, lambdaS);
+                            [x_F(2), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 1, lambdaAS);
+                            [x_F(3), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 2, lambdaS);
 
                             % difference between measurement and fit
                             ErrorVector(ii,jj,kk,ll,mm) = sum((peakPos - x_F).^2);
@@ -401,10 +401,10 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
 
     peakPosFitted = NaN(1,4);
     % position of the two Rayleigh peaks
-    [peakPosFitted(1,[1 4]), ~] = peakPosition( VIPAparams, constants, orders, constants.lambda0);
+    [peakPosFitted(1,[1 4]), ~] = BE_SharedFunctions.peakPosition( VIPAparams, constants, orders, constants.lambda0);
     % position of the Stokes and Anti-Stokes peaks
-    [peakPosFitted(2), ~] = peakPosition(VIPAparams, constants, 1, lambdaAS);
-    [peakPosFitted(3), ~] = peakPosition(VIPAparams, constants, 2, lambdaS);
+    [peakPosFitted(2), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 1, lambdaAS);
+    [peakPosFitted(3), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 2, lambdaS);
     peakPosFitted = peakPosFitted / constants.pixelSize;
 
     %% Plot Results
