@@ -122,7 +122,7 @@ function selectPeaks(~, ~, view, model, type)
         brushed = logical(get(model.handles.calibration.plotSpectrum, 'BrushData'));
         set(view.calibration.brushHandle, 'Enable', 'off');
         
-        xd = get(model.handles.calibration.plotSpectrum, 'XData');
+        xd = 1:length(brushed);
         ind = xd(brushed);
         model.parameters.calibration.samples.(model.parameters.calibration.selected).(type) = ...
             vertcat(model.parameters.calibration.samples.(model.parameters.calibration.selected).(type), findBorders(ind));
