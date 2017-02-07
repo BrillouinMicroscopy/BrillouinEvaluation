@@ -1,4 +1,4 @@
-function [VIPAparams] = fitVIPA(peakPos, VIPAstart, constants)
+function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants)
 %% FITVIPA
 %   this function fits the VIPA parameters to the measured peaks. To
 %   calculate the Parameters, 2 Rayleigh peaks and 2 Brillouin peaks within
@@ -10,13 +10,13 @@ function [VIPAparams] = fitVIPA(peakPos, VIPAstart, constants)
 %              d:   [m]     width of the cavity
 %              n:   [1]     refractive index
 %          theta:   [rad]   angle of the VIPA
-%              F:   [m]     focal length of the lens behind the VIPA
 %             x0:   [m]     offset for fitting
 %             xs:   [1]     scale factor for fitting
 %          order:   [1]     observed order of the VIPA spectrum
 %        iterNum:   [1]     number of iterations for the fit
 %   constants =
 %             c:    [m/s]   speed of light
+%              F:   [m]     focal length of the lens behind the VIPA
 %     pixelSize:    [m]     pixel size of the camera
 %       lambda0:    [m]     laser wavelength
 %     bshiftCal:    [Hz]    calibration shift frequency
@@ -26,7 +26,6 @@ function [VIPAparams] = fitVIPA(peakPos, VIPAstart, constants)
 %             d:    [m]     width of the cavity
 %             n:    [1]     refractive index
 %         theta:    [rad]   angle of the VIPA
-%             F:    [m]     focal length of the lens behind the VIPA
 %            x0:    [m]     offset for fitting
 %            xs:    [1]     scale factor for fitting
 
@@ -101,7 +100,7 @@ for gg = 1:1:VIPAstart.iterNum
             for kk = 1:length(thetaRange)
                 for ll = 1:length(x0Range)
                     for mm = 1:length(xsRange)
-                        VIPAparams = {};
+                        VIPAparams = struct;
                         VIPAparams.d     = dRange(ii);
                         VIPAparams.n     = nRange(jj);
                         VIPAparams.theta = thetaRange(kk);
@@ -137,14 +136,15 @@ VIPAparams.x0    = x0Range(x0Ind);
 VIPAparams.xs    = xsRange(xsInd);
 VIPAparams.error = ErrorVector(ind);
 
+peakPosFitted = NaN(1,4);
+% position of the two Rayleigh peaks
+[peakPosFitted(1,[1 4]), ~] = peakPosition( VIPAparams, constants, orders, constants.lambda0);
+% position of the Stokes and Anti-Stokes peaks
+[peakPosFitted(2), ~] = peakPosition(VIPAparams, constants, 1, lambdaAS);
+[peakPosFitted(3), ~] = peakPosition(VIPAparams, constants, 2, lambdaS);
+peakPosFitted = peakPosFitted / constants.pixelSize;
 
 %% Plot Results
-% x_F = NaN(1,4);
-% % position of the two Rayleigh peaks
-% [x_F(1,[1 4]), ~] = peakPosition( VIPAparams, constants, orders, constants.lambda0);
-% % position of the Stokes and Anti-Stokes peaks
-% [x_F(2), ~] = peakPosition(VIPAparams, constants, 1, lambdaAS);
-% [x_F(3), ~] = peakPosition(VIPAparams, constants, 2, lambdaS);
 % 
 % figure;
 % hold on

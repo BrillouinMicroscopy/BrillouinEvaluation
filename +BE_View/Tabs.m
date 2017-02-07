@@ -14,8 +14,8 @@ function handles = initGUI(model)
     tabgroup = uitabgroup('Parent', f);
     data = uitab('Parent', tabgroup, 'Title', 'Data');
     extraction = uitab('Parent', tabgroup, 'Title', 'Extraction');
-    peakSelection = uitab('Parent', tabgroup, 'Title', 'Peak Selection');
     calibration = uitab('Parent', tabgroup, 'Title', 'Calibration');
+    peakSelection = uitab('Parent', tabgroup, 'Title', 'Peak Selection');
     evaluation = uitab('Parent', tabgroup, 'Title', 'Evaluation');
     
     data = BE_View.Data(data, model);

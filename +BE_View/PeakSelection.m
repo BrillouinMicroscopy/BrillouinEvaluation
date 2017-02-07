@@ -1,5 +1,5 @@
 function handles = PeakSelection(parent, model)
-%% CALIBRATION View
+%% PEAKSELECTION View
 
     % build the GUI
     handles = initGUI(model, parent);
@@ -179,22 +179,33 @@ function plotData(handles, model)
     imgs = medfilt1(imgs,3);
     img = imgs(:,:,1);
     data = getIntensity1D(img, model.parameters.extraction.interpolationPositions);
+    data = data(~isnan(data));
     if ~isempty(data);
         hold(ax, 'off');
-        model.handles.plotSpectrum = plot(ax, data);
+        xLabelString = '$f$ [pix]';
+        
+        x = 1:length(data);
+        if ~isempty(model.parameters.calibration.values_mean.d) && ~isnan(model.parameters.calibration.values_mean.d)
+            wavelength = getWavelength(model.parameters.constants.pixelSize * x, model.parameters.calibration.values_mean, model.parameters.constants, 1);
+            x = 1e-9*getFrequencyShift(wavelength, model.parameters.constants.lambda0);
+            
+            xLabelString = '$f$ [GHz]';
+        end
+        
+        model.handles.plotSpectrum = plot(ax, x, data);
         hold(ax, 'on');
         ind = model.parameters.peakSelection.Rayleigh;
         for jj = 1:size(ind,1)
             ix = ind(jj,1):ind(jj,2);
             if ind(jj,1) > 0 && ind(jj,2) <= length(data)
-                plot(ax, ix, data(ix), 'color', [1, 0, 0, 0.4], 'linewidth', 5);
+                plot(ax, x(ix), data(ix), 'color', [1, 0, 0, 0.4], 'linewidth', 5);
             end
         end
         ind = model.parameters.peakSelection.Brillouin;
         for jj = 1:size(ind,1)
             ix = ind(jj,1):ind(jj,2);
             if ind(jj,1) > 0 && ind(jj,2) <= length(data)
-                plot(ax, ix, data(ix), 'color', [0, 0, 1, 0.4], 'linewidth', 5);
+                plot(ax, x(ix), data(ix), 'color', [0, 0, 1, 0.4], 'linewidth', 5);
             end
         end
         if model.displaySettings.peakSelection.autoscale
@@ -202,7 +213,9 @@ function plotData(handles, model)
         else
             ylim(ax, [model.displaySettings.peakSelection.floor model.displaySettings.peakSelection.cap]);
         end
-        xlim(ax, [1 size(data,2)]);
+        xlim(ax, [min(x(:)) max(x(:))]);
         zoom(ax, 'reset');
+        xlabel(ax, xLabelString, 'interpreter', 'latex');
+        ylabel(ax, '$I$ [a.u.]', 'interpreter', 'latex');
     end
 end

@@ -1,7 +1,7 @@
 function calibration = PeakSelection(model, view)
 %% CALIBRATION Controller
 
-    %% callbacks Calibration
+    %% callbacks PeakSelection
     set(view.peakSelection.selectBrillouin, 'Callback', {@selectPeaks, view, model, 'Brillouin'});
     set(view.peakSelection.selectRayleigh, 'Callback', {@selectPeaks, view, model, 'Rayleigh'});
     
@@ -45,7 +45,7 @@ function selectPeaks(~, ~, view, model, type)
         brushed = logical(get(model.handles.plotSpectrum, 'BrushData'));
         set(view.peakSelection.brushHandle, 'Enable', 'off');
         
-        xd = get(model.handles.plotSpectrum, 'XData');
+        xd = 1:length(brushed);
         ind = xd(brushed);
         model.parameters.peakSelection.(type) = vertcat(model.parameters.peakSelection.(type), findBorders(ind));
     end
