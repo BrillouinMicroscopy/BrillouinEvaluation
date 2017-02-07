@@ -110,13 +110,14 @@ classdef Model < handle
 %% Results of the evaluation
 % Saved to evaluated data file
             obj.results = struct( ...
-                'BrillouinShift', NaN, ...      % [GHz]  the Brillouin shift
-                'peaksBrillouin_pos', NaN, ...  % [pix]  the position of the Brillouin peak(s) in the spectrum
-                'peaksBrillouin_dev', NaN, ...  % [pix]  the deviation of the Brillouin fit
-                'peaksBrillouin_int', NaN, ...  % [a.u.] the intensity of the Brillouin peak(s)
-                'peaksBrillouin_fwhm', NaN, ... % [pix]  the FWHM of the Brillouin peak
-                'peaksRayleigh_pos', NaN, ...   % [pix]  the position of the Rayleigh peak(s) in the spectrum
-                'intensity', NaN ...            % [a.u.] the overall intensity of the image
+                'BrillouinShift', NaN, ...              % [GHz]  the Brillouin shift
+                'BrillouinShift_frequency', NaN, ...    % [GHz]  the Brillouin shift in Hz
+                'peaksBrillouin_pos', NaN, ...          % [pix]  the position of the Brillouin peak(s) in the spectrum
+                'peaksBrillouin_dev', NaN, ...          % [pix]  the deviation of the Brillouin fit
+                'peaksBrillouin_int', NaN, ...          % [a.u.] the intensity of the Brillouin peak(s)
+                'peaksBrillouin_fwhm', NaN, ...         % [pix]  the FWHM of the Brillouin peak
+                'peaksRayleigh_pos', NaN, ...           % [pix]  the position of the Rayleigh peak(s) in the spectrum
+                'intensity', NaN ...                    % [a.u.] the overall intensity of the image
             );
 %% Display settings of the plots
             obj.displaySettings = struct( ...

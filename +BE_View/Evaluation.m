@@ -214,13 +214,15 @@ function plotData (handles, model, location, full)
 
     %% calculate zero mean positions
     for jj = 1:length(dims)
-        positions.([dims{jj} '_zm']) = model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
+        positions.([dims{jj} '_zm']) = ...
+            model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
     end
 
     %% plot data for different dimensions
     switch dimension
         case 0
             %% 0D data
+            model.handles.results = plot(ax,data);
 %             disp(data(1,1,1));
         case 1
             %% 1D data
