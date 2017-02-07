@@ -298,6 +298,7 @@ function plotData(handles, model)
         xlim(ax, [min(x(:)) max(x(:))]);
         zoom(ax, 'reset');
         xlabel(ax, xLabelString, 'interpreter', 'latex');
+        ylabel(ax, '$I$ [a.u.]', 'interpreter', 'latex');
     end
 end
 

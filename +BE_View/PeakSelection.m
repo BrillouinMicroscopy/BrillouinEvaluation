@@ -204,5 +204,8 @@ function plotData(handles, model)
         end
         xlim(ax, [1 size(data,2)]);
         zoom(ax, 'reset');
+        xLabelString = '$f$ [pix]';
+        xlabel(ax, xLabelString, 'interpreter', 'latex');
+        ylabel(ax, '$I$ [a.u.]', 'interpreter', 'latex');
     end
 end
