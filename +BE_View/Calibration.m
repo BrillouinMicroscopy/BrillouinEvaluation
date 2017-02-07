@@ -245,6 +245,7 @@ function plotData(handles, model)
     imgs = medfilt1(imgs,3);
     img = imgs(:,:,1);
     data = getIntensity1D(img, model.parameters.extraction.interpolationPositions);
+    data = data(~isnan(data));
     if ~isempty(data);
         hold(ax, 'off');
         xLabelString = '$f$ [pix]';
@@ -287,7 +288,7 @@ function plotData(handles, model)
             for jj = 1:length(peaksFitted)
                 fitted = plot(ax, [peaksFitted(jj), peaksFitted(jj)], [min(data(:)) max(data(:))], 'color', 'Red');
             end
-            legend(ax, [measured, fitted], {'Measurement', 'Fit'});
+            legend(ax, [measured, fitted], {'Measurement', 'Fit'}, 'location', 'north');
         end
         
         if model.displaySettings.calibration.autoscale
