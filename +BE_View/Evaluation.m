@@ -231,7 +231,7 @@ function plotData (handles, model, location, full)
             hold(ax,'off');
             model.handles.results = plot(ax,p,d);
             title(ax,labels.titleString);
-            xlim([min(p(:)), max(p(:))]);
+            xlim(ax, [min(p(:)), max(p(:))]);
             xlabel(ax, ['$' nsdimslabel{1} '$ [$\mu$m]'], 'interpreter', 'latex');
             ylabel(ax, labels.dataLabel, 'interpreter', 'latex');
             box(ax, 'on');
