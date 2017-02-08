@@ -2,19 +2,22 @@ function configuration = Data(model, view)
 %% DATA Controller
 
     %% general panel
-    set(view.data.load, 'Callback', {@load, model});
+    set(view.data.load, 'Callback', {@loadData, model});
     set(view.data.clear, 'Callback', {@clear, model});
+    set(view.data.save, 'Callback', {@saveData, model});
 
     configuration = struct( ...
         'close', @close ...
     );
 end
 
-function load(~, ~, model)
+function loadData(~, ~, model)
 % Load the h5bm data file
     [FileName,PathName,~] = uigetfile('*.h5','Select the Brillouin file to evaluate.');
+    model.filepath = PathName;
     filePath = [PathName FileName];
     if ~isequal(PathName,0) && exist(filePath, 'file')
+        
         model.filename = FileName;
         model.file = BE_Utils.HDF5Storage.h5bmread(filePath);
         
@@ -80,9 +83,39 @@ function load(~, ~, model)
         parameters.extraction.circleStart = [1, size(img,1), mean(size(img))];
         model.parameters = parameters;
     end
+    
+    %% check if a corresponding results file exists
+    [~, filename, ~] = fileparts(model.filename);
+    defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
+    if exist(defaultPath, 'file') == 2
+        tmp = model;
+        results = load(defaultPath, 'results');
+        tmp.parameters = results.results.parameters;
+        tmp.results = results.results.results;
+        tmp.displaySettings = results.results.displaySettings;
+        model = tmp; %#ok<NASGU>
+    end
 end
 
 function clear(~, ~, model)
     model.file = [];
     model.filename = [];
+end
+
+function saveData(~, ~, model)
+    % Save the results file
+    [~, filename, ~] = fileparts(model.filename);
+    defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
+    [FileName,PathName,~] = uiputfile('*.mat','Save results as', defaultPath);
+    if ~isequal(FileName,0) && ~isequal(PathName,0)
+        filePath = [PathName FileName];
+
+        results = struct( ...
+            'parameters', model.parameters, ...
+            'results', model.results, ...
+            'displaySettings', model.displaySettings ...
+        ); %#ok<NASGU>
+
+        save(filePath, 'results');
+    end
 end

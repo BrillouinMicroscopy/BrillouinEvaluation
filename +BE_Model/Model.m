@@ -5,6 +5,7 @@ classdef Model < handle
     properties (SetObservable = true)
         file;       % handle to the H5BM file
         filename;   % name of the H5BM file
+        filepath;   % path to the H5BM file
         pp;         % path to the program
         parameters; % parameters of the measurement
         results;    % results of the evaluation
@@ -18,6 +19,7 @@ classdef Model < handle
         function obj = Model()
             obj.file = [];
             obj.filename = [];
+            obj.filepath = [];
             obj.pp = [];
 %% Parameters of the acquisition and settings used for evaluating
 % Saved to evaluated data file
