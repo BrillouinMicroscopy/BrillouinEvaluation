@@ -55,7 +55,6 @@ function evaluate(view, model)
     peaksBrillouin_pos = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrPeaks);
     peaksBrillouin_dev = peaksBrillouin_pos;
     peaksBrillouin_fwhm = peaksBrillouin_pos;
-    peaksBrillouin_max = peaksBrillouin_pos;
     peaksBrillouin_int = peaksBrillouin_pos;
     peaksRayleigh_pos = peaksBrillouin_pos;
     
@@ -102,9 +101,6 @@ function evaluate(view, model)
                         secInd = ind_Brillouin + shift;
                         spectrumSection = spectrum(secInd);
 
-                        [~, ind] = max(spectrumSection);
-                        peaksBrillouin_max(kk, jj, ll, mm) = ind + min(secInd(:));
-
                         [peakPos, fwhm, int, ~, thres, deviation] = ...
                             BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
                         peaksBrillouin_fwhm(kk, jj, ll, mm, :) = fwhm;
@@ -135,8 +131,8 @@ function evaluate(view, model)
                         calibration, model.parameters.constants, 1);
                     peaksBrillouin_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
                     
-                    brillouinShift = (peaksRayleigh_pos-peaksBrillouin_pos);
-                    brillouinShift_frequency = (peaksRayleigh_pos_frequency-peaksBrillouin_pos_frequency);
+                    brillouinShift = abs(peaksRayleigh_pos-peaksBrillouin_pos);
+                    brillouinShift_frequency = abs(peaksRayleigh_pos_frequency-peaksBrillouin_pos_frequency);
                     model.results = struct( ...
                         'BrillouinShift',           brillouinShift, ...             % [pix]  the Brillouin shift in pixels
                         'BrillouinShift_frequency', brillouinShift_frequency, ...   % [GHz]  the Brillouin shift in Hz
@@ -174,8 +170,8 @@ function evaluate(view, model)
             model.parameters.calibration.values_mean, model.parameters.constants, 1);
         peaksBrillouin_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
 
-        brillouinShift = (peaksRayleigh_pos-peaksBrillouin_pos);
-        brillouinShift_frequency = (peaksRayleigh_pos_frequency-peaksBrillouin_pos_frequency);
+        brillouinShift = abs(peaksRayleigh_pos-peaksBrillouin_pos);
+        brillouinShift_frequency = abs(peaksRayleigh_pos_frequency-peaksBrillouin_pos_frequency);
         model.results = struct( ...
             'BrillouinShift',           brillouinShift, ...             % [pix]  the Brillouin shift in pixels
             'BrillouinShift_frequency', brillouinShift_frequency, ...   % [GHz]  the Brillouin shift in GHz
