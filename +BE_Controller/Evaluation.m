@@ -46,6 +46,7 @@ function evaluate(view, model)
     parameters.peaks = [6 20];
     
     imgs = model.file.readPayloadData(1, 1, 1, 'data');
+    imgs = medfilt1(imgs,3);
     img = imgs(:,:,1);
     spectrum = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
     spectrumSection = spectrum(ind_Rayleigh);
@@ -57,6 +58,11 @@ function evaluate(view, model)
     peaksBrillouin_max = peaksBrillouin_pos;
     peaksBrillouin_int = peaksBrillouin_pos;
     peaksRayleigh_pos = peaksBrillouin_pos;
+    
+    %% Calculate the initial value of which the shift of x0 has to be corrected
+    initx0Shift = (initRayleighPos + min(ind_Rayleigh(:)) - 1) * model.parameters.constants.pixelSize;
+    
+    x0Shift = zeros(size(peaksBrillouin_pos));
     
     uu = 0;
     for jj = 1:1:model.parameters.resolution.X
@@ -87,7 +93,8 @@ function evaluate(view, model)
                         intensity(kk, jj, ll, mm) = sum(img(:));
 
                         spectrumSection = spectrum(ind_Rayleigh);
-                        [peakPos, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
+                        [peakPos, ~, ~] = ...
+                            BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
                         peaksRayleigh_pos(kk, jj, ll, mm, :) = peakPos + min(ind_Rayleigh(:)) - 1;
 
                         shift = round(peakPos - initRayleighPos);
@@ -98,12 +105,15 @@ function evaluate(view, model)
                         [~, ind] = max(spectrumSection);
                         peaksBrillouin_max(kk, jj, ll, mm) = ind + min(secInd(:));
 
-                        [peakPos, fwhm, int, ~, thres, deviation] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
+                        [peakPos, fwhm, int, ~, thres, deviation] = ...
+                            BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
                         peaksBrillouin_fwhm(kk, jj, ll, mm, :) = fwhm;
                         peaksBrillouin_dev(kk, jj, ll, mm, :) = deviation;
                         peaksBrillouin_pos(kk, jj, ll, mm, :) = peakPos + min(secInd(:)) - 1;
                         peaksBrillouin_int(kk, jj, ll, mm, :) = int - thres;
                         
+                        %% calculate the value of which x0 has to be shifted for each measurement point
+                        x0Shift(kk, jj, ll, mm) = peaksRayleigh_pos(kk, jj, ll, mm) * model.parameters.constants.pixelSize - initx0Shift;
 
                     catch e
                         disp(e);
@@ -111,10 +121,18 @@ function evaluate(view, model)
                 end
                 if model.displaySettings.evaluation.preview
                     
-                    wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, model.parameters.calibration.values_mean, model.parameters.constants, 1);
+                    %% adjust calibration accordingly to the shift of x0
+                    calibration = model.parameters.calibration.values_mean;
+                    calibration.x0Shift = x0Shift;
+                    calibration.x0 = calibration.x0 + calibration.x0Shift;
+                    
+                    %% calculate the frequency of the Rayleigh and Brillouin peak
+                    wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, ...
+                        calibration, model.parameters.constants, 1);
                     peaksRayleigh_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
                     
-                    wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, model.parameters.calibration.values_mean, model.parameters.constants, 1);
+                    wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, ...
+                        calibration, model.parameters.constants, 1);
                     peaksBrillouin_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
                     
                     brillouinShift = (peaksRayleigh_pos-peaksBrillouin_pos);
@@ -140,11 +158,20 @@ function evaluate(view, model)
         end
     end
     
+    %% save corrected calibration
+    calibration = model.parameters.calibration.values_mean;
+    calibration.x0Shift = x0Shift;
+    calibration.x0 = calibration.x0 + calibration.x0Shift;
+    model.parameters.calibration.values_mean = calibration;
+    
+    %% calculate and save the Brillouin shift
     if ~model.displaySettings.evaluation.preview
-        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, model.parameters.calibration.values_mean, model.parameters.constants, 1);
+        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, ...
+            model.parameters.calibration.values_mean, model.parameters.constants, 1);
         peaksRayleigh_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
 
-        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, model.parameters.calibration.values_mean, model.parameters.constants, 1);
+        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, ...
+            model.parameters.calibration.values_mean, model.parameters.constants, 1);
         peaksBrillouin_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
 
         brillouinShift = (peaksRayleigh_pos-peaksBrillouin_pos);

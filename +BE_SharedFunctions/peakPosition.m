@@ -10,13 +10,9 @@ F = constants.F;
 %% internal angle
 theta_in = asin(sin(theta)/n);
 
-%% number of wavelengths in the cavity
-% solve eq. 14 in the above mentioned paper for max[m]
-m_max = BE_SharedFunctions.getMinimalOrder(VIPAparams, constants);
-
 %% interesting number of wavelengths
 % (given by startOrder and number of requested peaks)
-m = m_max - orders + 1;
+m = getOrder( VIPAparams, constants, orders );
 
 %% position of the peaks
 % solve eq. 14 by x_F
