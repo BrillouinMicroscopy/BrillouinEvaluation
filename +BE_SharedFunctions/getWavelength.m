@@ -10,13 +10,13 @@ function [ lambda ] = getWavelength( peakPos, VIPAparams, constants, order)
 %             d:    [m]     width of the cavity
 %             n:    [1]     refractive index
 %         theta:    [rad]   angle of the VIPA
-%             F:    [m]     focal length of the lens behind the VIPA
 %            x0:    [m]     offset for fitting
 %            xs:    [1]     scale factor for fitting
 %   constants =
 %             c:    [m/s]   speed of light
 %     pixelSize:    [m]     pixel size of the camera
 %       lambda0:    [m]     laser wavelength
+%             F:    [m]     focal length of the lens behind the VIPA
 %     bshiftCal:    [Hz]    calibration shift frequency
 %   order:          [1]     orders of the peaks
 %
@@ -28,7 +28,7 @@ n     = VIPAparams.n;
 theta = VIPAparams.theta;
 F     = constants.F;
 
-[~, m] = BE_SharedFunctions.peakPosition(VIPAparams, constants, order, constants.lambda0);
+m = BE_SharedFunctions.getOrder(VIPAparams, constants, order);
 
 theta_in = asin(sin(theta)/n);
 peakPos = (peakPos - VIPAparams.x0)./VIPAparams.xs;
