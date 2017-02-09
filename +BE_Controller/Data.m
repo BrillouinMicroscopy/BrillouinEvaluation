@@ -82,18 +82,18 @@ function loadData(~, ~, model)
         img = img(:,:,model.parameters.extraction.imageNr);
         parameters.extraction.circleStart = [1, size(img,1), mean(size(img))];
         model.parameters = parameters;
-    end
-    
-    %% check if a corresponding results file exists
-    [~, filename, ~] = fileparts(model.filename);
-    defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
-    if exist(defaultPath, 'file') == 2
-        tmp = model;
-        results = load(defaultPath, 'results');
-        tmp.parameters = results.results.parameters;
-        tmp.results = results.results.results;
-        tmp.displaySettings = results.results.displaySettings;
-        model = tmp; %#ok<NASGU>
+        
+        %% check if a corresponding results file exists
+        [~, filename, ~] = fileparts(model.filename);
+        defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
+        if exist(defaultPath, 'file') == 2
+            tmp = model;
+            results = load(defaultPath, 'results');
+            tmp.parameters = results.results.parameters;
+            tmp.results = results.results.results;
+            tmp.displaySettings = results.results.displaySettings;
+            model = tmp; %#ok<NASGU>
+        end
     end
 end
 
