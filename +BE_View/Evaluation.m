@@ -222,14 +222,14 @@ function plotData (handles, model, location, full)
     switch dimension
         case 0
             %% 0D data
-            model.handles.results = plot(ax,data);
+            hndl = plot(ax,data);
 %             disp(data(1,1,1));
         case 1
             %% 1D data
             d = squeeze(data);
             p = squeeze(positions.([nsdims{1} '_zm']));
             hold(ax,'off');
-            model.handles.results = plot(ax,p,d);
+            hndl = plot(ax,p,d);
             title(ax,labels.titleString);
             xlim(ax, [min(p(:)), max(p(:))]);
             xlabel(ax, ['$' nsdimslabel{1} '$ [$\mu$m]'], 'interpreter', 'latex');
@@ -250,7 +250,7 @@ function plotData (handles, model, location, full)
             py = squeeze(positions.Y_zm);
             pz = squeeze(positions.Z_zm);
             hold(ax,'off');
-            model.handles.results = surf(ax,px, py, pz, d);
+            hndl = surf(ax,px, py, pz, d);
             title(ax,labels.titleString);
             shading(ax, 'flat');
             axis(ax, 'equal');
@@ -276,12 +276,11 @@ function plotData (handles, model, location, full)
         case 3
             %% 3D data
             hold(ax,'off');
-            hndls = NaN(size(data,3),1);
+            hndl = NaN(size(data,3),1);
             for jj = 1:size(data,3)
-                hndls(jj) = surf(ax,positions.X_zm(:,:,jj),positions.Y_zm(:,:,jj),positions.Z_zm(:,:,jj),data(:,:,jj));
+                hndl(jj) = surf(ax,positions.X_zm(:,:,jj),positions.Y_zm(:,:,jj),positions.Z_zm(:,:,jj),data(:,:,jj));
                 hold(ax,'on');
             end
-            model.handles.results = hndls;
             title(ax,labels.titleString);
             shading(ax, 'flat');
             axis(ax, 'equal');
@@ -304,6 +303,9 @@ function plotData (handles, model, location, full)
             end
             zoom(ax, 'reset');
             view(ax, [az el]);
+    end
+    if strcmp(location, 'int')
+        model.handles.results = hndl;
     end
 end
 
