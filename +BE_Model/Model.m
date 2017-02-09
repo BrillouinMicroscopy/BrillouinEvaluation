@@ -82,25 +82,27 @@ classdef Model < handle
                         'n',    1.453683, ...       % [1]   refractive index of the VIPA
                         'theta',0.8*2*pi/360, ...   % [rad] angle of the VIPA
                         'x0',   0.0021, ...         % [m]   offset for fitting
-                        'xs',   1.1348, ...         % [1]   scale factor for fitting
+                        'xs',   1.0000, ...         % [1]   scale factor for fitting
                         'order', 1, ...             % [1]   observed order of the VIPA spectrum
                         'iterNum', 4 ...            % [1]   number of iterations for the fit
                     ), ...
                     'values', struct( ...       % struct with all values
-                        'd',    [], ... % [m]   width of the cavity
-                        'n',    [], ... % [1]   refractive index of the VIPA
-                        'theta',[], ... % [rad] angle of the VIPA
-                        'x0',   [], ... % [m]   offset for fitting
-                        'xs',   [], ... % [1]   scale factor for fitting
-                        'error',[]  ... % [1]   uncertainty of the fit
+                        'd',        [], ... % [m]   width of the cavity
+                        'n',        [], ... % [1]   refractive index of the VIPA
+                        'theta',    [], ... % [rad] angle of the VIPA
+                        'x0Initial',[], ... % [m]   offset for fitting
+                        'x0',       [], ... % [m]   offset for fitting, corrected for each measurement
+                        'xs',       [], ... % [1]   scale factor for fitting
+                        'error',    []  ... % [1]   uncertainty of the fit
                     ), ...
                     'values_mean', struct( ...  % struct with the mean values
-                        'd',    NaN, ... % [m]   width of the cavity
-                        'n',    NaN, ... % [1]   refractive index of the VIPA
-                        'theta',NaN, ... % [rad] angle of the VIPA
-                        'x0',   NaN, ... % [m]   offset for fitting
-                        'xs',   NaN, ... % [1]   scale factor for fitting
-                        'error',NaN  ... % [1]   uncertainty of the fit
+                        'd',            NaN, ... % [m]   width of the cavity
+                        'n',            NaN, ... % [1]   refractive index of the VIPA
+                        'theta',        NaN, ... % [rad] angle of the VIPA
+                        'x0Initial',    NaN, ... % [m]   offset for fitting
+                        'x0',           NaN, ... % [m]   offset for fitting, corrected for each measurement
+                        'xs',           NaN, ... % [1]   scale factor for fitting
+                        'error',        NaN  ... % [1]   uncertainty of the fit
                     ) ...
                 ), ...
                 'evaluation', struct( ...

@@ -120,7 +120,7 @@ function evaluate(view, model)
                     %% adjust calibration accordingly to the shift of x0
                     calibration = model.parameters.calibration.values_mean;
                     calibration.x0Shift = x0Shift;
-                    calibration.x0 = calibration.x0 + calibration.x0Shift;
+                    calibration.x0 = calibration.x0Initial + calibration.x0Shift;
                     
                     %% calculate the frequency of the Rayleigh and Brillouin peak
                     wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, ...
@@ -157,7 +157,7 @@ function evaluate(view, model)
     %% save corrected calibration
     calibration = model.parameters.calibration.values_mean;
     calibration.x0Shift = x0Shift;
-    calibration.x0 = calibration.x0 + calibration.x0Shift;
+    calibration.x0 = calibration.x0Initial + calibration.x0Shift;
     model.parameters.calibration.values_mean = calibration;
     
     %% calculate and save the Brillouin shift

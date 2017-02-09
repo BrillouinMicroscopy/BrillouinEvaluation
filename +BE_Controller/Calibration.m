@@ -73,11 +73,11 @@ function calibrate(~, ~, model, view)
         constants = model.parameters.constants;
         constants.bShiftCal = calibration.samples.(selectedMeasurement).shift*1e9;
         VIPAstart = calibration.start;
-        VIPAstart.xs = 1.2114;
         [VIPAparams, peakPos] = fitVIPA(peakPos, VIPAstart, constants, view);
+        VIPAparams.x0Initial = VIPAparams.x0;
         values = calibration.values;
         values_mean = struct();
-        params = {'d', 'n', 'theta', 'x0', 'xs', 'error'};
+        params = {'d', 'n', 'theta', 'x0Initial', 'x0', 'xs', 'error'};
         for jj = 1:length(params)
             values.(params{jj}) = [values.(params{jj}) VIPAparams.(params{jj})];
             values_mean.(params{jj}) = mean(values.(params{jj}));
@@ -164,20 +164,22 @@ end
 
 function clearCalibration(~, ~, model)
     model.parameters.calibration.values = struct( ...
-        'd',    [], ... % [m]   width of the cavity
-        'n',    [], ... % [1]   refractive index of the VIPA
-        'theta',[], ... % [rad] angle of the VIPA
-        'x0',   [], ... % [m]   offset for fitting
-        'xs',   [], ... % [1]   scale factor for fitting
-        'error',[]  ... % [1]   uncertainty of the fit
+        'd',            [], ... % [m]   width of the cavity
+        'n',            [], ... % [1]   refractive index of the VIPA
+        'theta',        [], ... % [rad] angle of the VIPA
+        'x0Initial',    [], ... % [m]   offset for fitting
+        'x0',           [], ... % [m]   offset for fitting, corrected for each measurement
+        'xs',           [], ... % [1]   scale factor for fitting
+        'error',        []  ... % [1]   uncertainty of the fit
     );
     model.parameters.calibration.values_mean = struct( ...
-        'd',    NaN, ... % [m]   width of the cavity
-        'n',    NaN, ... % [1]   refractive index of the VIPA
-        'theta',NaN, ... % [rad] angle of the VIPA
-        'x0',   NaN, ... % [m]   offset for fitting
-        'xs',   NaN, ... % [1]   scale factor for fitting
-        'error',NaN  ... % [1]   uncertainty of the fit
+        'd',            NaN, ... % [m]   width of the cavity
+        'n',            NaN, ... % [1]   refractive index of the VIPA
+        'theta',        NaN, ... % [rad] angle of the VIPA
+        'x0Initial',    NaN, ... % [m]   offset for fitting
+        'x0',           NaN, ... % [m]   offset for fitting, corrected for each measurement
+        'xs',           NaN, ... % [1]   scale factor for fitting
+        'error',        NaN  ... % [1]   uncertainty of the fit
     );
 end
 
