@@ -12,7 +12,7 @@ theta_in = asin(sin(theta)/n);
 
 %% interesting number of wavelengths
 % (given by startOrder and number of requested peaks)
-m = getOrder( VIPAparams, constants, orders );
+m = BE_SharedFunctions.getOrder( VIPAparams, constants, orders );
 
 %% position of the peaks
 % solve eq. 14 by x_F

@@ -186,7 +186,9 @@ function plotData(handles, model)
         
         x = 1:length(data);
         if ~isempty(model.parameters.calibration.values_mean.d) && ~isnan(model.parameters.calibration.values_mean.d)
-            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * x, model.parameters.calibration.values_mean, model.parameters.constants, 1);
+            calibration = model.parameters.calibration.values_mean;
+            calibration.x0 = calibration.x0(1,1,1,1);
+            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * x, calibration, model.parameters.constants, 1);
             x = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
             
             xLabelString = '$f$ [GHz]';
