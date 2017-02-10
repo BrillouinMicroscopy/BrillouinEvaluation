@@ -6,6 +6,7 @@ function acquisition = Evaluation(model, view)
     set(view.evaluation.newFig, 'Callback', {@openNewFig, view, model});
     
     set(view.evaluation.livePreview, 'Callback', {@toggleLivePreview, view, model});
+    set(view.evaluation.discardInvalid, 'Callback', {@toggleDiscardInvalid, view, model});
     
     set(view.evaluation.zoomIn, 'Callback', {@zoom, 'in', view});
     set(view.evaluation.zoomOut, 'Callback', {@zoom, 'out', view});
@@ -57,6 +58,7 @@ function evaluate(view, model)
     peaksBrillouin_fwhm = peaksBrillouin_pos;
     peaksBrillouin_int = peaksBrillouin_pos;
     peaksRayleigh_pos = peaksBrillouin_pos;
+    validity = true(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
     
     %% Calculate the initial value of which the shift of x0 has to be corrected
     initx0Shift = (initRayleighPos + min(ind_Rayleigh(:)) - 1) * model.parameters.constants.pixelSize;
@@ -95,14 +97,26 @@ function evaluate(view, model)
                         [peakPos, ~, ~] = ...
                             BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
                         peaksRayleigh_pos(kk, jj, ll, mm, :) = peakPos + min(ind_Rayleigh(:)) - 1;
-
                         shift = round(peakPos - initRayleighPos);
+                        
+                        %% check if peak position is valid
+                        if peakPos < 0 || peakPos > length(ind_Rayleigh)
+                            validity(kk, jj, ll, mm) = false;
+                        end
+
 
                         secInd = ind_Brillouin + shift;
                         spectrumSection = spectrum(secInd);
 
                         [peakPos, fwhm, int, ~, thres, deviation] = ...
                             BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
+                        
+                        
+                        %% check if peak position is valid
+                        if peakPos < 0 || peakPos > length(secInd)
+                            validity(kk, jj, ll, mm) = false;
+                        end
+                        
                         peaksBrillouin_fwhm(kk, jj, ll, mm, :) = fwhm;
                         peaksBrillouin_dev(kk, jj, ll, mm, :) = deviation;
                         peaksBrillouin_pos(kk, jj, ll, mm, :) = peakPos + min(secInd(:)) - 1;
@@ -141,7 +155,8 @@ function evaluate(view, model)
                         'peaksBrillouin_int',       peaksBrillouin_int, ...         % [a.u.] the intensity of the Brillouin peak(s)
                         'peaksBrillouin_fwhm',      peaksBrillouin_fwhm, ...        % [pix]  the FWHM of the Brillouin peak
                         'peaksRayleigh_pos',        peaksRayleigh_pos, ...          % [pix]  the position of the Rayleigh peak(s) in the spectrum
-                        'intensity',                intensity ...                   % [a.u.] the overall intensity of the image
+                        'intensity',                intensity, ...                  % [a.u.] the overall intensity of the image
+                        'validity',                 validity ...                    % [logical] the validity of the results
                     );
                 end
                 drawnow;
@@ -180,7 +195,8 @@ function evaluate(view, model)
             'peaksBrillouin_int',       peaksBrillouin_int, ...         % [a.u.] the intensity of the Brillouin peak(s)
             'peaksBrillouin_fwhm',      peaksBrillouin_fwhm, ...        % [pix]  the FWHM of the Brillouin peak
             'peaksRayleigh_pos',        peaksRayleigh_pos, ...          % [pix]  the position of the Rayleigh peak(s) in the spectrum
-            'intensity',                intensity ...                   % [a.u.] the overall intensity of the image
+            'intensity',                intensity, ...                  % [a.u.] the overall intensity of the image
+            'validity',                 validity ...                    % [logical] the validity of the results
         );
     end
 end
@@ -270,6 +286,10 @@ end
 
 function toggleLivePreview(~, ~, view, model)
     model.displaySettings.evaluation.preview = get(view.evaluation.livePreview, 'Value');
+end
+
+function toggleDiscardInvalid(~, ~, view, model)
+    model.displaySettings.evaluation.discardInvalid = get(view.evaluation.discardInvalid, 'Value');
 end
 
 function openNewFig(~, ~, view, model)

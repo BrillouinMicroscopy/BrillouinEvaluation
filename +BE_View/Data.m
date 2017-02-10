@@ -107,7 +107,8 @@ function onFileLoad(handles, model)
             'peaksBrillouin_int', NaN, ...          % [a.u.] the intensity of the Brillouin peak(s)
             'peaksBrillouin_fwhm', NaN, ...         % [pix]  the FWHM of the Brillouin peak
             'peaksRayleigh_pos', NaN, ...           % [pix]  the position of the Rayleigh peak(s) in the spectrum
-            'intensity', NaN ...                    % [a.u.] the overall intensity of the image
+            'intensity', NaN, ...                   % [a.u.] the overall intensity of the image
+            'validity',  NaN ...                    % [logical] the validity of the results
         );
     else
         set(handles.filename, 'String', '');
