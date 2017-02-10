@@ -179,7 +179,6 @@ function plotData(handles, model)
     imgs = medfilt1(imgs,3);
     img = imgs(:,:,1);
     data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
-    data = data(~isnan(data));
     if ~isempty(data);
         hold(ax, 'off');
         xLabelString = '$f$ [pix]';
@@ -215,7 +214,8 @@ function plotData(handles, model)
         else
             ylim(ax, [model.displaySettings.peakSelection.floor model.displaySettings.peakSelection.cap]);
         end
-        xlim(ax, [min(x(:)) max(x(:))]);
+        validx = x(~isnan(data));
+        xlim(ax, [min(validx(:)) max(validx(:))]);
         zoom(ax, 'reset');
         xlabel(ax, xLabelString, 'interpreter', 'latex');
         ylabel(ax, '$I$ [a.u.]', 'interpreter', 'latex');
