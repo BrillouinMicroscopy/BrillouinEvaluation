@@ -65,7 +65,6 @@ function evaluate(view, model)
     
     x0Shift = zeros(size(peaksBrillouin_pos));
     
-    uu = 0;
     for jj = 1:1:model.parameters.resolution.X
         if ~model.status.evaluation.evaluate
             break
@@ -78,17 +77,17 @@ function evaluate(view, model)
                 if ~model.status.evaluation.evaluate
                     break
                 end
-                % read data from the file
-                imgs = model.file.readPayloadData(jj, kk, ll, 'data');
-                imgs = medfilt1(imgs,3);
+                try
+                    % read data from the file
+                    imgs = model.file.readPayloadData(jj, kk, ll, 'data');
+                    imgs = medfilt1(imgs,3);
 
-                for mm = 1:size(imgs,3)
-                    if ~model.status.evaluation.evaluate
-                        break
-                    end
-                    uu = uu + 1;
-                    try 
+                    for mm = 1:size(imgs,3)
+                        if ~model.status.evaluation.evaluate
+                            break
+                        end
                         img = imgs(:,:,mm);
+                        
                         spectrum = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
                         %%
                         intensity(kk, jj, ll, mm) = sum(img(:));
@@ -125,46 +124,46 @@ function evaluate(view, model)
                         %% calculate the value of which x0 has to be shifted for each measurement point
                         x0Shift(kk, jj, ll, mm) = peaksRayleigh_pos(kk, jj, ll, mm) * model.parameters.constants.pixelSize - initx0Shift;
 
-                    catch e
-                        disp(e);
                     end
+                    if model.displaySettings.evaluation.preview
+
+                        %% adjust calibration accordingly to the shift of x0
+                        calibration = model.parameters.calibration.values_mean;
+                        calibration.x0Shift = x0Shift;
+                        calibration.x0 = calibration.x0Initial + calibration.x0Shift;
+
+                        %% calculate the frequency of the Rayleigh and Brillouin peak
+                        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, ...
+                            calibration, model.parameters.constants, 1);
+                        peaksRayleigh_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
+
+                        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, ...
+                            calibration, model.parameters.constants, 1);
+                        peaksBrillouin_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
+
+                        brillouinShift = abs(peaksRayleigh_pos-peaksBrillouin_pos);
+                        brillouinShift_frequency = abs(peaksRayleigh_pos_frequency-peaksBrillouin_pos_frequency);
+                        model.results = struct( ...
+                            'BrillouinShift',           brillouinShift, ...             % [pix]  the Brillouin shift in pixels
+                            'BrillouinShift_frequency', brillouinShift_frequency, ...   % [GHz]  the Brillouin shift in Hz
+                            'peaksBrillouin_pos',       peaksBrillouin_pos, ...         % [pix]  the position of the Brillouin peak(s) in the spectrum
+                            'peaksBrillouin_dev',       peaksBrillouin_dev, ...         % [pix]  the deviation of the Brillouin fit
+                            'peaksBrillouin_int',       peaksBrillouin_int, ...         % [a.u.] the intensity of the Brillouin peak(s)
+                            'peaksBrillouin_fwhm',      peaksBrillouin_fwhm, ...        % [pix]  the FWHM of the Brillouin peak
+                            'peaksRayleigh_pos',        peaksRayleigh_pos, ...          % [pix]  the position of the Rayleigh peak(s) in the spectrum
+                            'intensity',                intensity, ...                  % [a.u.] the overall intensity of the image
+                            'validity',                 validity ...                    % [logical] the validity of the results
+                        );
+                    end
+                    drawnow;
+
+                    finishedPoints = ((jj-1)*(model.parameters.resolution.Y*model.parameters.resolution.Z) + (kk-1)*model.parameters.resolution.Z + ll);
+                    prog = 100*finishedPoints/totalPoints;
+                    view.evaluation.progressBar.setValue(prog);
+                    view.evaluation.progressBar.setString(sprintf('%01.1f%%',prog));
+                catch e
+                    disp(e);
                 end
-                if model.displaySettings.evaluation.preview
-                    
-                    %% adjust calibration accordingly to the shift of x0
-                    calibration = model.parameters.calibration.values_mean;
-                    calibration.x0Shift = x0Shift;
-                    calibration.x0 = calibration.x0Initial + calibration.x0Shift;
-                    
-                    %% calculate the frequency of the Rayleigh and Brillouin peak
-                    wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, ...
-                        calibration, model.parameters.constants, 1);
-                    peaksRayleigh_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
-                    
-                    wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, ...
-                        calibration, model.parameters.constants, 1);
-                    peaksBrillouin_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
-                    
-                    brillouinShift = abs(peaksRayleigh_pos-peaksBrillouin_pos);
-                    brillouinShift_frequency = abs(peaksRayleigh_pos_frequency-peaksBrillouin_pos_frequency);
-                    model.results = struct( ...
-                        'BrillouinShift',           brillouinShift, ...             % [pix]  the Brillouin shift in pixels
-                        'BrillouinShift_frequency', brillouinShift_frequency, ...   % [GHz]  the Brillouin shift in Hz
-                        'peaksBrillouin_pos',       peaksBrillouin_pos, ...         % [pix]  the position of the Brillouin peak(s) in the spectrum
-                        'peaksBrillouin_dev',       peaksBrillouin_dev, ...         % [pix]  the deviation of the Brillouin fit
-                        'peaksBrillouin_int',       peaksBrillouin_int, ...         % [a.u.] the intensity of the Brillouin peak(s)
-                        'peaksBrillouin_fwhm',      peaksBrillouin_fwhm, ...        % [pix]  the FWHM of the Brillouin peak
-                        'peaksRayleigh_pos',        peaksRayleigh_pos, ...          % [pix]  the position of the Rayleigh peak(s) in the spectrum
-                        'intensity',                intensity, ...                  % [a.u.] the overall intensity of the image
-                        'validity',                 validity ...                    % [logical] the validity of the results
-                    );
-                end
-                drawnow;
-                
-                finishedPoints = ((jj-1)*(model.parameters.resolution.Y*model.parameters.resolution.Z) + (kk-1)*model.parameters.resolution.Z + ll);
-                prog = 100*finishedPoints/totalPoints;
-                view.evaluation.progressBar.setValue(prog);
-                view.evaluation.progressBar.setString(sprintf('%01.1f%%',prog));
             end
         end
     end
