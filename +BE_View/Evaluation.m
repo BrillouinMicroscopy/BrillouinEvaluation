@@ -168,10 +168,11 @@ end
 function plotData (handles, model, location, full)
 
     data = model.results.(model.displaySettings.evaluation.type);
-    data = mean(data,4);
+    data = double(data);
     if model.displaySettings.evaluation.discardInvalid && ~strcmp(model.displaySettings.evaluation.type, 'validty')
         data(~model.results.validity) = NaN;
     end
+    data = nanmean(data,4);
 
     %% find non-singleton dimensions
     dimensions = size(data);
