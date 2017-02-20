@@ -150,7 +150,8 @@ classdef Model < handle
                     'floor', 100, ...
                     'cap', 500, ...
                     'discardInvalid', false, ...% [logical] discard invalid results
-                    'intFac', 1 ...             % [1]   interpolation factor
+                    'valThreshould', 25, ...    % [1]       threshould for the validity
+                    'intFac', 1 ...             % [1]       interpolation factor
                 ) ...
             );
 %% Status of the GUI

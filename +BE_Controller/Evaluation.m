@@ -8,7 +8,8 @@ function acquisition = Evaluation(model, view)
     set(view.evaluation.livePreview, 'Callback', {@toggleLivePreview, view, model});
     set(view.evaluation.discardInvalid, 'Callback', {@toggleDiscardInvalid, view, model});
     
-    set(view.evaluation.intFac, 'Callback', {@setInterpolationFactor, model});
+    set(view.evaluation.intFac, 'Callback', {@setValue, model, 'intFac'});
+    set(view.evaluation.validity, 'Callback', {@setValue, model, 'valThreshould'});
     
     set(view.evaluation.zoomIn, 'Callback', {@zoom, 'in', view});
     set(view.evaluation.zoomOut, 'Callback', {@zoom, 'out', view});
@@ -293,8 +294,8 @@ function toggleDiscardInvalid(~, ~, view, model)
     model.displaySettings.evaluation.discardInvalid = get(view.evaluation.discardInvalid, 'Value');
 end
 
-function setInterpolationFactor(src, ~, model)
-    model.displaySettings.evaluation.intFac = str2double(get(src, 'String'));
+function setValue(src, ~, model, value)
+    model.displaySettings.evaluation.(value) = str2double(get(src, 'String'));
 end
 
 function openNewFig(~, ~, view, model)
