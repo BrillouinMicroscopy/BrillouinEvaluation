@@ -99,7 +99,7 @@ function evaluate(view, model)
                         shift = round(peakPos - initRayleighPos);
                         
                         %% check if peak position is valid
-                        if peakPos < 0 || peakPos > length(ind_Rayleigh)
+                        if peakPos <= 0 || peakPos >= length(ind_Rayleigh)
                             validity(kk, jj, ll, mm) = false;
                         end
 
@@ -112,7 +112,7 @@ function evaluate(view, model)
                         
                         
                         %% check if peak position is valid
-                        if peakPos < 0 || peakPos > length(secInd)
+                        if peakPos <= 0 || peakPos >= length(secInd)
                             validity(kk, jj, ll, mm) = false;
                         end
                         
