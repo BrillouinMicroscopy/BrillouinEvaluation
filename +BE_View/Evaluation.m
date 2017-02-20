@@ -40,6 +40,12 @@ function handles = initGUI(model, parent)
 
     discardInvalid = uicontrol('Parent', parent, 'Style', 'checkbox', 'Units', 'normalized',...
         'Position', [0.22,0.75,0.04,0.034], 'FontSize', 11, 'HorizontalAlignment', 'left');
+    
+    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Interpolate by factor:', 'Units', 'normalized',...
+        'Position', [0.02,0.7,0.15,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
+
+    intFac = uicontrol('Parent', parent, 'Style', 'edit', 'Units', 'normalized',...
+        'Position', [0.18,0.698,0.06,0.04], 'FontSize', 11, 'HorizontalAlignment', 'center');
 
     zoomIn = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
         'String', BE_SharedFunctions.iconString([model.pp '/images/zoomin.png']), 'Position',[0.33,0.92,0.0375,0.055],...
@@ -116,6 +122,7 @@ function handles = initGUI(model, parent)
         'plotTypes', plotTypes, ...
         'livePreview', livePreview, ...
         'discardInvalid', discardInvalid, ...
+        'intFac', intFac, ...
         'zoomIn', zoomIn, ...
         'zoomOut', zoomOut, ...
         'panButton', panButton, ...
@@ -157,6 +164,7 @@ function onDisplaySettings(handles, model)
     set(handles.autoscale, 'Value', model.displaySettings.evaluation.autoscale);
     set(handles.cap, 'String', model.displaySettings.evaluation.cap);
     set(handles.floor, 'String', model.displaySettings.evaluation.floor);
+    set(handles.intFac, 'String', model.displaySettings.evaluation.intFac);
     if model.displaySettings.evaluation.autoscale
         caxis(handles.axesImage,'auto');
     else
@@ -166,6 +174,7 @@ function onDisplaySettings(handles, model)
 end
 
 function plotData (handles, model, location, full)
+    intFac = model.displaySettings.evaluation.intFac;
 
     data = model.results.(model.displaySettings.evaluation.type);
     data = double(data);
@@ -239,6 +248,13 @@ function plotData (handles, model, location, full)
             %% 1D data
             d = squeeze(data);
             p = squeeze(positions.([nsdims{1} '_zm']));
+            if intFac > 1
+                interpolationValue = intFac * round(length(p));
+                pn = linspace(min(p(:)),max(p(:)),interpolationValue);
+                
+                d = interp1(p,d,pn);
+                p = pn;
+            end
             hold(ax,'off');
             hndl = plot(ax,p,d);
             title(ax,labels.titleString);
@@ -257,11 +273,21 @@ function plotData (handles, model, location, full)
         case 2
             %% 2D data
             d = squeeze(data);
-            px = squeeze(positions.X_zm);
-            py = squeeze(positions.Y_zm);
-            pz = squeeze(positions.Z_zm);
+            p1 = squeeze(positions.([nsdims{2} '_zm']));
+            p2 = squeeze(positions.([nsdims{1} '_zm']));
+            if intFac > 1
+                interpolationValue1 = intFac * round(size(p1,1));
+                interpolationValue2 = intFac * round(size(p2,1)); 
+                p1lin = linspace(min(p1(:)),max(p1(:)),interpolationValue1);
+                p2lin = linspace(min(p2(:)),max(p2(:)),interpolationValue2);
+                [p1n, p2n] = meshgrid(p1lin, p2lin);
+                
+                d = interp2(p1,p2,d,p1n,p2n);
+                p1 = p1n;
+                p2 = p2n;
+            end
             hold(ax,'off');
-            hndl = surf(ax,px, py, pz, d);
+            hndl = surf(ax, p1, p2, d);
             title(ax,labels.titleString);
             shading(ax, 'flat');
             axis(ax, 'equal');
