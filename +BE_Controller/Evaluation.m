@@ -11,6 +11,9 @@ function acquisition = Evaluation(model, view)
     set(view.evaluation.intFac, 'Callback', {@setValue, model, 'intFac'});
     set(view.evaluation.validity, 'Callback', {@setValue, model, 'valThreshould'});
     
+    set(view.evaluation.showSpectrum, 'Callback', {@showSpectrum, view, model});
+    
+    
     set(view.evaluation.zoomIn, 'Callback', {@zoom, 'in', view});
     set(view.evaluation.zoomOut, 'Callback', {@zoom, 'out', view});
     set(view.evaluation.panButton, 'Callback', {@pan, view});
@@ -300,4 +303,62 @@ end
 
 function openNewFig(~, ~, view, model)
     view.evaluation.functions.plotData(view, model, 'ext');
+end
+
+function showSpectrum(~, ~, view, model)
+     model.status.evaluation.showSpectrum = ~model.status.evaluation.showSpectrum;
+     if model.status.evaluation.showSpectrum
+            set(model.handles.results,'ButtonDownFcn',{@ImageClickCallback model});
+            set(view.evaluation.axesImage,'ButtonDownFcn',{@ImageClickCallback model});
+     else
+            set(model.handles.results,'ButtonDownFcn',[]);
+            set(view.evaluation.axesImage,'ButtonDownFcn',[]);
+    end
+end
+
+function ImageClickCallback(~, event, model)
+
+    x = event.IntersectionPoint(1);
+    y = event.IntersectionPoint(2);
+    z = event.IntersectionPoint(3);
+    
+    positions.X = ...
+            model.parameters.positions.X - mean(model.parameters.positions.X(:));
+    positions.Y = ...
+            model.parameters.positions.Y - mean(model.parameters.positions.Y(:));
+    positions.Z = ...
+            model.parameters.positions.Z - mean(model.parameters.positions.Z(:));
+    
+    x_min = min(positions.X(:));
+    x_max = max(positions.X(:));
+
+    x_lin = linspace(x_min,x_max,model.parameters.resolution.X);
+    
+    y_min = min(positions.Y(:));
+    y_max = max(positions.Y(:));
+
+    y_lin = linspace(y_min,y_max,model.parameters.resolution.Y);
+    
+    z_min = min(positions.Z(:));
+    z_max = max(positions.Z(:));
+
+    z_lin = linspace(z_min,z_max,model.parameters.resolution.Z);
+
+    [~, jj] = min(abs(x_lin-x));
+    
+    [~, kk] = min(abs(y_lin-y));
+    
+    [~, ll] = min(abs(z_lin-z));
+    
+    imgs = model.file.readPayloadData(jj, kk, ll, 'data');
+    
+    spectrum = BE_SharedFunctions.getIntensity1D(imgs(:,:,1), model.parameters.extraction.interpolationPositions);
+    
+    figure(123);
+    imagesc(imgs(:,:,1));
+    caxis([100 500]);
+    
+    figure(124);
+    plot(spectrum);
+    ylim([100 500]);
 end
