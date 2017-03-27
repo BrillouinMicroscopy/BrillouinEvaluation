@@ -364,29 +364,36 @@ function ImageClickCallback(~, event, model)
     ylim([100 500]);
 end
 
-function selectbright(~, ~, view, model)
+function selectbright(~, ~, ~, model)
+    rotationAngle = 45;
 
     startingFolder = 'D:\Guck-Users\Conrad\#Data';
-        if ~exist(startingFolder, 'dir')
-            startingFolder = pwd;
-        end
+    if ~exist(startingFolder, 'dir')
+        startingFolder = pwd;
+    end
+    
     defaultFileName = fullfile(startingFolder, '*.png');
     [baseFileName, folder] = uigetfile(defaultFileName, 'Select a file');
-        if baseFileName == 0
-
-            return;
-        end
+    if baseFileName == 0
+        return;
+    end
+    
     fullFileName = fullfile(folder, baseFileName);
     I = imread(fullFileName);
+    I = imrotate(I, rotationAngle);
+    I = flip(I, 1);
+    I = imcrop(I, [1300 1500 1100 1000]);
+    I = I(:,:,1);
     
-        
-        [X,Y,Z] = meshgrid(1:size(I,1), 1:size(I,2), 1:size(I,3));
-        
-        model.parameters.positions_brightfield.X = X;
-        model.parameters.positions_brightfield.Y = Y;
-        model.parameters.positions_brightfield.Z = Z;
-        
-        model.results.brightfield = I;
+    [X,Y,Z] = meshgrid(1:size(I,2), 1:size(I,1), 1:size(I,3));
+    
+    parameters = model.parameters;
+    parameters.positions_brightfield.X = X;
+    parameters.positions_brightfield.Y = Y;
+    parameters.positions_brightfield.Z = Z;
+    model.parameters = parameters;
+    
+    model.results.brightfield = I;
 
 end
 
