@@ -365,27 +365,82 @@ function ImageClickCallback(~, event, model)
 end
 
 function selectbright(~, ~, ~, model)
-    rotationAngle = 45;
 
-    startingFolder = 'D:\Guck-Users\Conrad\#Data';
-    if ~exist(startingFolder, 'dir')
-        startingFolder = pwd;
-    end
-    
-    defaultFileName = fullfile(startingFolder, '*.png');
+    defaultFileName = fullfile(pwd, '*.png');
     [baseFileName, folder] = uigetfile(defaultFileName, 'Select a file');
     if baseFileName == 0
         return;
     end
     
     fullFileName = fullfile(folder, baseFileName);
+
     I = imread(fullFileName);
-    I = imrotate(I, rotationAngle);
-    I = flip(I, 1);
-    I = imcrop(I, [1300 1500 1100 1000]);
     I = I(:,:,1);
+    I = imcrop(I, [600 500 1500 1500]);
+    model.results.brightfield_raw = I;
+
+%     brillouin = model.results.BrillouinShift_frequency;
+%     figure1 = figure(372);
+%     t = uitoolbar(figure1);
+%     
+%     ax1 = axes('Parent', figure1);
+%     ax2 = axes('Parent', figure1);
+%     
+%     set(ax1,'Visible', 'off');
+%     set(ax2,'Visible', 'on');
+%     
+%     a = imread(brillouin);
+%     imshow(a, 'Parent',ax1);
+%     hold on;
+%     imshow(I, 'Parent',ax2);
+%     hold off;
+%     alpha(0.5);
+%     
+%     [img, map] = imread(fullfile(matlabroot,...
+%                     'toolbox','matlab','icons','matlabicon.gif'));
+%     
+%     icon = ind2rgb(img,map);
+%     
+%     p = uipushtool(t,'TooltipString', 'Toolbar push button',...
+%                     'ClickedCallback', {@getpopstn,view,model});
+%     p.CData = icon;
     
-    [X,Y,Z] = meshgrid(1:size(I,2), 1:size(I,1), 1:size(I,3));
+    overlayBrightfield(model);
+end
+    
+function overlayBrightfield(model)
+
+    model.parameters.evaluation.scaling = 0.086;
+    model.parameters.evaluation.centerx = 800;
+    model.parameters.evaluation.centery = 860;
+    model.parameters.evaluation.rotationAngle = -135;
+
+    scaling = model.parameters.evaluation.scaling;   % [micro m / pix]   scaling factor
+    
+    dims = {'Y', 'X', 'Z'};
+    for jj = 1:length(dims)
+        positions.([dims{jj} '_zm']) = ...
+            model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
+    end
+    
+    maxx = max(max(positions.X_zm));
+    minx = min(min(positions.X_zm));
+    maxy = max(max(positions.Y_zm));
+    miny = min(min(positions.Y_zm));
+    
+    width = (maxx - minx)/(scaling);
+    height = (maxy - miny)/(scaling);
+    
+    startx = model.parameters.evaluation.centerx - width/2;
+    starty = model.parameters.evaluation.centery - height/2;
+
+    I = imrotate(model.results.brightfield_raw, model.parameters.evaluation.rotationAngle);
+    
+    I = imcrop(I, [startx starty width height]);
+    
+    x = linspace(minx, maxx, size(I,2));
+    y = linspace(miny, maxy, size(I,1));
+    [X,Y,Z] = meshgrid(x, y, 1);
     
     parameters = model.parameters;
     parameters.positions_brightfield.X = X;
@@ -394,6 +449,5 @@ function selectbright(~, ~, ~, model)
     model.parameters = parameters;
     
     model.results.brightfield = I;
-
 end
 
