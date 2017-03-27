@@ -12,6 +12,7 @@ function acquisition = Evaluation(model, view)
     set(view.evaluation.validity, 'Callback', {@setValue, model, 'valThreshould'});
     
     set(view.evaluation.showSpectrum, 'Callback', {@showSpectrum, view, model});
+    set(view.evaluation.selectbright, 'Callback', {@selectbright, view, model});
     
     
     set(view.evaluation.zoomIn, 'Callback', {@zoom, 'in', view});
@@ -362,3 +363,30 @@ function ImageClickCallback(~, event, model)
     plot(spectrum);
     ylim([100 500]);
 end
+
+function selectbright(~, ~, view, model)
+
+    startingFolder = 'D:\Guck-Users\Conrad\#Data';
+        if ~exist(startingFolder, 'dir')
+            startingFolder = pwd;
+        end
+    defaultFileName = fullfile(startingFolder, '*.png');
+    [baseFileName, folder] = uigetfile(defaultFileName, 'Select a file');
+        if baseFileName == 0
+
+            return;
+        end
+    fullFileName = fullfile(folder, baseFileName);
+    I = imread(fullFileName);
+    
+        
+        [X,Y,Z] = meshgrid(1:size(I,1), 1:size(I,2), 1:size(I,3));
+        
+        model.parameters.positions_brightfield.X = X;
+        model.parameters.positions_brightfield.Y = Y;
+        model.parameters.positions_brightfield.Z = Z;
+        
+        model.results.brightfield = I;
+
+end
+

@@ -58,6 +58,10 @@ function handles = initGUI(model, parent)
         'String','Show Spectrum','Position',[0.02,0.58,0.222,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
+    selectbright = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...
+        'String','select Brightfield image','Position',[0.02,0.50,0.222,0.055],...
+        'FontSize', 11, 'HorizontalAlignment', 'left');
+    
     zoomIn = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
         'String', BE_SharedFunctions.iconString([model.pp '/images/zoomin.png']), 'Position',[0.33,0.92,0.0375,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -136,6 +140,7 @@ function handles = initGUI(model, parent)
         'intFac', intFac, ...
         'validity', validity, ...
         'showSpectrum', showSpectrum, ...
+        'selectbright', selectbright, ... 
         'zoomIn', zoomIn, ...
         'zoomOut', zoomOut, ...
         'panButton', panButton, ...
@@ -257,11 +262,18 @@ function plotData (handles, model, location, full)
     end
 
     %% calculate zero mean positions
-    for jj = 1:length(dims)
-        positions.([dims{jj} '_zm']) = ...
-            model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
+    if strcmp(model.displaySettings.evaluation.type, 'brightfield')
+        positions.X_zm = model.parameters.positions_brightfield.X;
+        positions.Y_zm = model.parameters.positions_brightfield.Y;
+        positions.Z_zm = model.parameters.positions_brightfield.Z;
+        
+        
+    else
+        for jj = 1:length(dims)
+            positions.([dims{jj} '_zm']) = ...
+                model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
+        end
     end
-
     %% plot data for different dimensions
     switch dimension
         case 0
@@ -297,21 +309,25 @@ function plotData (handles, model, location, full)
         case 2
             %% 2D data
             d = squeeze(data);
-            p1 = squeeze(positions.([nsdims{2} '_zm']));
-            p2 = squeeze(positions.([nsdims{1} '_zm']));
-            if intFac > 1
-                interpolationValue1 = intFac * round(size(p1,1));
-                interpolationValue2 = intFac * round(size(p2,1)); 
-                p1lin = linspace(min(p1(:)),max(p1(:)),interpolationValue1);
-                p2lin = linspace(min(p2(:)),max(p2(:)),interpolationValue2);
-                [p1n, p2n] = meshgrid(p1lin, p2lin);
-                
-                d = interp2(p1,p2,d,p1n,p2n);
-                p1 = p1n;
-                p2 = p2n;
-            end
+%             p1 = squeeze(positions.([nsdims{2} '_zm']));
+%             p2 = squeeze(positions.([nsdims{1} '_zm']));
+%             if intFac > 1
+%                 interpolationValue1 = intFac * round(size(p1,1));
+%                 interpolationValue2 = intFac * round(size(p2,1)); 
+%                 p1lin = linspace(min(p1(:)),max(p1(:)),interpolationValue1);
+%                 p2lin = linspace(min(p2(:)),max(p2(:)),interpolationValue2);
+%                 [p1n, p2n] = meshgrid(p1lin, p2lin);
+% 
+%                 d = interp2(p1,p2,d,p1n,p2n);
+%                 p1 = p1n;
+%                 p2 = p2n;
+%             end
+            px = squeeze(positions.X_zm);
+            py = squeeze(positions.Y_zm);
+            pz = squeeze(positions.Z_zm);
             hold(ax,'off');
-            hndl = surf(ax, p1, p2, d);
+%             hndl = surf(ax, p1, p2, d);
+            hndl = surf(ax, px, py, pz, d);
             title(ax,labels.titleString);
             shading(ax, 'flat');
             axis(ax, 'equal');
