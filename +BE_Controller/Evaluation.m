@@ -13,7 +13,7 @@ function acquisition = Evaluation(model, view)
     
     set(view.evaluation.showSpectrum, 'Callback', {@showSpectrum, view, model});
     set(view.evaluation.selectbright, 'Callback', {@selectbright, view, model});
-    
+    set(view.evaluation.getbrightposition, 'Callback', {@getpstn, view, model});
     
     set(view.evaluation.zoomIn, 'Callback', {@zoom, 'in', view});
     set(view.evaluation.zoomOut, 'Callback', {@zoom, 'out', view});
@@ -378,33 +378,6 @@ function selectbright(~, ~, ~, model)
     I = I(:,:,1);
     I = imcrop(I, [600 500 1500 1500]);
     model.results.brightfield_raw = I;
-
-%     brillouin = model.results.BrillouinShift_frequency;
-%     figure1 = figure(372);
-%     t = uitoolbar(figure1);
-%     
-%     ax1 = axes('Parent', figure1);
-%     ax2 = axes('Parent', figure1);
-%     
-%     set(ax1,'Visible', 'off');
-%     set(ax2,'Visible', 'on');
-%     
-%     a = imread(brillouin);
-%     imshow(a, 'Parent',ax1);
-%     hold on;
-%     imshow(I, 'Parent',ax2);
-%     hold off;
-%     alpha(0.5);
-%     
-%     [img, map] = imread(fullfile(matlabroot,...
-%                     'toolbox','matlab','icons','matlabicon.gif'));
-%     
-%     icon = ind2rgb(img,map);
-%     
-%     p = uipushtool(t,'TooltipString', 'Toolbar push button',...
-%                     'ClickedCallback', {@getpopstn,view,model});
-%     p.CData = icon;
-    
     overlayBrightfield(model);
 end
     
@@ -435,6 +408,7 @@ function overlayBrightfield(model)
     starty = model.parameters.evaluation.centery - height/2;
 
     I = imrotate(model.results.brightfield_raw, model.parameters.evaluation.rotationAngle);
+    model.results.brightfield_rot = I;
     
     I = imcrop(I, [startx starty width height]);
     
@@ -449,5 +423,22 @@ function overlayBrightfield(model)
     model.parameters = parameters;
     
     model.results.brightfield = I;
+end
+
+function getpstn(~, ~, view, model)
+%     if strcmp(model.displaySettings.evaluation.type, 'brightfield')
+% 
+%         msg = 'Select any Brillouin related image in dropdown menu please';
+%         errordlg(msg,'File Error');
+% 
+%     else
+        figure1 = figure('Position',[500,200,900,650]);
+        % hide the menubar and prevent resizing
+        set(figure1, 'menubar', 'none', 'Resize','off');
+    
+        overlay = BE_View.Overlay(figure1, model);
+        
+        BE_Controller.Overlay(model, overlay);
+%     end
 end
 
