@@ -79,6 +79,13 @@ end
 function initView(handles, model) 
 %% Initialize the view
     bright = model.results.brightfield_rot;
+    if ~isfield(model.parameters.evaluation, 'xl')
+        model.parameters.evaluation.xl = NaN;
+        model.parameters.evaluation.yl = NaN;
+    end
+    xl = model.parameters.evaluation.xl;
+    yl = model.parameters.evaluation.yl;
+    
     
     data = model.results.BrillouinShift;
     data = double(data);
@@ -99,4 +106,13 @@ function initView(handles, model)
     
     axis(handles.brillouinImage,'equal');
     axis(handles.brightfieldImage,'equal');
+    
+    axis([0 size(bright,2) 0 size(bright,1)] + 0.5)
+    
+    zoom(gcf,'reset')
+    
+    if ~sum(isnan(xl)) && ~sum(isnan(yl))
+       axis([xl(1) xl(2) yl(1) yl(2)]);
+    end
+    
 end

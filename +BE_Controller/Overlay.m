@@ -87,6 +87,9 @@ end
     xl = get(view.brightfieldImage, 'xlim');
     yl = get(view.brightfieldImage, 'ylim');
     
+    model.parameters.evaluation.xl = xl;
+    model.parameters.evaluation.yl = yl;
+    
     xlmin = round(min(xl));
     if xlmin < 1
         xlmin = 1;
