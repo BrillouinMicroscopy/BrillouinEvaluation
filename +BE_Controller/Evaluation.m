@@ -433,6 +433,7 @@ function getpstn(~, ~, view, model)
 % 
 %     else
         figure1 = figure('Position',[500,200,900,650]);
+        model.handles.overlay = figure1;
         % hide the menubar and prevent resizing
         set(figure1, 'menubar', 'none', 'Resize','off');
     

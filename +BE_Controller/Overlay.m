@@ -115,10 +115,12 @@ end
     model.parameters.positions_brightfield.Y = Y;
     model.parameters.positions_brightfield.Z = Z;
     model.results.brightfield = cut;
+    close(model.handles.overlay);
+    
  end
  
  function cancel(~, ~, view, model)
-    disp('i am useless atm')
+   close(model.handles.overlay);
  end
  
 function zoomslide(source, event, view, model)
@@ -129,4 +131,5 @@ function zoomslide(source, event, view, model)
 function transpslide(source, event, view, model)
     val = source.Value/100;
     alpha(val)
- end
+end
+ 

@@ -37,7 +37,7 @@ function handles = initGUI(model, parent)
         'String', 'Cancel', 'Position',[0.167,0.92,0.08,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
-    sld1 = uicontrol('Style', 'slider', 'Min',1,'Max',100,'Value',10,...
+    sld1 = uicontrol('Style', 'slider', 'Min',1,'Max',100,'Value',50,...
         'Position', [410 600 120 20]); 
     
     uicontrol('Style','text', 'Position',[410 625 120 20],...
@@ -54,6 +54,7 @@ function handles = initGUI(model, parent)
     zoomHandle = zoom;
     panHandle = pan;
     rotate3dHandle = rotate3d;
+    model.handles.brightfield = brightfieldImage;
     
     set(brillouinImage, 'Visible', 'off');
     set(brightfieldImage, 'Visible', 'off');
