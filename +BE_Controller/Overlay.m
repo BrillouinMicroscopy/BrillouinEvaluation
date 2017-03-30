@@ -72,7 +72,7 @@ function rotate3d(src, ~, view)
 end
 
  function getprmtrs(~, ~, view, model)
-    
+    bright = model.results.brightfield_rot;
     dims = {'Y', 'X', 'Z'};
     for jj = 1:length(dims)
         positions.([dims{jj} '_zm']) = ...
@@ -86,9 +86,26 @@ end
     
     xl = get(view.brightfieldImage, 'xlim');
     yl = get(view.brightfieldImage, 'ylim');
-
-    bright = model.results.brightfield_rot;
-    cut = bright(round(min(yl)):round(max(yl)),round(min(xl)):round(max(xl)));
+    
+    xlmin = round(min(xl));
+    if xlmin < 1
+        xlmin = 1;
+    end
+    xlmax = round(max(xl));
+    if xlmax > size(bright,2)
+        xlmax = size(bright,2);
+    end
+    
+    ylmin = round(min(yl));
+    if ylmin < 1
+        ylmin = 1;
+    end
+    ylmax = round(max(yl));
+    if ylmax > size(bright,1)
+        ylmax = size(bright,1);
+    end
+    
+    cut = bright(ylmin:ylmax , xlmin:xlmax);
     x = linspace(minx, maxx ,size(cut,2));
     y = linspace(miny, maxy ,size(cut,1));
     
