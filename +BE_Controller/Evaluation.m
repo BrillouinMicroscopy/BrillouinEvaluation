@@ -439,7 +439,7 @@ function getpstn(~, ~, view, model)
     
         overlay = BE_View.Overlay(figure1, model);
         
-        BE_Controller.Overlay(model, overlay);
+        view.overlay = BE_Controller.Overlay(model, overlay);
 %     end
 end
 

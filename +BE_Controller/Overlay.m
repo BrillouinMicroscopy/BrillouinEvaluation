@@ -126,9 +126,64 @@ end
    close(model.handles.overlay);
  end
  
-function zoomslide(source, event, view, model)
-    val = source.Value/10;
-    zoom(val)
+function zoomslide(source, ~, view, model)
+    val = source.Value;
+    bright = model.results.brightfield_rot;
+    
+    halfWidth = size(bright,2)/2;
+    halfHeight = size(bright,1)/2;
+    
+    xCenter = mean(view.brightfieldImage.XLim);
+    xLims = [xCenter-halfWidth/val xCenter+halfWidth/val];
+
+    yCenter = mean(view.brightfieldImage.YLim);
+    yLims = [yCenter-halfHeight/val yCenter+halfHeight/val];
+
+    
+    xlmin = (min(xLims));
+    xlmax = (max(xLims));
+    
+    if xlmin < 1
+        dx = abs(xlmin - 1); 
+        xlmin = xlmin + dx;
+        xlmax = xlmax + dx;
+        if xlmax > 2*halfWidth;
+            xlmax = halfWidth*2;
+        end
+    end
+    
+    if xlmax > 2*halfWidth
+        dx = abs(xlmax - 2*halfWidth); 
+        xlmin = xlmin - dx;
+        xlmax = xlmax - dx;
+        if xlmin < 1;
+            xlmin = 1;
+        end
+    end
+    
+    ylmin = (min(yLims));
+    ylmax = (max(yLims));
+    
+    if ylmin < 1
+        dy = abs(ylmin - 1); 
+        ylmin = ylmin + dy;
+        ylmax = ylmax + dy;
+        if ylmax > 2*halfHeight;
+            ylmax = halfHeight*2;
+        end
+    end
+    
+    if ylmax > 2*halfHeight
+        dy = abs(ylmax - 2*halfHeight); 
+        ylmin = ylmin - dy;
+        ylmax = ylmax - dy;
+        if ylmin < 1;
+            ylmin = 1;
+        end
+    end
+    
+    xlim([xlmin xlmax]);
+    ylim([ylmin ylmax]);
  end
  
 function transpslide(source, event, view, model)
