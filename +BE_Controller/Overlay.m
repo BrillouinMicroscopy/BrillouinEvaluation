@@ -8,7 +8,7 @@ function overlay = Overlay(model, view)
     set(view.rotate3dButton, 'Callback', {@rotate3d, view});
     
     set(view.ok, 'Callback', {@getprmtrs, view, model});
-    set(view.cancel, 'Callback', {@cancel, view, model});
+    set(view.cancel, 'Callback', {@cancel, view});
     set(view.sld1, 'Callback', {@zoomslide, view, model});
     set(view.sld2, 'Callback', {@transpslide, view, model});
         
@@ -118,12 +118,12 @@ end
     model.parameters.positions_brightfield.Y = Y;
     model.parameters.positions_brightfield.Z = Z;
     model.results.brightfield = cut;
-    close(model.handles.overlay);
+    close(view.parent);
     
  end
  
- function cancel(~, ~, view, model)
-   close(model.handles.overlay);
+ function cancel(~, ~, view)
+   close(view.parent);
  end
  
 function zoomslide(source, ~, view, model)

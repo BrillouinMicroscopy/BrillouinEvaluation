@@ -426,20 +426,12 @@ function overlayBrightfield(model)
 end
 
 function getpstn(~, ~, view, model)
-%     if strcmp(model.displaySettings.evaluation.type, 'brightfield')
-% 
-%         msg = 'Select any Brillouin related image in dropdown menu please';
-%         errordlg(msg,'File Error');
-% 
-%     else
-        figure1 = figure('Position',[500,200,900,650]);
-        model.handles.overlay = figure1;
-        % hide the menubar and prevent resizing
-        set(figure1, 'menubar', 'none', 'Resize','off');
-    
-        overlay = BE_View.Overlay(figure1, model);
-        
-        view.overlay = BE_Controller.Overlay(model, overlay);
-%     end
+    parent = figure('Position',[500,200,900,650]);
+    % hide the menubar and prevent resizing
+    set(parent, 'menubar', 'none', 'Resize','off');
+
+    overlay = BE_View.Overlay(parent, model);
+
+    view.overlay = BE_Controller.Overlay(model, overlay);
 end
 
