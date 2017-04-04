@@ -11,6 +11,7 @@ function overlay = Overlay(model, view)
     set(view.cancel, 'Callback', {@cancel, view});
     set(view.sld1, 'Callback', {@zoomslide, view, model});
     set(view.sld2, 'Callback', {@transpslide, view, model});
+    set(view.sld3, 'Callback', {@angleslide, view, model});
         
     overlay = struct( ...
     ); 
@@ -71,6 +72,7 @@ function rotate3d(src, ~, view)
     end
 end
 
+
  function getprmtrs(~, ~, view, model)
     bright = model.results.brightfield_rot;
     dims = {'Y', 'X', 'Z'};
@@ -118,6 +120,9 @@ end
     model.parameters.positions_brightfield.Y = Y;
     model.parameters.positions_brightfield.Z = Z;
     model.results.brightfield = cut;
+    
+    msgbox('Brightfield image has been adapted')
+    
     close(view.parent);
     
  end
@@ -143,7 +148,7 @@ function zoomslide(source, ~, view, model)
     xlmin = (min(xLims));
     xlmax = (max(xLims));
     
-    if xlmin < 1
+    if xlmin < 0.5
         dx = abs(xlmin - 1); 
         xlmin = xlmin + dx;
         xlmax = xlmax + dx;
@@ -156,7 +161,7 @@ function zoomslide(source, ~, view, model)
         dx = abs(xlmax - 2*halfWidth); 
         xlmin = xlmin - dx;
         xlmax = xlmax - dx;
-        if xlmin < 1;
+        if xlmin < 0.5;
             xlmin = 1;
         end
     end
@@ -164,7 +169,7 @@ function zoomslide(source, ~, view, model)
     ylmin = (min(yLims));
     ylmax = (max(yLims));
     
-    if ylmin < 1
+    if ylmin < 0.5
         dy = abs(ylmin - 1); 
         ylmin = ylmin + dy;
         ylmax = ylmax + dy;
@@ -177,7 +182,7 @@ function zoomslide(source, ~, view, model)
         dy = abs(ylmax - 2*halfHeight); 
         ylmin = ylmin - dy;
         ylmax = ylmax - dy;
-        if ylmin < 1;
+        if ylmin < 0.5;
             ylmin = 1;
         end
     end
@@ -186,8 +191,13 @@ function zoomslide(source, ~, view, model)
     ylim([ylmin ylmax]);
  end
  
-function transpslide(source, event, view, model)
+function transpslide(source, ~, ~, ~)
     val = source.Value/100;
     alpha(val)
+end
+
+function angleslide(source, ~, ~, model)
+    bright = model.results.brightfield_raw;
+    model.results.brightfield_rot = imrotate(bright, source.Value, 'crop');
 end
  

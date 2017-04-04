@@ -113,7 +113,7 @@ classdef Model < handle
                 'evaluation', struct( ...
                     'fwhm', 5, ...              % [pix] initial value for the FWHM of the Brillouin peak
                     'gap', 10, ...              % [pix] minimum x and y distance of maxima to the edges of the image
-                    'rotationAngle', -135, ...  % [degree]          angle of rotation
+                    'rotationAngle', NaN, ...  % [degree]          angle of rotation
                     'centerx', 800, ...         % [pix]             x-center of the image
                     'centery', 860, ...         % [pix]             y-center of the image
                     'scaling', 0.086, ...       % [micro m / pix]   scaling factor

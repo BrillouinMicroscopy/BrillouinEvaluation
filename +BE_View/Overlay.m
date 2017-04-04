@@ -4,7 +4,13 @@ function handles = Overlay(parent, model)
     % build the GUI
     handles = initGUI(model, parent);
     initView(handles, model);    % populate with initial values
+
+    % observe on model changes and update view accordingly
+    % (tie listener to model object lifecycle)
+    listener = addlistener(model, 'results', 'PostSet', ...
+        @(o,e) initView(handles, e.AffectedObject));
     
+    set(parent, 'CloseRequestFcn', {@closeOverlay, listener});    
 end
 
 function handles = initGUI(model, parent)
@@ -38,16 +44,22 @@ function handles = initGUI(model, parent)
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     sld1 = uicontrol('Style', 'slider', 'Min',1,'Max',50,'Value',1,...
-        'Position', [410 600 120 20]); 
+        'Position', [650 110 120 20]); 
     
-    uicontrol('Style','text', 'Position',[410 625 120 20],...
+    uicontrol('Style','text', 'Position',[650 135 120 20],...
         'String','Zoomslider');
     
     sld2 = uicontrol('Style', 'slider', 'Min',0,'Max',100,'Value',50,...
-        'Position', [550 600 120 20]); 
+        'Position', [650 55 120 20]); 
     
-    uicontrol('Style','text', 'Position',[550 625 120 20],...
+    uicontrol('Style','text', 'Position',[650 80 120 20],...
         'String','Transparencyslider');
+    
+    sld3 = uicontrol('Style', 'slider', 'Min',0,'Max',720,'Value',180,...
+        'Position', [650 165 120 20]); 
+    
+    uicontrol('Style','text', 'Position',[650 180 120 20],...
+        'String','Angleslider');
     
     brillouinImage = axes('Parent', parent, 'Position', [0.1 .085 .575 .795]);
     brightfieldImage = axes('Parent', parent, 'Position', [0.1 .085 .575 .795]);
@@ -73,8 +85,14 @@ function handles = initGUI(model, parent)
         'ok', ok, ...
         'cancel', cancel, ...
         'sld1', sld1, ...
-        'sld2', sld2 ...
+        'sld2', sld2, ...
+        'sld3', sld3 ...
     );
+end
+
+function closeOverlay(source, ~, listener)
+    delete(listener);
+    delete(source);
 end
 
 function initView(handles, model) 
@@ -115,5 +133,4 @@ function initView(handles, model)
     if ~sum(isnan(xl)) && ~sum(isnan(yl))
        axis([xl(1) xl(2) yl(1) yl(2)]);
     end
-    
 end
