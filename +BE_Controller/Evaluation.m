@@ -319,9 +319,42 @@ end
 
 function ImageClickCallback(~, event, model)
 
-    x = event.IntersectionPoint(1);
-    y = event.IntersectionPoint(2);
-    z = event.IntersectionPoint(3);
+    data = model.results.(model.displaySettings.evaluation.type);
+    data = double(data);
+    data = nanmean(data,4);
+    %% find non-singleton dimensions
+    dimensions = size(data);
+    dimension = sum(dimensions > 1);
+    
+    %% define possible dimensions and their labels
+    dims = {'Y', 'X', 'Z'};
+    dimslabel = {'y', 'x', 'z'};
+
+    nsdims = cell(dimension,1);
+    otherdims = cell(dimension,1);
+    nsdimslabel = cell(dimension,1);
+    ind = 0;
+    ind2 = 0;
+    for jj = 1:length(dimensions)
+        if dimensions(jj) > 1
+            ind = ind + 1;
+            nsdims{ind} = dims{jj};
+            nsdimslabel{ind} = dimslabel{jj};
+        else
+            ind2 = ind2 + 1;
+            otherdims{ind2} = dims{jj};
+        end
+    end
+    
+    if (dimension > 1)
+        position.X = event.IntersectionPoint(1);
+        position.Y = event.IntersectionPoint(2);
+        position.Z = event.IntersectionPoint(3);
+    else
+        position.([nsdims{1}]) = event.IntersectionPoint(1);
+        position.([otherdims{1}]) = 0;
+        position.([otherdims{2}]) = 0;
+    end
     
     positions.X = ...
             model.parameters.positions.X - mean(model.parameters.positions.X(:));
@@ -345,11 +378,11 @@ function ImageClickCallback(~, event, model)
 
     z_lin = linspace(z_min,z_max,model.parameters.resolution.Z);
 
-    [~, jj] = min(abs(x_lin-x));
+    [~, jj] = min(abs(x_lin-position.X));
     
-    [~, kk] = min(abs(y_lin-y));
+    [~, kk] = min(abs(y_lin-position.Y));
     
-    [~, ll] = min(abs(z_lin-z));
+    [~, ll] = min(abs(z_lin-position.Z));
     
     imgs = model.file.readPayloadData(jj, kk, ll, 'data');
     
