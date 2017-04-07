@@ -132,7 +132,7 @@ end
  end
  
 function zoomslide(source, ~, view, model)
-    val = source.Value;
+    val = source.Value/20;
     bright = model.results.brightfield_rot;
     
     halfWidth = size(bright,2)/2;
@@ -191,13 +191,14 @@ function zoomslide(source, ~, view, model)
     ylim([ylmin ylmax]);
  end
  
-function transpslide(source, ~, ~, ~)
-    val = source.Value/100;
-    alpha(val)
-end
 
 function angleslide(source, ~, ~, model)
     bright = model.results.brightfield_raw;
     model.results.brightfield_rot = imrotate(bright, source.Value, 'crop');
+end
+
+function transpslide(source, ~, ~, ~)
+    val = source.Value/100;
+    alpha(val)
 end
  
