@@ -59,11 +59,18 @@ function loadData(~, ~, model)
             while testCalibration
                 try
                     jj = jj + 1;
-                    sample = model.file.readCalibrationData(jj,'sample');
-                    if ~isempty(sample)
+                    sampleType = model.file.readCalibrationData(jj,'sample');
+                    if ~isempty(sampleType)
                         parameters.calibration.hasCalibration = true;
                     end
-                    parameters.calibration.samples.(sample) = struct( ...
+                    sampleKey = sampleType;
+                    kk = 0;
+                    while isfield(parameters.calibration.samples, sampleKey)
+                        sampleKey = [sampleType sprintf('_%02d', kk)];
+                        kk = kk + 1;
+                    end
+                    parameters.calibration.samples.(sampleKey) = struct( ...
+                        'sampleType', sampleType, ...
                         'position', jj, ...
                         'Rayleigh', [], ...
                         'Brillouin', [], ...
