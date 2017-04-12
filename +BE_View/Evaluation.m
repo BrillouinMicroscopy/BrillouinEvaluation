@@ -209,7 +209,7 @@ function plotData (handles, model, location, full)
     
     data = model.results.(model.displaySettings.evaluation.type);
     data = double(data);
-    if ~strcmp(model.displaySettings.evaluation.type, 'brightfield')
+    if ~strcmp(model.displaySettings.evaluation.type, 'brightfield') && ~strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')
         if model.displaySettings.evaluation.discardInvalid && ~strcmp(model.displaySettings.evaluation.type, 'validity')
             data(~model.results.validity) = NaN;
             validity = model.results.peaksBrillouin_dev./model.results.peaksBrillouin_int;
@@ -221,6 +221,9 @@ function plotData (handles, model, location, full)
     %% find non-singleton dimensions
     dimensions = size(data);
     dimension = sum(dimensions > 1);
+    if strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')
+        dimension = 1;
+    end
 
     %% only update cdata for live preview
     if model.displaySettings.evaluation.preview && model.status.evaluation.evaluate && ~full
@@ -256,15 +259,20 @@ function plotData (handles, model, location, full)
     dims = {'Y', 'X', 'Z'};
     dimslabel = {'y', 'x', 'z'};
 
-    nsdims = cell(dimension,1);
-    nsdimslabel = cell(dimension,1);
-    ind = 0;
-    for jj = 1:length(dimensions)
-        if dimensions(jj) > 1
-            ind = ind + 1;
-            nsdims{ind} = dims{jj};
-            nsdimslabel{ind} = dimslabel{jj};
+    if ~strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')  
+        nsdims = cell(dimension,1);
+        nsdimslabel = cell(dimension,1);
+        ind = 0;
+        for jj = 1:length(dimensions)
+            if dimensions(jj) > 1
+                ind = ind + 1;
+                nsdims{ind} = dims{jj};
+                nsdimslabel{ind} = ['$' dimslabel{jj} '$ [$\mu$m]'];
+            end
         end
+    else
+        nsdims{1} = 't';
+        nsdimslabel{1} = '$t$ [s]';
     end
 
     %% calculate zero mean positions
@@ -272,8 +280,8 @@ function plotData (handles, model, location, full)
         positions.X_zm = model.parameters.positions_brightfield.X;
         positions.Y_zm = model.parameters.positions_brightfield.Y;
         positions.Z_zm = model.parameters.positions_brightfield.Z;
-        
-        
+    elseif strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')    
+        positions.t_zm = model.results.calibrationTime;
     else
         for jj = 1:length(dims)
             positions.([dims{jj} '_zm']) = ...
@@ -300,8 +308,12 @@ function plotData (handles, model, location, full)
             hold(ax,'off');
             hndl = plot(ax,p,d);
             title(ax,labels.titleString);
-            xlim(ax, [min(p(:)), max(p(:))]);
-            xlabel(ax, ['$' nsdimslabel{1} '$ [$\mu$m]'], 'interpreter', 'latex');
+            pmin = min(p(:));
+            pmax = max(p(:));
+            if pmin < pmax
+                xlim(ax, [pmin pmax]);
+            end
+            xlabel(ax, nsdimslabel{1}, 'interpreter', 'latex');
             ylabel(ax, labels.dataLabel, 'interpreter', 'latex');
             box(ax, 'on');
             if model.displaySettings.evaluation.autoscale
