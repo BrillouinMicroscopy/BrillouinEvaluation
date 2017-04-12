@@ -210,7 +210,7 @@ function plotData (handles, model, location, full)
     data = model.results.(model.displaySettings.evaluation.type);
     data = double(data);
     if ~strcmp(model.displaySettings.evaluation.type, 'brightfield')
-        if model.displaySettings.evaluation.discardInvalid && ~strcmp(model.displaySettings.evaluation.type, 'validty')
+        if model.displaySettings.evaluation.discardInvalid && ~strcmp(model.displaySettings.evaluation.type, 'validity')
             data(~model.results.validity) = NaN;
             validity = model.results.peaksBrillouin_dev./model.results.peaksBrillouin_int;
             data(validity > model.displaySettings.evaluation.valThreshould) = NaN;
