@@ -44,7 +44,6 @@ function startEvaluation(~, ~, view, model)
 end
 
 function evaluate(view, model)
-    
     totalPoints = (model.parameters.resolution.X*model.parameters.resolution.Y*model.parameters.resolution.Z);
     
     ind_Rayleigh = model.parameters.peakSelection.Rayleigh(1,1):model.parameters.peakSelection.Rayleigh(1,2);
@@ -150,17 +149,18 @@ function evaluate(view, model)
 
                         brillouinShift = abs(peaksRayleigh_pos-peaksBrillouin_pos);
                         brillouinShift_frequency = abs(peaksRayleigh_pos_frequency-peaksBrillouin_pos_frequency);
-                        model.results = struct( ...
-                            'BrillouinShift',           brillouinShift, ...             % [pix]  the Brillouin shift in pixels
-                            'BrillouinShift_frequency', brillouinShift_frequency, ...   % [GHz]  the Brillouin shift in Hz
-                            'peaksBrillouin_pos',       peaksBrillouin_pos, ...         % [pix]  the position of the Brillouin peak(s) in the spectrum
-                            'peaksBrillouin_dev',       peaksBrillouin_dev, ...         % [pix]  the deviation of the Brillouin fit
-                            'peaksBrillouin_int',       peaksBrillouin_int, ...         % [a.u.] the intensity of the Brillouin peak(s)
-                            'peaksBrillouin_fwhm',      peaksBrillouin_fwhm, ...        % [pix]  the FWHM of the Brillouin peak
-                            'peaksRayleigh_pos',        peaksRayleigh_pos, ...          % [pix]  the position of the Rayleigh peak(s) in the spectrum
-                            'intensity',                intensity, ...                  % [a.u.] the overall intensity of the image
-                            'validity',                 validity ...                    % [logical] the validity of the results
-                        );
+                        
+                        results = model.results;
+                        results.BrillouinShift            = brillouinShift;           % [pix]  the Brillouin shift in pixels
+                        results.BrillouinShift_frequency  = brillouinShift_frequency; % [GHz]  the Brillouin shift in GHz
+                        results.peaksBrillouin_pos        = peaksBrillouin_pos;       % [pix]  the position of the Brillouin peak(s) in the spectrum
+                        results.peaksBrillouin_dev        = peaksBrillouin_dev;       % [pix]  the deviation of the Brillouin fit
+                        results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the intensity of the Brillouin peak(s)
+                        results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
+                        results.peaksRayleigh_pos         = peaksRayleigh_pos;        % [pix]  the position of the Rayleigh peak(s) in the spectrum
+                        results.intensity                 = intensity;                % [a.u.] the overall intensity of the image
+                        results.validity                  = validity;                 % [logical] the validity of the results
+                        model.results = results;
                     end
                     drawnow;
 
@@ -193,17 +193,18 @@ function evaluate(view, model)
 
         brillouinShift = abs(peaksRayleigh_pos-peaksBrillouin_pos);
         brillouinShift_frequency = abs(peaksRayleigh_pos_frequency-peaksBrillouin_pos_frequency);
-        model.results = struct( ...
-            'BrillouinShift',           brillouinShift, ...             % [pix]  the Brillouin shift in pixels
-            'BrillouinShift_frequency', brillouinShift_frequency, ...   % [GHz]  the Brillouin shift in GHz
-            'peaksBrillouin_pos',       peaksBrillouin_pos, ...         % [pix]  the position of the Brillouin peak(s) in the spectrum
-            'peaksBrillouin_dev',       peaksBrillouin_dev, ...         % [pix]  the deviation of the Brillouin fit
-            'peaksBrillouin_int',       peaksBrillouin_int, ...         % [a.u.] the intensity of the Brillouin peak(s)
-            'peaksBrillouin_fwhm',      peaksBrillouin_fwhm, ...        % [pix]  the FWHM of the Brillouin peak
-            'peaksRayleigh_pos',        peaksRayleigh_pos, ...          % [pix]  the position of the Rayleigh peak(s) in the spectrum
-            'intensity',                intensity, ...                  % [a.u.] the overall intensity of the image
-            'validity',                 validity ...                    % [logical] the validity of the results
-        );
+        
+        results = model.results;
+        results.BrillouinShift            = brillouinShift;           % [pix]  the Brillouin shift in pixels
+        results.BrillouinShift_frequency  = brillouinShift_frequency; % [GHz]  the Brillouin shift in GHz
+        results.peaksBrillouin_pos        = peaksBrillouin_pos;       % [pix]  the position of the Brillouin peak(s) in the spectrum
+        results.peaksBrillouin_dev        = peaksBrillouin_dev;       % [pix]  the deviation of the Brillouin fit
+        results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the intensity of the Brillouin peak(s)
+        results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
+        results.peaksRayleigh_pos         = peaksRayleigh_pos;        % [pix]  the position of the Rayleigh peak(s) in the spectrum
+        results.intensity                 = intensity;                % [a.u.] the overall intensity of the image
+        results.validity                  = validity;                 % [logical] the validity of the results
+        model.results = results;
     end
 end
 
