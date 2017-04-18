@@ -124,20 +124,20 @@ classdef Model < handle
 %% Results of the evaluation
 % Saved to evaluated data file
             obj.results = struct( ...
-                'BrillouinShift', NaN, ...              % [GHz]  the Brillouin shift
+                'BrillouinShift',           NaN, ...    % [GHz]  the Brillouin shift
                 'BrillouinShift_frequency', NaN, ...    % [GHz]  the Brillouin shift in Hz
-                'peaksBrillouin_pos', NaN, ...          % [pix]  the position of the Brillouin peak(s) in the spectrum
-                'peaksBrillouin_dev', NaN, ...          % [pix]  the deviation of the Brillouin fit
-                'peaksBrillouin_int', NaN, ...          % [a.u.] the intensity of the Brillouin peak(s)
-                'peaksBrillouin_fwhm', NaN, ...         % [pix]  the FWHM of the Brillouin peak
-                'peaksRayleigh_pos', NaN, ...           % [pix]  the position of the Rayleigh peak(s) in the spectrum
-                'intensity', NaN, ...                   % [a.u.] the overall intensity of the image
-                'validity', NaN, ...                    % [logical] the validity of the results
-                'brightfield', NaN, ...                 % [a.u.] the intensity of the brightfield image (usefull for 2D xy images)
-                'brightfield_raw', NaN, ...             % [a.u.] the complete brightfield image
-                'brightfield_rot', NaN, ...             % [a.u.] the rotated brightfield image
-                'calibrationFrequency', NaN, ...        % [GHz]  the frequency of the calibration sample
-                'calibrationTime', NaN ...              % [s]    the time vector of the calibration measurements
+                'peaksBrillouin_pos',       NaN, ...    % [pix]  the position of the Brillouin peak(s) in the spectrum
+                'peaksBrillouin_dev',       NaN, ...    % [pix]  the deviation of the Brillouin fit
+                'peaksBrillouin_int',       NaN, ...    % [a.u.] the intensity of the Brillouin peak(s)
+                'peaksBrillouin_fwhm',      NaN, ...    % [pix]  the FWHM of the Brillouin peak
+                'peaksRayleigh_pos',        NaN, ...    % [pix]  the position of the Rayleigh peak(s) in the spectrum
+                'intensity',                NaN, ...    % [a.u.] the overall intensity of the image
+                'validity',                 NaN, ...    % [logical] the validity of the results
+                'brightfield',              NaN, ...    % [a.u.] the intensity of the brightfield image (usefull for 2D xy images)
+                'brightfield_raw',          NaN, ...    % [a.u.] the complete brightfield image
+                'brightfield_rot',          NaN, ...    % [a.u.] the rotated brightfield image
+                'calibrationFrequency',     NaN, ...    % [GHz]  the frequency of the calibration sample
+                'calibrationTime',          NaN ...     % [s]    the time vector of the calibration measurements
             );
 %% Display settings of the plots
             obj.displaySettings = struct( ...
