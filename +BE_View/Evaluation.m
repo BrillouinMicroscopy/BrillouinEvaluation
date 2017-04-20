@@ -14,6 +14,7 @@ function handles = Evaluation(parent, model)
         @(o,e) onDisplaySettings(handles, e.AffectedObject));
     addlistener(model, 'status', 'PostSet', ...
         @(o,e) onStatus(handles, e.AffectedObject));
+   
 end
 
 function handles = initGUI(model, parent)
@@ -40,7 +41,31 @@ function handles = initGUI(model, parent)
 
     discardInvalid = uicontrol('Parent', parent, 'Style', 'checkbox', 'Units', 'normalized',...
         'Position', [0.22,0.75,0.04,0.034], 'FontSize', 11, 'HorizontalAlignment', 'left');
+    
+    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Validity Threshould:', 'Units', 'normalized',...
+        'Position', [0.02,0.7,0.15,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
+    validity = uicontrol('Parent', parent, 'Style', 'edit', 'Units', 'normalized',...
+        'Position', [0.18,0.698,0.06,0.04], 'FontSize', 11, 'HorizontalAlignment', 'center');
+    
+    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Interpolate by factor:', 'Units', 'normalized',...
+        'Position', [0.02,0.65,0.15,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
+
+    intFac = uicontrol('Parent', parent, 'Style', 'edit', 'Units', 'normalized',...
+        'Position', [0.18,0.648,0.06,0.04], 'FontSize', 11, 'HorizontalAlignment', 'center');
+    
+    showSpectrum = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...
+        'String','Show Spectrum','Position',[0.02,0.58,0.222,0.055],...
+        'FontSize', 11, 'HorizontalAlignment', 'left');
+    
+    selectbright = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...
+        'String', BE_SharedFunctions.iconString([model.pp '/images/add.png']),'Position',[0.02,0.50,0.0375,0.055],...
+        'FontSize', 11, 'HorizontalAlignment', 'left');
+    
+    getbrightposition = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...
+        'String','Optimize Overlay','Position',[0.065,0.50,0.177,0.055],...
+        'FontSize', 11, 'HorizontalAlignment', 'left');
+    
     zoomIn = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
         'String', BE_SharedFunctions.iconString([model.pp '/images/zoomin.png']), 'Position',[0.33,0.92,0.0375,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -116,6 +141,11 @@ function handles = initGUI(model, parent)
         'plotTypes', plotTypes, ...
         'livePreview', livePreview, ...
         'discardInvalid', discardInvalid, ...
+        'intFac', intFac, ...
+        'validity', validity, ...
+        'showSpectrum', showSpectrum, ...
+        'selectbright', selectbright, ... 
+        'getbrightposition', getbrightposition, ...
         'zoomIn', zoomIn, ...
         'zoomOut', zoomOut, ...
         'panButton', panButton, ...
@@ -151,12 +181,21 @@ function onStatus(handles, model)
         label = 'Evaluate';
     end
     set(handles.evaluate, 'String', label);
+    
+    if model.status.evaluation.showSpectrum
+          label = 'Done';
+    else 
+         label = 'Show Spectrum';
+    end
+    set(handles.showSpectrum, 'String', label);
 end
 
 function onDisplaySettings(handles, model)
     set(handles.autoscale, 'Value', model.displaySettings.evaluation.autoscale);
     set(handles.cap, 'String', model.displaySettings.evaluation.cap);
     set(handles.floor, 'String', model.displaySettings.evaluation.floor);
+    set(handles.intFac, 'String', model.displaySettings.evaluation.intFac);
+    set(handles.validity, 'String', model.displaySettings.evaluation.valThreshould);
     if model.displaySettings.evaluation.autoscale
         caxis(handles.axesImage,'auto');
     else
@@ -166,17 +205,25 @@ function onDisplaySettings(handles, model)
 end
 
 function plotData (handles, model, location, full)
-
+    intFac = model.displaySettings.evaluation.intFac;
+    
     data = model.results.(model.displaySettings.evaluation.type);
     data = double(data);
-    if model.displaySettings.evaluation.discardInvalid && ~strcmp(model.displaySettings.evaluation.type, 'validty')
-        data(~model.results.validity) = NaN;
+    if ~strcmp(model.displaySettings.evaluation.type, 'brightfield') && ~strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')
+        if model.displaySettings.evaluation.discardInvalid && ~strcmp(model.displaySettings.evaluation.type, 'validity')
+            data(~model.results.validity) = NaN;
+            validity = model.results.peaksBrillouin_dev./model.results.peaksBrillouin_int;
+            data(validity > model.displaySettings.evaluation.valThreshould) = NaN;
+        end
     end
     data = nanmean(data,4);
 
     %% find non-singleton dimensions
     dimensions = size(data);
     dimension = sum(dimensions > 1);
+    if strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')
+        dimension = 1;
+    end
 
     %% only update cdata for live preview
     if model.displaySettings.evaluation.preview && model.status.evaluation.evaluate && ~full
@@ -212,23 +259,35 @@ function plotData (handles, model, location, full)
     dims = {'Y', 'X', 'Z'};
     dimslabel = {'y', 'x', 'z'};
 
-    nsdims = cell(dimension,1);
-    nsdimslabel = cell(dimension,1);
-    ind = 0;
-    for jj = 1:length(dimensions)
-        if dimensions(jj) > 1
-            ind = ind + 1;
-            nsdims{ind} = dims{jj};
-            nsdimslabel{ind} = dimslabel{jj};
+    if ~strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')  
+        nsdims = cell(dimension,1);
+        nsdimslabel = cell(dimension,1);
+        ind = 0;
+        for jj = 1:length(dimensions)
+            if dimensions(jj) > 1
+                ind = ind + 1;
+                nsdims{ind} = dims{jj};
+                nsdimslabel{ind} = ['$' dimslabel{jj} '$ [$\mu$m]'];
+            end
         end
+    else
+        nsdims{1} = 't';
+        nsdimslabel{1} = '$t$ [s]';
     end
 
     %% calculate zero mean positions
-    for jj = 1:length(dims)
-        positions.([dims{jj} '_zm']) = ...
-            model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
+    if strcmp(model.displaySettings.evaluation.type, 'brightfield')
+        positions.X_zm = model.parameters.positions_brightfield.X;
+        positions.Y_zm = model.parameters.positions_brightfield.Y;
+        positions.Z_zm = model.parameters.positions_brightfield.Z;
+    elseif strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')    
+        positions.t_zm = model.results.calibrationTime;
+    else
+        for jj = 1:length(dims)
+            positions.([dims{jj} '_zm']) = ...
+                model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
+        end
     end
-
     %% plot data for different dimensions
     switch dimension
         case 0
@@ -239,11 +298,22 @@ function plotData (handles, model, location, full)
             %% 1D data
             d = squeeze(data);
             p = squeeze(positions.([nsdims{1} '_zm']));
+            if intFac > 1
+                interpolationValue = intFac * round(length(p));
+                pn = linspace(min(p(:)),max(p(:)),interpolationValue);
+                
+                d = interp1(p,d,pn);
+                p = pn;
+            end
             hold(ax,'off');
             hndl = plot(ax,p,d);
             title(ax,labels.titleString);
-            xlim(ax, [min(p(:)), max(p(:))]);
-            xlabel(ax, ['$' nsdimslabel{1} '$ [$\mu$m]'], 'interpreter', 'latex');
+            pmin = min(p(:));
+            pmax = max(p(:));
+            if pmin < pmax
+                xlim(ax, [pmin pmax]);
+            end
+            xlabel(ax, nsdimslabel{1}, 'interpreter', 'latex');
             ylabel(ax, labels.dataLabel, 'interpreter', 'latex');
             box(ax, 'on');
             if model.displaySettings.evaluation.autoscale
@@ -257,11 +327,26 @@ function plotData (handles, model, location, full)
         case 2
             %% 2D data
             d = squeeze(data);
+%             p1 = squeeze(positions.([nsdims{2} '_zm']));
+%             p2 = squeeze(positions.([nsdims{1} '_zm']));
+%             if intFac > 1
+%                 interpolationValue1 = intFac * round(size(p1,1));
+%                 interpolationValue2 = intFac * round(size(p2,1)); 
+%                 p1lin = linspace(min(p1(:)),max(p1(:)),interpolationValue1);
+%                 p2lin = linspace(min(p2(:)),max(p2(:)),interpolationValue2);
+%                 [p1n, p2n] = meshgrid(p1lin, p2lin);
+% 
+%                 d = interp2(p1,p2,d,p1n,p2n);
+%                 p1 = p1n;
+%                 p2 = p2n;
+%             end
             px = squeeze(positions.X_zm);
             py = squeeze(positions.Y_zm);
             pz = squeeze(positions.Z_zm);
             hold(ax,'off');
-            hndl = surf(ax,px, py, pz, d);
+%             hndl = surf(ax, p1, p2, d);
+
+            hndl = surf(ax, px, py, pz, d);
             title(ax,labels.titleString);
             shading(ax, 'flat');
             axis(ax, 'equal');

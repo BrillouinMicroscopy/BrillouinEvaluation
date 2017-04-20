@@ -155,7 +155,7 @@ function handles = initGUI(model, parent)
     axesImage.YDir = 'reverse';
     axis(axesImage, 'equal');
     hold(axesImage,'on');
-    imageCamera = imagesc(axesImage, NaN);
+    imageCamera = imagesc(NaN);
     
     plotCenters = plot(axesImage, NaN, 'color', 'green', 'linestyle', '--', 'linewidth', 2, 'marker', 'x');
     plotBorders = plot(axesImage, NaN(2,2), 'color', 'red', 'linestyle', '--', 'linewidth', 2);

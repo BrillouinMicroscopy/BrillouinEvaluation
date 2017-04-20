@@ -8,6 +8,13 @@ function acquisition = Evaluation(model, view)
     set(view.evaluation.livePreview, 'Callback', {@toggleLivePreview, view, model});
     set(view.evaluation.discardInvalid, 'Callback', {@toggleDiscardInvalid, view, model});
     
+    set(view.evaluation.intFac, 'Callback', {@setValue, model, 'intFac'});
+    set(view.evaluation.validity, 'Callback', {@setValue, model, 'valThreshould'});
+    
+    set(view.evaluation.showSpectrum, 'Callback', {@showSpectrum, view, model});
+    set(view.evaluation.selectbright, 'Callback', {@selectbright, view, model});
+    set(view.evaluation.getbrightposition, 'Callback', {@getpstn, view, model});
+    
     set(view.evaluation.zoomIn, 'Callback', {@zoom, 'in', view});
     set(view.evaluation.zoomOut, 'Callback', {@zoom, 'out', view});
     set(view.evaluation.panButton, 'Callback', {@pan, view});
@@ -37,7 +44,6 @@ function startEvaluation(~, ~, view, model)
 end
 
 function evaluate(view, model)
-    
     totalPoints = (model.parameters.resolution.X*model.parameters.resolution.Y*model.parameters.resolution.Z);
     
     ind_Rayleigh = model.parameters.peakSelection.Rayleigh(1,1):model.parameters.peakSelection.Rayleigh(1,2);
@@ -99,7 +105,7 @@ function evaluate(view, model)
                         shift = round(peakPos - initRayleighPos);
                         
                         %% check if peak position is valid
-                        if peakPos < 0 || peakPos > length(ind_Rayleigh)
+                        if peakPos <= 0 || peakPos >= length(ind_Rayleigh)
                             validity(kk, jj, ll, mm) = false;
                         end
 
@@ -112,7 +118,7 @@ function evaluate(view, model)
                         
                         
                         %% check if peak position is valid
-                        if peakPos < 0 || peakPos > length(secInd)
+                        if peakPos <= 0 || peakPos >= length(secInd)
                             validity(kk, jj, ll, mm) = false;
                         end
                         
@@ -132,28 +138,27 @@ function evaluate(view, model)
                         calibration.x0Shift = x0Shift;
                         calibration.x0 = calibration.x0Initial + calibration.x0Shift;
 
-                        %% calculate the frequency of the Rayleigh and Brillouin peak
-                        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, ...
-                            calibration, model.parameters.constants, 1);
-                        peaksRayleigh_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
-
-                        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, ...
-                            calibration, model.parameters.constants, 1);
-                        peaksBrillouin_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
-
+                        %% calculate the Brillouin shift in [pix]
                         brillouinShift = abs(peaksRayleigh_pos-peaksBrillouin_pos);
-                        brillouinShift_frequency = abs(peaksRayleigh_pos_frequency-peaksBrillouin_pos_frequency);
-                        model.results = struct( ...
-                            'BrillouinShift',           brillouinShift, ...             % [pix]  the Brillouin shift in pixels
-                            'BrillouinShift_frequency', brillouinShift_frequency, ...   % [GHz]  the Brillouin shift in Hz
-                            'peaksBrillouin_pos',       peaksBrillouin_pos, ...         % [pix]  the position of the Brillouin peak(s) in the spectrum
-                            'peaksBrillouin_dev',       peaksBrillouin_dev, ...         % [pix]  the deviation of the Brillouin fit
-                            'peaksBrillouin_int',       peaksBrillouin_int, ...         % [a.u.] the intensity of the Brillouin peak(s)
-                            'peaksBrillouin_fwhm',      peaksBrillouin_fwhm, ...        % [pix]  the FWHM of the Brillouin peak
-                            'peaksRayleigh_pos',        peaksRayleigh_pos, ...          % [pix]  the position of the Rayleigh peak(s) in the spectrum
-                            'intensity',                intensity, ...                  % [a.u.] the overall intensity of the image
-                            'validity',                 validity ...                    % [logical] the validity of the results
-                        );
+                        
+                        %% calculate the Brillouin shift in [GHz]
+                        wavelengthRayleigh = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, ...
+                            calibration, model.parameters.constants, 1);
+                        wavelengthBrillouin = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, ...
+                            calibration, model.parameters.constants, 1);
+                        brillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
+                        
+                        results = model.results;
+                        results.BrillouinShift            = brillouinShift;           % [pix]  the Brillouin shift in pixels
+                        results.BrillouinShift_frequency  = brillouinShift_frequency; % [GHz]  the Brillouin shift in GHz
+                        results.peaksBrillouin_pos        = peaksBrillouin_pos;       % [pix]  the position of the Brillouin peak(s) in the spectrum
+                        results.peaksBrillouin_dev        = peaksBrillouin_dev;       % [pix]  the deviation of the Brillouin fit
+                        results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the intensity of the Brillouin peak(s)
+                        results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
+                        results.peaksRayleigh_pos         = peaksRayleigh_pos;        % [pix]  the position of the Rayleigh peak(s) in the spectrum
+                        results.intensity                 = intensity;                % [a.u.] the overall intensity of the image
+                        results.validity                  = validity;                 % [logical] the validity of the results
+                        model.results = results;
                     end
                     drawnow;
 
@@ -176,27 +181,25 @@ function evaluate(view, model)
     
     %% calculate and save the Brillouin shift
     if ~model.displaySettings.evaluation.preview
-        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, ...
-            model.parameters.calibration.values_mean, model.parameters.constants, 1);
-        peaksRayleigh_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
-
-        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, ...
-            model.parameters.calibration.values_mean, model.parameters.constants, 1);
-        peaksBrillouin_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
-
         brillouinShift = abs(peaksRayleigh_pos-peaksBrillouin_pos);
-        brillouinShift_frequency = abs(peaksRayleigh_pos_frequency-peaksBrillouin_pos_frequency);
-        model.results = struct( ...
-            'BrillouinShift',           brillouinShift, ...             % [pix]  the Brillouin shift in pixels
-            'BrillouinShift_frequency', brillouinShift_frequency, ...   % [GHz]  the Brillouin shift in GHz
-            'peaksBrillouin_pos',       peaksBrillouin_pos, ...         % [pix]  the position of the Brillouin peak(s) in the spectrum
-            'peaksBrillouin_dev',       peaksBrillouin_dev, ...         % [pix]  the deviation of the Brillouin fit
-            'peaksBrillouin_int',       peaksBrillouin_int, ...         % [a.u.] the intensity of the Brillouin peak(s)
-            'peaksBrillouin_fwhm',      peaksBrillouin_fwhm, ...        % [pix]  the FWHM of the Brillouin peak
-            'peaksRayleigh_pos',        peaksRayleigh_pos, ...          % [pix]  the position of the Rayleigh peak(s) in the spectrum
-            'intensity',                intensity, ...                  % [a.u.] the overall intensity of the image
-            'validity',                 validity ...                    % [logical] the validity of the results
-        );
+        
+        wavelengthRayleigh = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, ...
+            model.parameters.calibration.values_mean, model.parameters.constants, 1);
+        wavelengthBrillouin = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, ...
+            model.parameters.calibration.values_mean, model.parameters.constants, 1);
+        brillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
+        
+        results = model.results;
+        results.BrillouinShift            = brillouinShift;           % [pix]  the Brillouin shift in pixels
+        results.BrillouinShift_frequency  = brillouinShift_frequency; % [GHz]  the Brillouin shift in GHz
+        results.peaksBrillouin_pos        = peaksBrillouin_pos;       % [pix]  the position of the Brillouin peak(s) in the spectrum
+        results.peaksBrillouin_dev        = peaksBrillouin_dev;       % [pix]  the deviation of the Brillouin fit
+        results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the intensity of the Brillouin peak(s)
+        results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
+        results.peaksRayleigh_pos         = peaksRayleigh_pos;        % [pix]  the position of the Rayleigh peak(s) in the spectrum
+        results.intensity                 = intensity;                % [a.u.] the overall intensity of the image
+        results.validity                  = validity;                 % [logical] the validity of the results
+        model.results = results;
     end
 end
 
@@ -291,6 +294,173 @@ function toggleDiscardInvalid(~, ~, view, model)
     model.displaySettings.evaluation.discardInvalid = get(view.evaluation.discardInvalid, 'Value');
 end
 
+function setValue(src, ~, model, value)
+    model.displaySettings.evaluation.(value) = str2double(get(src, 'String'));
+end
+
 function openNewFig(~, ~, view, model)
     view.evaluation.functions.plotData(view, model, 'ext');
 end
+
+function showSpectrum(~, ~, view, model)
+     model.status.evaluation.showSpectrum = ~model.status.evaluation.showSpectrum;
+     if model.status.evaluation.showSpectrum
+            set(model.handles.results,'ButtonDownFcn',{@ImageClickCallback model});
+            set(view.evaluation.axesImage,'ButtonDownFcn',{@ImageClickCallback model});
+     else
+            set(model.handles.results,'ButtonDownFcn',[]);
+            set(view.evaluation.axesImage,'ButtonDownFcn',[]);
+    end
+end
+
+function ImageClickCallback(~, event, model)
+
+    data = model.results.(model.displaySettings.evaluation.type);
+    data = double(data);
+    data = nanmean(data,4);
+    %% find non-singleton dimensions
+    dimensions = size(data);
+    dimension = sum(dimensions > 1);
+    
+    %% define possible dimensions and their labels
+    dims = {'Y', 'X', 'Z'};
+    dimslabel = {'y', 'x', 'z'};
+
+    nsdims = cell(dimension,1);
+    otherdims = cell(dimension,1);
+    nsdimslabel = cell(dimension,1);
+    ind = 0;
+    ind2 = 0;
+    for jj = 1:length(dimensions)
+        if dimensions(jj) > 1
+            ind = ind + 1;
+            nsdims{ind} = dims{jj};
+            nsdimslabel{ind} = dimslabel{jj};
+        else
+            ind2 = ind2 + 1;
+            otherdims{ind2} = dims{jj};
+        end
+    end
+    
+    if (dimension > 1)
+        position.X = event.IntersectionPoint(1);
+        position.Y = event.IntersectionPoint(2);
+        position.Z = event.IntersectionPoint(3);
+    else
+        position.([nsdims{1}]) = event.IntersectionPoint(1);
+        position.([otherdims{1}]) = 0;
+        position.([otherdims{2}]) = 0;
+    end
+    
+    positions.X = ...
+            model.parameters.positions.X - mean(model.parameters.positions.X(:));
+    positions.Y = ...
+            model.parameters.positions.Y - mean(model.parameters.positions.Y(:));
+    positions.Z = ...
+            model.parameters.positions.Z - mean(model.parameters.positions.Z(:));
+    
+    x_min = min(positions.X(:));
+    x_max = max(positions.X(:));
+
+    x_lin = linspace(x_min,x_max,model.parameters.resolution.X);
+    
+    y_min = min(positions.Y(:));
+    y_max = max(positions.Y(:));
+
+    y_lin = linspace(y_min,y_max,model.parameters.resolution.Y);
+    
+    z_min = min(positions.Z(:));
+    z_max = max(positions.Z(:));
+
+    z_lin = linspace(z_min,z_max,model.parameters.resolution.Z);
+
+    [~, jj] = min(abs(x_lin-position.X));
+    
+    [~, kk] = min(abs(y_lin-position.Y));
+    
+    [~, ll] = min(abs(z_lin-position.Z));
+    
+    imgs = model.file.readPayloadData(jj, kk, ll, 'data');
+    
+    spectrum = BE_SharedFunctions.getIntensity1D(imgs(:,:,1), model.parameters.extraction.interpolationPositions);
+    
+    figure(123);
+    imagesc(imgs(:,:,1));
+    caxis([100 500]);
+    
+    figure(124);
+    plot(spectrum);
+    ylim([100 500]);
+end
+
+function selectbright(~, ~, ~, model)
+
+    defaultFileName = fullfile(pwd, '*.png');
+    [baseFileName, folder] = uigetfile(defaultFileName, 'Select a file');
+    if baseFileName == 0
+        return;
+    end
+    
+    fullFileName = fullfile(folder, baseFileName);
+
+    I = imread(fullFileName);
+    I = I(:,:,1);
+    I = imcrop(I, [600 500 1500 1500]);
+    model.results.brightfield_raw = I;
+    overlayBrightfield(model);
+end
+    
+function overlayBrightfield(model)
+
+    model.parameters.evaluation.scaling = 0.086;
+    model.parameters.evaluation.centerx = 800;
+    model.parameters.evaluation.centery = 860;
+    model.parameters.evaluation.rotationAngle = -135;
+
+    scaling = model.parameters.evaluation.scaling;   % [micro m / pix]   scaling factor
+    
+    dims = {'Y', 'X', 'Z'};
+    for jj = 1:length(dims)
+        positions.([dims{jj} '_zm']) = ...
+            model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
+    end
+    
+    maxx = max(max(positions.X_zm));
+    minx = min(min(positions.X_zm));
+    maxy = max(max(positions.Y_zm));
+    miny = min(min(positions.Y_zm));
+    
+    width = (maxx - minx)/(scaling);
+    height = (maxy - miny)/(scaling);
+    
+    startx = model.parameters.evaluation.centerx - width/2;
+    starty = model.parameters.evaluation.centery - height/2;
+
+    I = imrotate(model.results.brightfield_raw, model.parameters.evaluation.rotationAngle);
+    model.results.brightfield_rot = I;
+    
+    I = imcrop(I, [startx starty width height]);
+    
+    x = linspace(minx, maxx, size(I,2));
+    y = linspace(miny, maxy, size(I,1));
+    [X,Y,Z] = meshgrid(x, y, 1);
+    
+    parameters = model.parameters;
+    parameters.positions_brightfield.X = X;
+    parameters.positions_brightfield.Y = Y;
+    parameters.positions_brightfield.Z = Z;
+    model.parameters = parameters;
+    
+    model.results.brightfield = I;
+end
+
+function getpstn(~, ~, view, model)
+    parent = figure('Position',[500,200,900,650]);
+    % hide the menubar and prevent resizing
+    set(parent, 'menubar', 'none', 'Resize','off');
+
+    overlay = BE_View.Overlay(parent, model);
+
+    view.overlay = BE_Controller.Overlay(model, overlay);
+end
+
