@@ -210,12 +210,12 @@ function onSettings(handles, model)
         set(handles.imageNr, 'Visible', 'off');
     end
     set(handles.BrillouinShift, 'String', sample.shift);
-    handles.peakTableBrillouin.Data = sample.Brillouin;
-    handles.peakTableRayleigh.Data = sample.Rayleigh;
+    handles.peakTableBrillouin.Data = sample.indBrillouin;
+    handles.peakTableRayleigh.Data = sample.indRayleigh;
     s = model.parameters.calibration.start;
     startValues = [s.d, s.n, s.theta, s.x0, s.xs, s.order, s.iterNum];
     handles.startTable.Data = startValues;
-    v = model.parameters.calibration.values;
+    v = sample.values;
     fittedValues = [v.d.', v.n.', v.theta.', v.x0.', v.xs.', 1e10*v.error.'];
     handles.valuesTable.Data = fittedValues;
     plotData(handles, model);
@@ -234,48 +234,63 @@ function onStatus(handles, model)
 end
 
 function plotData(handles, model)
-    selectedMeasurement = model.parameters.calibration.selected;
+    %% store often used values in separate variables for convenience
+    calibration = model.parameters.calibration;         % general calibration
+    selectedMeasurement = calibration.selected;
+    sample = calibration.samples.(selectedMeasurement); % selected sample
+    
+    mm = 1;     % selected image
+    %% Plot
     ax = handles.axesImage;
     if strcmp(selectedMeasurement, 'measurement')
-        imgs = model.file.readPayloadData(1, 1, 1, 'data');
+        imgs = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'data');
     else
-        sample = model.parameters.calibration.samples.(selectedMeasurement);
         imgs = model.file.readCalibrationData(sample.position, 'data');
     end
     imgs = medfilt1(imgs,3);
-    img = imgs(:,:,1);
+    img = imgs(:,:,mm);
     data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
     if ~isempty(data);
         hold(ax, 'off');
         xLabelString = '$f$ [pix]';
-            
-        peaksMeasured = model.parameters.calibration.samples.(selectedMeasurement).peaksMeasured;
-        peaksFitted = model.parameters.calibration.samples.(selectedMeasurement).peaksFitted;
         
+        peaksMeasured = [];
+        peaksFitted = [];
         x = 1:length(data);
-        if ~isempty(model.parameters.calibration.values_mean.d) && ~isnan(model.parameters.calibration.values_mean.d)
-            calibration = model.parameters.calibration.values_mean;
-            calibration.x0 = calibration.x0(1,1,1,1);
-            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * x, calibration, model.parameters.constants, 1);
-            x = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
-            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksMeasured, calibration, model.parameters.constants, 1);
-            peaksMeasured = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
-            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksFitted, calibration, model.parameters.constants, 1);
-            peaksFitted = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
+        if ~sum(isempty(sample.values.d)) && ~sum(isnan(sample.values.d))
+            peaksMeasured = model.parameters.calibration.samples.(selectedMeasurement).peaksMeasured(mm,:);
+            peaksFitted = model.parameters.calibration.samples.(selectedMeasurement).peaksFitted(mm,:);
+
+            params = {'d', 'n', 'theta', 'x0Initial', 'x0', 'xs', 'error'};
+            for jj = 1:length(params)
+                VIPAparams.(params{jj}) = sample.values.(params{jj})(mm);
+            end
+            
+            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * x, ...
+                VIPAparams, model.parameters.constants, 1);
+            x = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants.lambda0, wavelength);
+
+            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksMeasured, ...
+                VIPAparams, model.parameters.constants, 1);
+            peaksMeasured = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants.lambda0, wavelength);
+            
+            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksFitted, ...
+                VIPAparams, model.parameters.constants, 1);
+            peaksFitted = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants.lambda0, wavelength);
             
             xLabelString = '$f$ [GHz]';
         end
         
         model.handles.calibration.plotSpectrum = plot(ax, x, data);
         hold(ax, 'on');
-        ind = model.parameters.calibration.samples.(selectedMeasurement).Rayleigh;
+        ind = model.parameters.calibration.samples.(selectedMeasurement).indRayleigh;
         for jj = 1:size(ind,1)
             ix = ind(jj,1):ind(jj,2);
             if ind(jj,1) > 0 && ind(jj,2) <= length(data)
                 plot(ax, x(ix), data(ix), 'color', [1, 0, 0, 0.4], 'linewidth', 5);
             end
         end
-        ind = model.parameters.calibration.samples.(selectedMeasurement).Brillouin;
+        ind = model.parameters.calibration.samples.(selectedMeasurement).indBrillouin;
         for jj = 1:size(ind,1)
             ix = ind(jj,1):ind(jj,2);
             if ind(jj,1) > 0 && ind(jj,2) <= length(data)

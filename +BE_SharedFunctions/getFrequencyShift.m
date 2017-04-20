@@ -13,6 +13,6 @@ function [frequencyShift] = getFrequencyShift(wavelength, reference)
 %%
 c = 299792458;    % [m/s]   speed of light
 
-frequencyShift = c./wavelength - c./reference;
+frequencyShift = c./reference - c./wavelength;
 
 end

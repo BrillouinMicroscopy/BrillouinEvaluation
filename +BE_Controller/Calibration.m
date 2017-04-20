@@ -38,61 +38,82 @@ function calibration = Calibration(model, view)
 end
 
 function calibrate(~, ~, model, view)
-    calibration = model.parameters.calibration;
-    
+    %% store often used values in separate variables for convenience
+    calibration = model.parameters.calibration;         % general calibration
     selectedMeasurement = calibration.selected;
+    sample = calibration.samples.(selectedMeasurement); % selected sample
+    
+    %% 
+    startTime = model.file.date;
+    refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    calibration.times(sample.position) = etime(datevec(datestring),datevec(refTime));
+    
     %% find the positions of the Rayleigh and Brillouin peaks
     if strcmp(selectedMeasurement, 'measurement')
-        imgs = model.file.readPayloadData(1, 1, 1, 'data');
+        imgs = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'data');
     else
-        sample = model.parameters.calibration.samples.(selectedMeasurement);
         imgs = model.file.readCalibrationData(sample.position, 'data');
     end
-    imgs = medfilt1(imgs,3);
-    img = imgs(:,:,1);
-    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
     
-    indRayleigh = calibration.samples.(selectedMeasurement).Rayleigh;
-    indBrillouin = calibration.samples.(selectedMeasurement).Brillouin;
-    if size(indRayleigh,1) == 2 && size(indBrillouin,1) == 2
-        peakPos = NaN(1,4);
-        for jj = 1:length(indBrillouin)
-            spectrumSection = data(indRayleigh(jj,1):indRayleigh(jj,2));
-            [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, 1, [6 20], 0);
-            peakPos(jj) = tmp+indRayleigh(jj,1)-1;
-        end
-        for jj = 1:length(indBrillouin)
-            spectrumSection = data(indBrillouin(jj,1):indBrillouin(jj,2));
-            [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, 1, [6 20], 0);
-            peakPos(jj+2) = tmp+indBrillouin(jj,1)-1;
-        end
+    imgs = medfilt1(imgs,3);
+    for mm = 1:size(imgs,3)
+        data = BE_SharedFunctions.getIntensity1D(imgs(:,:,mm), model.parameters.extraction.interpolationPositions);
         
-        calibration.samples.(selectedMeasurement).peaksMeasured = peakPos;
+        nrPositions = size(data,2)/0.1;
+        calibration.pixels = linspace(1,size(data,2),nrPositions);
 
-        %% do the VIPA fit
-        constants = model.parameters.constants;
-        constants.bShiftCal = calibration.samples.(selectedMeasurement).shift*1e9;
-        VIPAstart = calibration.start;
-        [VIPAparams, peakPos] = fitVIPA(peakPos, VIPAstart, constants, view);
-        VIPAparams.x0Initial = VIPAparams.x0;
-        values = calibration.values;
-        values_mean = struct();
-        params = {'d', 'n', 'theta', 'x0Initial', 'x0', 'xs', 'error'};
-        for jj = 1:length(params)
-            values.(params{jj}) = [values.(params{jj}) VIPAparams.(params{jj})];
-            values_mean.(params{jj}) = mean(values.(params{jj}));
+        indRayleigh = sample.indRayleigh;
+        indBrillouin = sample.indBrillouin;
+        if size(indRayleigh,1) == 2 && size(indBrillouin,1) == 2
+            %% find the measured peaks
+            peakPos = NaN(1,4);
+            for jj = 1:length(indRayleigh)
+                spectrumSection = data(indRayleigh(jj,1):indRayleigh(jj,2));
+                [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, 1, [6 20], 0);
+                peakPos(jj) = tmp+indRayleigh(jj,1)-1;
+            end
+            for jj = 1:length(indBrillouin)
+                spectrumSection = data(indBrillouin(jj,1):indBrillouin(jj,2));
+                [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, 1, [6 20], 0);
+                peakPos(jj+2) = tmp+indBrillouin(jj,1)-1;
+            end
+            sample.peaksMeasured(mm,:) = peakPos;
+
+            %% find the fitted peaks, do the VIPA fit
+            constants = model.parameters.constants;
+            constants.bShiftCal = sample.shift*1e9;
+            
+            [VIPAparams, peakPos] = fitVIPA(peakPos, calibration.start, constants, view);
+            VIPAparams.x0Initial = VIPAparams.x0;
+            
+            params = {'d', 'n', 'theta', 'x0Initial', 'x0', 'xs', 'error'};
+            for jj = 1:length(params)
+                sample.values.(params{jj})(mm) = VIPAparams.(params{jj});
+            end
+            sample.peaksFitted(mm,:) = peakPos;
+            
+            wavelengths = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * calibration.pixels, ...
+                VIPAparams, model.parameters.constants, 1);
+            
+            sample.wavelengths(mm,:) = wavelengths;
+        else
+            ex = MException('MATLAB:toLessValues', ...
+                    'Please select two Rayleigh and two Brillouin peaks.');
+            throw(ex);
         end
-        calibration.values = values;
-        calibration.values_mean = values_mean;
-        calibration.samples.(selectedMeasurement).peaksFitted = peakPos;
-
-        model.parameters.calibration = calibration;
-    else
-        ex = MException('MATLAB:toLessValues', ...
-                'Please select two Rayleigh and two Brillouin peaks.');
-        throw(ex);
     end
     
+    calibration.wavelength(sample.position,:) = nanmean(sample.wavelengths,1);
+    
+    %% save the results
+    calibration.samples.(selectedMeasurement) = sample;
+    model.parameters.calibration = calibration;
+    
+    wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromFrequencyMap(model.results.peaksRayleigh_pos, model.results.times, calibration);
+    wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromFrequencyMap(model.results.peaksBrillouin_pos, model.results.times, calibration);
+
+    model.results.BrillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
 end
 
 function selectSample(src, ~, model)
@@ -124,8 +145,8 @@ function selectPeaks(~, ~, view, model, type)
         
         xd = 1:length(brushed);
         ind = xd(brushed);
-        model.parameters.calibration.samples.(model.parameters.calibration.selected).(type) = ...
-            vertcat(model.parameters.calibration.samples.(model.parameters.calibration.selected).(type), findBorders(ind));
+        model.parameters.calibration.samples.(model.parameters.calibration.selected).(['ind' type]) = ...
+            vertcat(model.parameters.calibration.samples.(model.parameters.calibration.selected).(['ind' type]), findBorders(ind));
     end
 end
 
@@ -155,11 +176,11 @@ function borders = findBorders(ind)
 end
 
 function clearPeaks(~, ~, model, type)
-    model.parameters.calibration.samples.(model.parameters.calibration.selected).(type) = [];
+    model.parameters.calibration.samples.(model.parameters.calibration.selected).(['ind' type]) = [];
 end
 
 function editPeaks(~, table, model, type)
-    model.parameters.calibration.samples.(model.parameters.calibration.selected).(type)(table.Indices(1), table.Indices(2)) = table.NewData;
+    model.parameters.calibration.samples.(model.parameters.calibration.selected).(['ind' type])(table.Indices(1), table.Indices(2)) = table.NewData;
 end
 
 function clearCalibration(~, ~, model)

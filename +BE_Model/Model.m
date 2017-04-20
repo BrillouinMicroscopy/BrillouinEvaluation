@@ -91,24 +91,9 @@ classdef Model < handle
                         'order', 1, ...             % [1]   observed order of the VIPA spectrum
                         'iterNum', 4 ...            % [1]   number of iterations for the fit
                     ), ...
-                    'values', struct( ...       % struct with all values
-                        'd',        [], ... % [m]   width of the cavity
-                        'n',        [], ... % [1]   refractive index of the VIPA
-                        'theta',    [], ... % [rad] angle of the VIPA
-                        'x0Initial',[], ... % [m]   offset for fitting
-                        'x0',       [], ... % [m]   offset for fitting, corrected for each measurement
-                        'xs',       [], ... % [1]   scale factor for fitting
-                        'error',    []  ... % [1]   uncertainty of the fit
-                    ), ...
-                    'values_mean', struct( ...  % struct with the mean values
-                        'd',            NaN, ... % [m]   width of the cavity
-                        'n',            NaN, ... % [1]   refractive index of the VIPA
-                        'theta',        NaN, ... % [rad] angle of the VIPA
-                        'x0Initial',    NaN, ... % [m]   offset for fitting
-                        'x0',           NaN, ... % [m]   offset for fitting, corrected for each measurement
-                        'xs',           NaN, ... % [1]   scale factor for fitting
-                        'error',        NaN  ... % [1]   uncertainty of the fit
-                    ) ...
+                    'wavelength', [], ...           % [m]   the wavelength corresponding to every pixel
+                    'times', [], ...                % [s]   the time vector of the calibration measurements
+                    'pixels', [] ...             	% [pix] the pixel value of the calibration axis
                 ), ...
                 'evaluation', struct( ...
                     'fwhm', 5, ...              % [pix] initial value for the FWHM of the Brillouin peak
@@ -133,11 +118,10 @@ classdef Model < handle
                 'peaksRayleigh_pos',        NaN, ...    % [pix]  the position of the Rayleigh peak(s) in the spectrum
                 'intensity',                NaN, ...    % [a.u.] the overall intensity of the image
                 'validity',                 NaN, ...    % [logical] the validity of the results
+                'time',                     NaN, ...    % [s]    time of the measurement
                 'brightfield',              NaN, ...    % [a.u.] the intensity of the brightfield image (usefull for 2D xy images)
                 'brightfield_raw',          NaN, ...    % [a.u.] the complete brightfield image
-                'brightfield_rot',          NaN, ...    % [a.u.] the rotated brightfield image
-                'calibrationFrequency',     NaN, ...    % [GHz]  the frequency of the calibration sample
-                'calibrationTime',          NaN ...     % [s]    the time vector of the calibration measurements
+                'brightfield_rot',          NaN  ...    % [a.u.] the rotated brightfield image
             );
 %% Display settings of the plots
             obj.displaySettings = struct( ...
