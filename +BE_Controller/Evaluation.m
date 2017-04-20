@@ -138,17 +138,15 @@ function evaluate(view, model)
                         calibration.x0Shift = x0Shift;
                         calibration.x0 = calibration.x0Initial + calibration.x0Shift;
 
-                        %% calculate the frequency of the Rayleigh and Brillouin peak
-                        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, ...
-                            calibration, model.parameters.constants, 1);
-                        peaksRayleigh_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
-
-                        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, ...
-                            calibration, model.parameters.constants, 1);
-                        peaksBrillouin_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
-
+                        %% calculate the Brillouin shift in [pix]
                         brillouinShift = abs(peaksRayleigh_pos-peaksBrillouin_pos);
-                        brillouinShift_frequency = abs(peaksRayleigh_pos_frequency-peaksBrillouin_pos_frequency);
+                        
+                        %% calculate the Brillouin shift in [GHz]
+                        wavelengthRayleigh = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, ...
+                            calibration, model.parameters.constants, 1);
+                        wavelengthBrillouin = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, ...
+                            calibration, model.parameters.constants, 1);
+                        brillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
                         
                         results = model.results;
                         results.BrillouinShift            = brillouinShift;           % [pix]  the Brillouin shift in pixels
@@ -183,16 +181,13 @@ function evaluate(view, model)
     
     %% calculate and save the Brillouin shift
     if ~model.displaySettings.evaluation.preview
-        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, ...
-            model.parameters.calibration.values_mean, model.parameters.constants, 1);
-        peaksRayleigh_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
-
-        wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, ...
-            model.parameters.calibration.values_mean, model.parameters.constants, 1);
-        peaksBrillouin_pos_frequency = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
-
         brillouinShift = abs(peaksRayleigh_pos-peaksBrillouin_pos);
-        brillouinShift_frequency = abs(peaksRayleigh_pos_frequency-peaksBrillouin_pos_frequency);
+        
+        wavelengthRayleigh = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksRayleigh_pos, ...
+            model.parameters.calibration.values_mean, model.parameters.constants, 1);
+        wavelengthBrillouin = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksBrillouin_pos, ...
+            model.parameters.calibration.values_mean, model.parameters.constants, 1);
+        brillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
         
         results = model.results;
         results.BrillouinShift            = brillouinShift;           % [pix]  the Brillouin shift in pixels
