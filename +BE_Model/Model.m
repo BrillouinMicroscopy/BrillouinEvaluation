@@ -118,7 +118,7 @@ classdef Model < handle
                 'peaksRayleigh_pos',        NaN, ...    % [pix]  the position of the Rayleigh peak(s) in the spectrum
                 'intensity',                NaN, ...    % [a.u.] the overall intensity of the image
                 'validity',                 NaN, ...    % [logical] the validity of the results
-                'time',                     NaN, ...    % [s]    time of the measurement
+                'times',                    NaN, ...    % [s]    time of the measurement
                 'brightfield',              NaN, ...    % [a.u.] the intensity of the brightfield image (usefull for 2D xy images)
                 'brightfield_raw',          NaN, ...    % [a.u.] the complete brightfield image
                 'brightfield_rot',          NaN  ...    % [a.u.] the rotated brightfield image
