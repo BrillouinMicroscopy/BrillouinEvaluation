@@ -308,15 +308,15 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
     %            xs:    [1]     scale factor for fitting
     
     %% numer of iterations for every parameter
-    nrIter.d     = 11;
-    nrIter.n     = 11;
-    nrIter.theta = 11;
-    nrIter.x0    = 11;
-    nrIter.xs    = 11;
+    nrIter.d     = 111;
+    nrIter.n     = 1;
+    nrIter.theta = 1;
+    nrIter.x0    = 22;
+    nrIter.xs    = 22;
     
     variation.d     = 2.5e-5;
-    variation.n     = 2.0e-5;
-    variation.theta = 0.001;
+    variation.n     = 0;%2.0e-5;
+    variation.theta = 0;%0.001;
     variation.x0    = 0.3;
     variation.xs    = 0.1;
 
