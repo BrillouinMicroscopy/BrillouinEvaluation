@@ -195,8 +195,8 @@ function clearCalibration(~, ~, model)
         'error',        []  ... % [1]   uncertainty of the fit
     );
     pos = model.parameters.calibration.samples.(selectedMeasurement).position;
-    model.parameters.calibration.times(pos) = [];
-    model.parameters.calibration.wavelength(pos,:) = [];
+    model.parameters.calibration.times(pos) = NaN;
+    model.parameters.calibration.wavelength(pos,:) = NaN;
 end
 
 function zoom(src, ~, str, view)

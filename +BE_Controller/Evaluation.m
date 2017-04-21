@@ -192,6 +192,7 @@ function evaluate(view, model)
     results.peaksRayleigh_pos         = peaksRayleigh_pos;        % [pix]  the position of the Rayleigh peak(s) in the spectrum
     results.intensity                 = intensity;                % [a.u.] the overall intensity of the image
     results.validity                  = validity;                 % [logical] the validity of the results
+    results.times                     = times;                    % [s]    time of the measurement
     model.results = results;
 end
 
