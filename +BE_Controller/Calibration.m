@@ -306,7 +306,21 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
     %         theta:    [rad]   angle of the VIPA
     %            x0:    [m]     offset for fitting
     %            xs:    [1]     scale factor for fitting
+    
+    %% numer of iterations for every parameter
+    nrIter.d     = 11;
+    nrIter.n     = 11;
+    nrIter.theta = 11;
+    nrIter.x0    = 11;
+    nrIter.xs    = 11;
+    
+    variation.d     = 2.5e-5;
+    variation.n     = 2.0e-5;
+    variation.theta = 0.001;
+    variation.x0    = 0.3;
+    variation.xs    = 0.1;
 
+    %%
     orders = VIPAstart.order:(VIPAstart.order + 1);
 
     % peaks = peaks - peaks(1);
@@ -317,7 +331,7 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
 
     %% calculation
 
-    total = VIPAstart.iterNum * 11;
+    total = VIPAstart.iterNum * nrIter.d;
     for gg = 1:1:VIPAstart.iterNum
 
         if exist('ItRun', 'var')
@@ -327,54 +341,54 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
         end
 
         %
-        dVariation = 2.5e-5/(2^ItRun);
+        dVariation = variation.d/(2^ItRun);
         if exist('dInd', 'var')
             dcenter = dRange(dInd);
         else
             dcenter = VIPAstart.d;
         end
-        dRange = linspace((1-dVariation)*dcenter, (1+dVariation)*dcenter, 11);
+        dRange = linspace((1-dVariation)*dcenter, (1+dVariation)*dcenter, nrIter.d);
 
         %
-        nVariation = 2e-5/(2^ItRun);
+        nVariation = variation.n/(2^ItRun);
         if exist('nInd', 'var')
             ncenter = nRange(nInd);
         else
             ncenter = VIPAstart.n;
         end
-        nRange = linspace((1-nVariation)*ncenter, (1+nVariation)*ncenter, 11);
+        nRange = linspace((1-nVariation)*ncenter, (1+nVariation)*ncenter, nrIter.n);
 
         %
-        thetaVariation = 0.001/(2^ItRun);
+        thetaVariation = variation.theta/(2^ItRun);
         if exist('thetaInd', 'var')
             thetacenter = thetaRange(thetaInd);
         else
             thetacenter = VIPAstart.theta;
         end
-        thetaRange = linspace((1-thetaVariation)*thetacenter, (1+thetaVariation)*thetacenter, 11);
+        thetaRange = linspace((1-thetaVariation)*thetacenter, (1+thetaVariation)*thetacenter, nrIter.theta);
 
         %
-        x0Variation = 0.3/(2^ItRun);
+        x0Variation = variation.x0/(2^ItRun);
         if exist('x0Ind', 'var')
             x0center = x0Range(x0Ind);
         else
             x0center = VIPAstart.x0;
         end
-        x0Range = linspace((1-x0Variation)*x0center, (1+x0Variation)*x0center, 11);
+        x0Range = linspace((1-x0Variation)*x0center, (1+x0Variation)*x0center, nrIter.x0);
 
         %
-        xsVariation = 0.1/(2^ItRun);
+        xsVariation = variation.xs/(2^ItRun);
         if exist('xsInd', 'var')
             xscenter = xsRange(xsInd);
         else
             xscenter = VIPAstart.xs;
         end
-        xsRange = linspace((1-xsVariation)*xscenter, (1+xsVariation)*xscenter, 11);
+        xsRange = linspace((1-xsVariation)*xscenter, (1+xsVariation)*xscenter, nrIter.xs);
 
         ErrorVector = NaN(length(dRange), length(nRange), length(thetaRange), length(x0Range), length(xsRange));
 
         for ii = 1:length(dRange)
-            done = 100*((gg-1)*11 + ii)/total;
+            done = 100*((gg-1)*nrIter.d + ii)/total;
             view.calibration.progressBar.setValue(done);
             view.calibration.progressBar.setString(sprintf('%01.0f%%', done));
             for jj = 1:length(nRange)
