@@ -184,7 +184,8 @@ function editPeaks(~, table, model, type)
 end
 
 function clearCalibration(~, ~, model)
-    model.parameters.calibration.values = struct( ...
+    selectedMeasurement = model.parameters.calibration.selected;
+    model.parameters.calibration.samples.(selectedMeasurement).values = struct( ...
         'd',            [], ... % [m]   width of the cavity
         'n',            [], ... % [1]   refractive index of the VIPA
         'theta',        [], ... % [rad] angle of the VIPA
@@ -193,15 +194,9 @@ function clearCalibration(~, ~, model)
         'xs',           [], ... % [1]   scale factor for fitting
         'error',        []  ... % [1]   uncertainty of the fit
     );
-    model.parameters.calibration.values_mean = struct( ...
-        'd',            NaN, ... % [m]   width of the cavity
-        'n',            NaN, ... % [1]   refractive index of the VIPA
-        'theta',        NaN, ... % [rad] angle of the VIPA
-        'x0Initial',    NaN, ... % [m]   offset for fitting
-        'x0',           NaN, ... % [m]   offset for fitting, corrected for each measurement
-        'xs',           NaN, ... % [1]   scale factor for fitting
-        'error',        NaN  ... % [1]   uncertainty of the fit
-    );
+    pos = model.parameters.calibration.samples.(selectedMeasurement).position;
+    model.parameters.calibration.times(pos) = [];
+    model.parameters.calibration.wavelength(pos,:) = [];
 end
 
 function zoom(src, ~, str, view)
