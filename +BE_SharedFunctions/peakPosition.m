@@ -18,7 +18,7 @@ m = BE_SharedFunctions.getOrder( VIPAparams, constants, orders );
 % solve eq. 14 by x_F
 x_F =      -n*F*tan(theta_in)*cos(theta)/(cos(theta_in)) + ...
       sqrt((n*F*tan(theta_in)*cos(theta)/(cos(theta_in)))^2 + ...
-      2*n^2*F^2 - n*F^2*m*lambda/(VIPAparams.d*cos(theta_in)));
+      2*n^2*F^2 - n*F^2*m.*lambda./(VIPAparams.d*cos(theta_in)));
 
 x_F = (x_F * VIPAparams.xs) + VIPAparams.x0;
 end

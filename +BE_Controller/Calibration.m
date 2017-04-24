@@ -321,7 +321,7 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
     variation.xs    = 0.1;
 
     %%
-    orders = VIPAstart.order:(VIPAstart.order + 1);
+    startOrders = VIPAstart.order:(VIPAstart.order + 1);
 
     % peaks = peaks - peaks(1);
     peakPos = sort(peakPos, 'ascend');
@@ -402,12 +402,11 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
                             VIPAparams.x0    = x0Range(ll);
                             VIPAparams.xs    = xsRange(mm);
 
-                            x_F = NaN(1,4);
-                            % position of the two Rayleigh peaks
-                            [x_F(1,[1 4]), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, orders, constants.lambda0);
-                            % position of the Stokes and Anti-Stokes peaks
-                            [x_F(2), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 1, lambdaAS);
-                            [x_F(3), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 2, lambdaS);
+%                             x_F = NaN(1,4);
+                            orders = [startOrders(1), 1, 2, startOrders(2)];
+                            lambdas = [constants.lambda0, lambdaAS, lambdaS, constants.lambda0];
+                            % position of the two Rayleigh peaks and the Stokes and Anti-Stokes peaks
+                            [x_F, ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, orders, lambdas);
 
                             % difference between measurement and fit
                             ErrorVector(ii,jj,kk,ll,mm) = sum((peakPos - x_F).^2);
@@ -433,7 +432,7 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
 
     peakPosFitted = NaN(1,4);
     % position of the two Rayleigh peaks
-    [peakPosFitted(1,[1 4]), ~] = BE_SharedFunctions.peakPosition( VIPAparams, constants, orders, constants.lambda0);
+    [peakPosFitted(1,[1 4]), ~] = BE_SharedFunctions.peakPosition( VIPAparams, constants, startOrders, constants.lambda0);
     % position of the Stokes and Anti-Stokes peaks
     [peakPosFitted(2), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 1, lambdaAS);
     [peakPosFitted(3), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 2, lambdaS);
