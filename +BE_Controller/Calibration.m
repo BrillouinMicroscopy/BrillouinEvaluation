@@ -330,7 +330,8 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
     lambdaAS = 1/(1/constants.lambda0 + constants.bShiftCal/constants.c);
 
     %% calculation
-
+    
+    VIPAparams = struct;
     total = VIPAstart.iterNum * nrIter.d;
     for gg = 1:1:VIPAstart.iterNum
 
@@ -386,7 +387,7 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
         xsRange = linspace((1-xsVariation)*xscenter, (1+xsVariation)*xscenter, nrIter.xs);
 
         ErrorVector = NaN(length(dRange), length(nRange), length(thetaRange), length(x0Range), length(xsRange));
-
+        
         for ii = 1:length(dRange)
             done = 100*((gg-1)*nrIter.d + ii)/total;
             view.calibration.progressBar.setValue(done);
@@ -395,14 +396,12 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
                 for kk = 1:length(thetaRange)
                     for ll = 1:length(x0Range)
                         for mm = 1:length(xsRange)
-                            VIPAparams = struct;
                             VIPAparams.d     = dRange(ii);
                             VIPAparams.n     = nRange(jj);
                             VIPAparams.theta = thetaRange(kk);
                             VIPAparams.x0    = x0Range(ll);
                             VIPAparams.xs    = xsRange(mm);
 
-%                             x_F = NaN(1,4);
                             orders = [startOrders(1), 1, 2, startOrders(2)];
                             lambdas = [constants.lambda0, lambdaAS, lambdaS, constants.lambda0];
                             % position of the two Rayleigh peaks and the Stokes and Anti-Stokes peaks
