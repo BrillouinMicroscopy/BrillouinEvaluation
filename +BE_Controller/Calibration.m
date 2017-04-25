@@ -103,8 +103,31 @@ function calibrate(~, ~, model, view)
             throw(ex);
         end
     end
+
+    %% check if field for weighted calibration is available, set default value if not
+    if ~isfield(calibration, 'weighted')
+        calibration.weighted = true;
+    end
+
+    %% check if field for selecting calibration images is available, set default value if not
+    if ~isfield(sample, 'active')
+        sample.active = ones(size(imgs,3),1);
+        sample.nrImages = size(imgs,3);
+    end
     
-    calibration.wavelength(sample.position,:) = nanmean(sample.wavelengths,1);
+    if calibration.weighted
+        %% average the single calibrations according to their uncertainty
+        wavelengths = sample.wavelengths(logical(sample.active), :);        % wavelengths from calibration, only select active calibration images
+        weights = repmat(sample.values.error(:,logical(sample.active)).', 1, size(wavelengths,2));    % map of the weights, only select active calibration images
+        weights(isnan(wavelengths)) = NaN;                                  % set weights to NaN in case wavelength is NaN
+        norm = nansum(1./weights,1);                                        % calculate the normalization value
+
+        weighted = nansum((wavelengths ./ weights), 1) ./ norm;             % calculate the weighted average
+
+        calibration.wavelength(sample.position,:) = weighted;               % store the result
+    else
+        calibration.wavelength(sample.position,:) = nanmean(sample.wavelengths,1);
+    end
     
     %% save the results
     calibration.samples.(selectedMeasurement) = sample;
