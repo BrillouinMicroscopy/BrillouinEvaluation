@@ -194,7 +194,7 @@ function plotData(handles, model)
         calibration = model.parameters.calibration;
         valid = ~isnan(calibration.wavelength);
         if ~isempty(calibration.wavelength) && sum(valid(:))
-            wavelength = BE_SharedFunctions.getWavelengthFromFrequencyMap(x, time, calibration);
+            wavelength = BE_SharedFunctions.getWavelengthFromMap(x, time, calibration);
             x = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants.lambda0, wavelength);
             
             xLabelString = '$f$ [GHz]';
@@ -222,7 +222,11 @@ function plotData(handles, model)
             ylim(ax, [model.displaySettings.peakSelection.floor model.displaySettings.peakSelection.cap]);
         end
         validx = x(~isnan(data));
-        xlim(ax, [min(validx(:)) max(validx(:))]);
+        xmin = min(validx(:));
+        xmax = max(validx(:));
+        if xmax > xmin
+            xlim(ax, [xmin xmax]);
+        end
         zoom(ax, 'reset');
         xlabel(ax, xLabelString, 'interpreter', 'latex');
         ylabel(ax, '$I$ [a.u.]', 'interpreter', 'latex');

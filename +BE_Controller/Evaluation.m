@@ -137,8 +137,8 @@ function evaluate(view, model)
                         %% calculate the Brillouin shift in [GHz]
                         calibration = model.parameters.calibration;
                         
-                        wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromFrequencyMap(peaksRayleigh_pos, times, calibration);
-                        wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromFrequencyMap(peaksBrillouin_pos, times, calibration);
+                        wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromMap(peaksRayleigh_pos, times, calibration);
+                        wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromMap(peaksBrillouin_pos, times, calibration);
                         
                         brillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
                         
@@ -176,8 +176,8 @@ function evaluate(view, model)
     %% calculate the Brillouin shift in [GHz]
     calibration = model.parameters.calibration;
     
-    wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromFrequencyMap(peaksRayleigh_pos, times, calibration);
-    wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromFrequencyMap(peaksBrillouin_pos, times, calibration);
+    wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromMap(peaksRayleigh_pos, times, calibration);
+    wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromMap(peaksBrillouin_pos, times, calibration);
     
     brillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
     

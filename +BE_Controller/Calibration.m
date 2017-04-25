@@ -108,6 +108,11 @@ function calibrate(~, ~, model, view)
     if ~isfield(calibration, 'weighted')
         calibration.weighted = true;
     end
+    
+    %% check if field for extrapolating the calibration is available, set default value if not
+    if ~isfield(calibration, 'extrapolate')
+        calibration.extrapolate = false;
+    end
 
     %% check if field for selecting calibration images is available, set default value if not
     if ~isfield(sample, 'active')
@@ -133,8 +138,8 @@ function calibrate(~, ~, model, view)
     calibration.samples.(selectedMeasurement) = sample;
     model.parameters.calibration = calibration;
     
-    wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromFrequencyMap(model.results.peaksRayleigh_pos, model.results.times, calibration);
-    wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromFrequencyMap(model.results.peaksBrillouin_pos, model.results.times, calibration);
+    wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksRayleigh_pos, model.results.times, calibration);
+    wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksBrillouin_pos, model.results.times, calibration);
 
     model.results.BrillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
 end
@@ -207,8 +212,9 @@ function editPeaks(~, table, model, type)
 end
 
 function clearCalibration(~, ~, model)
-    selectedMeasurement = model.parameters.calibration.selected;
-    model.parameters.calibration.samples.(selectedMeasurement).values = struct( ...
+    calibration = model.parameters.calibration;
+    selectedMeasurement = calibration.selected;
+    calibration.samples.(selectedMeasurement).values = struct( ...
         'd',            [], ... % [m]   width of the cavity
         'n',            [], ... % [1]   refractive index of the VIPA
         'theta',        [], ... % [rad] angle of the VIPA
@@ -217,9 +223,10 @@ function clearCalibration(~, ~, model)
         'xs',           [], ... % [1]   scale factor for fitting
         'error',        []  ... % [1]   uncertainty of the fit
     );
-    pos = model.parameters.calibration.samples.(selectedMeasurement).position;
-    model.parameters.calibration.times(pos) = NaN;
-    model.parameters.calibration.wavelength(pos,:) = NaN;
+    pos = calibration.samples.(selectedMeasurement).position;
+    calibration.times(pos) = NaN;
+    calibration.wavelength(pos,:) = NaN;
+    model.parameters.calibration = calibration;
 end
 
 function zoom(src, ~, str, view)
