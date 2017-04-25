@@ -23,7 +23,17 @@ function [ lambda ] = getWavelengthFromMap( peakPos, time, calibration)
     
     % decide if interpolation is possible (requires at least two sample
     % points)
-    if size(wavelengths_valid,1) > 1
+
+    if size(wavelengths_valid,1) > 3
+        [pixels, times] = meshgrid(calibration.pixels, times_valid);
+        
+        % check if extrapolation is wanted and necessary
+        if calibration.extrapolate
+            lambda = interp2(pixels, times, wavelengths_valid, peakPos, time, 'spline');
+        else
+            lambda = interp2(pixels, times, wavelengths_valid, peakPos, time, 'spline', NaN);
+        end
+    elseif size(wavelengths_valid,1) > 1
         [pixels, times] = meshgrid(calibration.pixels, times_valid);
         
         % check if extrapolation is wanted and necessary
@@ -31,7 +41,6 @@ function [ lambda ] = getWavelengthFromMap( peakPos, time, calibration)
             maxTime = max(times_valid(:));
             time(time>maxTime) = maxTime;
         end
-        
         lambda = interp2(pixels, times, wavelengths_valid, peakPos, time);
         
     elseif size(wavelengths_valid,1) > 0
