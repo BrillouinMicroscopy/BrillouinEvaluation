@@ -33,6 +33,8 @@ function calibration = Calibration(model, view)
     set(view.calibration.increaseCap, 'Callback', {@changeClim, model, 1});
     set(view.calibration.decreaseCap, 'Callback', {@changeClim, model, -1});
     
+    set(view.calibration.openBrillouinShift, 'Callback', {@openBrillouinShift, model});
+    
     calibration = struct( ...
     );
 end
@@ -133,6 +135,11 @@ function calibrate(~, ~, model, view)
     else
         calibration.wavelength(sample.position,:) = nanmean(sample.wavelengths,1);
     end
+    
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    times = calibration.times(sample.position) * ones(size(sample.peaksMeasured));
+    wavelengths = BE_SharedFunctions.getWavelengthFromMap(sample.peaksMeasured, times, calibration);
+    sample.BrillouinShift = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengths(:,[3, 4]), wavelengths(:,[1, 2])));
     
     %% save the results
     calibration.samples.(selectedMeasurement) = sample;
@@ -479,4 +486,37 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
     % fit = plot(x_F*1e3, ones(length(x_F)), 'xb');
     % legend([meas(1), fit(1)], 'Measurement', 'Fit');
 
+end
+
+function openBrillouinShift(~, ~, model)
+    calibration = model.parameters.calibration;
+    
+    BrillouinShifts = NaN(10,2);
+    BrillouinShifts_mean = BrillouinShifts;
+    calibrationFrequency = NaN(10,1);
+    
+    sampleNames = fields(calibration.samples);
+    for jj = 1:length(sampleNames)
+        sample = calibration.samples.(sampleNames{jj});
+        if isfield(sample, 'BrillouinShift')
+            shift = sample.BrillouinShift;
+            BrillouinShifts(((jj-1)*10 + 1 + (1:10)), :) = shift;
+            BrillouinShifts_mean(((jj-1)*10 + 1 + (1:10)), :) = repmat(nanmean(shift,1), 10, 1);
+            calibrationFrequency(((jj-1)*10 + 1 + (1:10)), 1) = ones(10,1) * sample.shift;
+        else
+            BrillouinShifts(((jj-1)*10 + 1 + (1:10)), :) = NaN(10,2);
+            BrillouinShifts_mean(((jj-1)*10 + 1 + (1:10)), :) = NaN(10,2);
+        end
+    end
+
+    figure;
+    plot(BrillouinShifts);
+    hold on;
+    ax = gca;
+    ax.ColorOrderIndex = 1;
+    plot(BrillouinShifts_mean, 'LineStyle', '--', 'LineWidth', 0.8);
+    plot(calibrationFrequency);
+    xlabel('Calibration image #');
+    ylabel('$f$ [GHz]', 'interpreter', 'latex');
+    legend('Stokes Peak', 'AntiStokes Peak', 'Stokes Peak Mean', 'AntiStokes Peak Mean', 'Calibration Frequency');
 end
