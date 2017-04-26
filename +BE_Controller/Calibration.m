@@ -14,6 +14,8 @@ function calibration = Calibration(model, view)
     set(view.calibration.peakTableBrillouin, 'CellEditCallback', {@editPeaks, model, 'Brillouin'});
     set(view.calibration.peakTableRayleigh, 'CellEditCallback', {@editPeaks, model, 'Rayleigh'});
     
+    set(view.calibration.startTable, 'CellEditCallback', {@editStartParameters, model});
+    
     set(view.calibration.clearBrillouin, 'Callback', {@clearPeaks, model, 'Brillouin'});
     set(view.calibration.clearRayleigh, 'Callback', {@clearPeaks, model, 'Rayleigh'});
     
@@ -216,6 +218,11 @@ end
 
 function editPeaks(~, table, model, type)
     model.parameters.calibration.samples.(model.parameters.calibration.selected).(['ind' type])(table.Indices(1), table.Indices(2)) = table.NewData;
+end
+
+function editStartParameters(~, table, model)
+    fields = {'d', 'n', 'theta', 'x0', 'xs', 'order', 'iterNum'};
+    model.parameters.calibration.start.(fields{table.Indices(2)}) = table.NewData;
 end
 
 function clearCalibration(~, ~, model)
