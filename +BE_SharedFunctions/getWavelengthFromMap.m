@@ -15,15 +15,17 @@ function [ lambda ] = getWavelengthFromMap( peakPos, time, calibration)
 %
 %   ##OUTPUT
 %   lambda:         [nm]    5-D array of the wavelengths
+
+    %% discard all invalid wavelengths and corresponding times
+    wavelengths = calibration.wavelength;
+    wavelengths(wavelengths == 0) = NaN;
     
-    times_valid = calibration.times(~isnan(calibration.times));
-    
-    inds = sum(isnan(calibration.wavelength),2) < 1;
-    wavelengths_valid = calibration.wavelength(inds,:);
+    inds = sum(isnan(wavelengths),2) < 1;
+    wavelengths_valid = wavelengths(inds,:);
+    times_valid = calibration.times(inds);
     
     % decide if interpolation is possible (requires at least two sample
     % points)
-
     if size(wavelengths_valid,1) > 3
         [pixels, times] = meshgrid(calibration.pixels, times_valid);
         
