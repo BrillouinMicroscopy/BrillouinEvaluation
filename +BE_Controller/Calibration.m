@@ -47,6 +47,12 @@ function calibrate(~, ~, model, view)
     selectedMeasurement = calibration.selected;
     sample = calibration.samples.(selectedMeasurement); % selected sample
     
+    %% 
+	startTime = model.file.date;
+	refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+	datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+	calibration.times(sample.position) = etime(datevec(datestring),datevec(refTime));
+    
     %% find the positions of the Rayleigh and Brillouin peaks
     if strcmp(selectedMeasurement, 'measurement')
         imgs = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'data');
