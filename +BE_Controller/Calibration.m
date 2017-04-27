@@ -222,7 +222,7 @@ end
 
 function editStartParameters(~, table, model)
     fields = {'d', 'n', 'theta', 'x0', 'xs', 'order', 'iterNum'};
-    model.parameters.calibration.start.(fields{table.Indices(2)}) = table.NewData;
+    model.parameters.calibration.start.(fields{table.Indices(2)}) = str2double(table.NewData);
 end
 
 function clearCalibration(~, ~, model)
