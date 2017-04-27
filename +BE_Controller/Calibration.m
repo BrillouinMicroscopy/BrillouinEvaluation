@@ -47,12 +47,6 @@ function calibrate(~, ~, model, view)
     selectedMeasurement = calibration.selected;
     sample = calibration.samples.(selectedMeasurement); % selected sample
     
-    %% 
-    startTime = model.file.date;
-    refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
-    datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
-    calibration.times(sample.position) = etime(datevec(datestring),datevec(refTime));
-    
     %% find the positions of the Rayleigh and Brillouin peaks
     if strcmp(selectedMeasurement, 'measurement')
         imgs = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'data');
@@ -124,7 +118,21 @@ function calibrate(~, ~, model, view)
         sample.nrImages = size(imgs,3);
     end
     
-    if calibration.weighted
+    calibration.wavelength(sample.position,:) = averageCalibrations(sample, calibration.weighted);
+    
+    %% save the results
+    calibration.samples.(selectedMeasurement) = sample;
+    model.parameters.calibration = calibration;
+    
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    updateCalibrationBrillouinShift(model);
+    
+    %% calculate the Brillouin shift for the measurements
+    updateMeasurementBrillouinShift(model);
+end
+
+function weighted = averageCalibrations(sample, weight)
+    if weight
         %% average the single calibrations according to their uncertainty
         wavelengths = sample.wavelengths(logical(sample.active), :);        % wavelengths from calibration, only select active calibration images
         weights = repmat(sample.values.error(:,logical(sample.active)).', 1, size(wavelengths,2));    % map of the weights, only select active calibration images
@@ -132,25 +140,38 @@ function calibrate(~, ~, model, view)
         norm = nansum(1./weights,1);                                        % calculate the normalization value
 
         weighted = nansum((wavelengths ./ weights), 1) ./ norm;             % calculate the weighted average
-
-        calibration.wavelength(sample.position,:) = weighted;               % store the result
     else
-        calibration.wavelength(sample.position,:) = nanmean(sample.wavelengths,1);
+        weighted = nanmean(sample.wavelengths,1);
     end
-    
-    %% calculate the Brillouin shift corresponding to each calibration measurement
-    times = calibration.times(sample.position) * ones(size(sample.peaksMeasured));
-    wavelengths = BE_SharedFunctions.getWavelengthFromMap(sample.peaksMeasured, times, calibration);
-    sample.BrillouinShift = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengths(:,[3, 4]), wavelengths(:,[1, 2])));
-    
-    %% save the results
-    calibration.samples.(selectedMeasurement) = sample;
-    model.parameters.calibration = calibration;
-    
-    wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksRayleigh_pos, model.results.times, calibration);
-    wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksBrillouin_pos, model.results.times, calibration);
+end
+
+function updateMeasurementBrillouinShift(model)
+    wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksRayleigh_pos, model.results.times, model.parameters.calibration);
+    wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksBrillouin_pos, model.results.times, model.parameters.calibration);
 
     model.results.BrillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
+end
+
+function updateCalibrationBrillouinShift(model)
+    calibration = model.parameters.calibration;
+    samples = fields(model.parameters.calibration.samples);
+    
+    %%
+    startTime = model.file.date;
+    refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    
+    for jj = 1:length(samples)
+        sample = calibration.samples.(samples{jj});
+        if ~isempty(sample.peaksMeasured)
+            datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+            calibration.times(sample.position) = etime(datevec(datestring),datevec(refTime));
+            times = calibration.times(sample.position) * ones(size(sample.peaksMeasured));
+            wavelengths = BE_SharedFunctions.getWavelengthFromMap(sample.peaksMeasured, times, calibration);
+            sample.BrillouinShift = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengths(:,[3, 4]), wavelengths(:,[1, 2])));
+            calibration.samples.(samples{jj}) = sample;
+        end
+    end
+    model.parameters.calibration = calibration;
 end
 
 function selectSample(src, ~, model)
