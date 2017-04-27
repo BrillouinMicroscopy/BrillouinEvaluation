@@ -498,22 +498,26 @@ end
 function openBrillouinShift(~, ~, model)
     calibration = model.parameters.calibration;
     
-    BrillouinShifts = NaN(10,2);
+    BrillouinShifts = NaN(1,2);
     BrillouinShifts_mean = BrillouinShifts;
-    calibrationFrequency = NaN(10,1);
+    calibrationFrequency = NaN(1,1);
     
     sampleNames = fields(calibration.samples);
+    totalImages = 0;
     for jj = 1:length(sampleNames)
         sample = calibration.samples.(sampleNames{jj});
         if isfield(sample, 'BrillouinShift')
+            nrImages = sample.nrImages;
             shift = sample.BrillouinShift;
-            BrillouinShifts(((jj-1)*10 + 1 + (1:10)), :) = shift;
-            BrillouinShifts_mean(((jj-1)*10 + 1 + (1:10)), :) = repmat(nanmean(shift,1), 10, 1);
-            calibrationFrequency(((jj-1)*10 + 1 + (1:10)), 1) = ones(10,1) * sample.shift;
+            BrillouinShifts((totalImages + (1:nrImages)), :) = shift;
+            BrillouinShifts_mean((totalImages + (1:nrImages)), :) = repmat(nanmean(shift,1), nrImages, 1);
+            calibrationFrequency((totalImages + (1:nrImages)), 1) = ones(nrImages,1) * sample.shift;
         else
-            BrillouinShifts(((jj-1)*10 + 1 + (1:10)), :) = NaN(10,2);
-            BrillouinShifts_mean(((jj-1)*10 + 1 + (1:10)), :) = NaN(10,2);
+            nrImages = 1;
+            BrillouinShifts((totalImages + (1:nrImages)), :) = NaN(nrImages,2);
+            BrillouinShifts_mean((totalImages + (1:nrImages)), :) = NaN(nrImages,2);
         end
+        totalImages = totalImages + nrImages;
     end
 
     figure;
