@@ -249,7 +249,7 @@ function plotData (handles, model, location, full)
             [az, el] = view(handles.axesImage);
         case 'ext'
             fig = figure;
-            ax = axes(fig);
+            ax = axes('Parent', fig);
             [az, el] = view(handles.evaluation.axesImage);
     end
 
