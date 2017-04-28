@@ -37,6 +37,9 @@ function calibration = Calibration(model, view)
     
     set(view.calibration.openBrillouinShift, 'Callback', {@openBrillouinShift, model});
     
+    set(view.calibration.extrapolate, 'Callback', {@toggleExtrapolation, model});
+    set(view.calibration.weighted, 'Callback', {@toggleWeighting, model});
+    
     calibration = struct( ...
     );
 end
@@ -124,7 +127,7 @@ function calibrate(~, ~, model, view)
         sample.nrImages = size(imgs,3);
     end
     
-    calibration.wavelength(sample.position,:) = averageCalibrations(sample, calibration.weighted);
+    calibration.wavelength(sample.position,:) = averageCalibration(sample, calibration.weighted);
     
     %% save the results
     calibration.samples.(selectedMeasurement) = sample;
@@ -137,7 +140,7 @@ function calibrate(~, ~, model, view)
     updateMeasurementBrillouinShift(model);
 end
 
-function weighted = averageCalibrations(sample, weight)
+function weighted = averageCalibration(sample, weight)
     if weight
         %% average the single calibrations according to their uncertainty
         wavelengths = sample.wavelengths(logical(sample.active), :);        % wavelengths from calibration, only select active calibration images
@@ -175,6 +178,41 @@ function updateCalibrationBrillouinShift(model)
             wavelengths = BE_SharedFunctions.getWavelengthFromMap(sample.peaksMeasured, times, calibration);
             sample.BrillouinShift = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengths(:,[3, 4]), wavelengths(:,[1, 2])));
             calibration.samples.(samples{jj}) = sample;
+        end
+    end
+    model.parameters.calibration = calibration;
+end
+
+function toggleExtrapolation(src, ~, model)
+    model.parameters.calibration.extrapolate = get(src, 'Value');
+    
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    updateCalibrationBrillouinShift(model);
+    
+    %% calculate the Brillouin shift for the measurements
+    updateMeasurementBrillouinShift(model);
+end
+
+function toggleWeighting(src, ~, model)
+    model.parameters.calibration.weighted = get(src, 'Value');
+    
+    averageCalibrations(model);
+    
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    updateCalibrationBrillouinShift(model);
+    
+    %% calculate the Brillouin shift for the measurements
+    updateMeasurementBrillouinShift(model);
+end
+
+function averageCalibrations(model)
+    calibration = model.parameters.calibration;
+    samples = fields(model.parameters.calibration.samples);
+    
+    for jj = 1:length(samples)
+        sample = calibration.samples.(samples{jj});
+        if isfield(sample, 'wavelengths') && ~isempty(sample.wavelengths)
+            calibration.wavelength(sample.position,:) = averageCalibration(sample, calibration.weighted);
         end
     end
     model.parameters.calibration = calibration;
@@ -268,6 +306,12 @@ function clearCalibration(~, ~, model)
     calibration.times(pos) = NaN;
     calibration.wavelength(pos,:) = NaN;
     model.parameters.calibration = calibration;
+    
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    updateCalibrationBrillouinShift(model);
+    
+    %% calculate the Brillouin shift for the measurements
+    updateMeasurementBrillouinShift(model);
 end
 
 function zoom(src, ~, str, view)
