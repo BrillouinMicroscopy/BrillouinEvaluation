@@ -14,6 +14,8 @@ function calibration = Calibration(model, view)
     set(view.calibration.peakTableBrillouin, 'CellEditCallback', {@editPeaks, model, 'Brillouin'});
     set(view.calibration.peakTableRayleigh, 'CellEditCallback', {@editPeaks, model, 'Rayleigh'});
     
+    set(view.calibration.startTable, 'CellEditCallback', {@editStartParameters, model});
+    
     set(view.calibration.clearBrillouin, 'Callback', {@clearPeaks, model, 'Brillouin'});
     set(view.calibration.clearRayleigh, 'Callback', {@clearPeaks, model, 'Rayleigh'});
     
@@ -33,66 +35,187 @@ function calibration = Calibration(model, view)
     set(view.calibration.increaseCap, 'Callback', {@changeClim, model, 1});
     set(view.calibration.decreaseCap, 'Callback', {@changeClim, model, -1});
     
+    set(view.calibration.openBrillouinShift, 'Callback', {@openBrillouinShift, model});
+    
+    set(view.calibration.extrapolate, 'Callback', {@toggleExtrapolation, model});
+    set(view.calibration.weighted, 'Callback', {@toggleWeighting, model});
+    
     calibration = struct( ...
     );
 end
 
 function calibrate(~, ~, model, view)
-    calibration = model.parameters.calibration;
-    
+    %% store often used values in separate variables for convenience
+    calibration = model.parameters.calibration;         % general calibration
     selectedMeasurement = calibration.selected;
+    sample = calibration.samples.(selectedMeasurement); % selected sample
+    
+    %% 
+	startTime = model.file.date;
+	refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+	datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+	calibration.times(sample.position) = etime(datevec(datestring),datevec(refTime));
+    
     %% find the positions of the Rayleigh and Brillouin peaks
     if strcmp(selectedMeasurement, 'measurement')
-        imgs = model.file.readPayloadData(1, 1, 1, 'data');
+        imgs = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'data');
     else
-        sample = model.parameters.calibration.samples.(selectedMeasurement);
         imgs = model.file.readCalibrationData(sample.position, 'data');
     end
-    imgs = medfilt1(imgs,3);
-    img = imgs(:,:,1);
-    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
     
-    indRayleigh = calibration.samples.(selectedMeasurement).Rayleigh;
-    indBrillouin = calibration.samples.(selectedMeasurement).Brillouin;
-    if size(indRayleigh,1) == 2 && size(indBrillouin,1) == 2
-        peakPos = NaN(1,4);
-        for jj = 1:length(indBrillouin)
-            spectrumSection = data(indRayleigh(jj,1):indRayleigh(jj,2));
-            [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, 1, [6 20], 0);
-            peakPos(jj) = tmp+indRayleigh(jj,1)-1;
-        end
-        for jj = 1:length(indBrillouin)
-            spectrumSection = data(indBrillouin(jj,1):indBrillouin(jj,2));
-            [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, 1, [6 20], 0);
-            peakPos(jj+2) = tmp+indBrillouin(jj,1)-1;
-        end
+    imgs = medfilt1(imgs,3);
+    for mm = 1:size(imgs,3)
+        data = BE_SharedFunctions.getIntensity1D(imgs(:,:,mm), model.parameters.extraction.interpolationPositions);
         
-        calibration.samples.(selectedMeasurement).peaksMeasured = peakPos;
+        nrPositions = size(data,2)/0.1;
+        calibration.pixels = linspace(1,size(data,2),nrPositions);
 
-        %% do the VIPA fit
-        constants = model.parameters.constants;
-        constants.bShiftCal = calibration.samples.(selectedMeasurement).shift*1e9;
-        VIPAstart = calibration.start;
-        [VIPAparams, peakPos] = fitVIPA(peakPos, VIPAstart, constants, view);
-        VIPAparams.x0Initial = VIPAparams.x0;
-        values = calibration.values;
-        values_mean = struct();
-        params = {'d', 'n', 'theta', 'x0Initial', 'x0', 'xs', 'error'};
-        for jj = 1:length(params)
-            values.(params{jj}) = [values.(params{jj}) VIPAparams.(params{jj})];
-            values_mean.(params{jj}) = mean(values.(params{jj}));
+        indRayleigh = sample.indRayleigh;
+        indBrillouin = sample.indBrillouin;
+        if size(indRayleigh,1) == 2 && size(indBrillouin,1) == 2
+            %% find the measured peaks
+            peakPos = NaN(1,4);
+            for jj = 1:length(indRayleigh)
+                spectrumSection = data(indRayleigh(jj,1):indRayleigh(jj,2));
+                [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, 1, [6 20], 0);
+                peakPos(jj) = tmp+indRayleigh(jj,1)-1;
+            end
+            for jj = 1:length(indBrillouin)
+                spectrumSection = data(indBrillouin(jj,1):indBrillouin(jj,2));
+                [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, 1, [6 20], 0);
+                peakPos(jj+2) = tmp+indBrillouin(jj,1)-1;
+            end
+            sample.peaksMeasured(mm,:) = peakPos;
+
+            %% find the fitted peaks, do the VIPA fit
+            constants = model.parameters.constants;
+            constants.bShiftCal = sample.shift*1e9;
+            
+            [VIPAparams, peakPos] = fitVIPA(peakPos, calibration.start, constants, view);
+            VIPAparams.x0Initial = VIPAparams.x0;
+            
+            params = {'d', 'n', 'theta', 'x0Initial', 'x0', 'xs', 'error'};
+            for jj = 1:length(params)
+                sample.values.(params{jj})(mm) = VIPAparams.(params{jj});
+            end
+            sample.peaksFitted(mm,:) = peakPos;
+            
+            wavelengths = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * calibration.pixels, ...
+                VIPAparams, model.parameters.constants, 1);
+            
+            sample.wavelengths(mm,:) = wavelengths;
+        else
+            ex = MException('MATLAB:toLessValues', ...
+                    'Please select two Rayleigh and two Brillouin peaks.');
+            throw(ex);
         end
-        calibration.values = values;
-        calibration.values_mean = values_mean;
-        calibration.samples.(selectedMeasurement).peaksFitted = peakPos;
+    end
 
-        model.parameters.calibration = calibration;
-    else
-        ex = MException('MATLAB:toLessValues', ...
-                'Please select two Rayleigh and two Brillouin peaks.');
-        throw(ex);
+    %% check if field for weighted calibration is available, set default value if not
+    if ~isfield(calibration, 'weighted')
+        calibration.weighted = true;
     end
     
+    %% check if field for extrapolating the calibration is available, set default value if not
+    if ~isfield(calibration, 'extrapolate')
+        calibration.extrapolate = false;
+    end
+
+    %% check if field for selecting calibration images is available, set default value if not
+    if ~isfield(sample, 'active')
+        sample.active = ones(size(imgs,3),1);
+        sample.nrImages = size(imgs,3);
+    end
+    
+    calibration.wavelength(sample.position,:) = averageCalibration(sample, calibration.weighted);
+    
+    %% save the results
+    calibration.samples.(selectedMeasurement) = sample;
+    model.parameters.calibration = calibration;
+    
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    updateCalibrationBrillouinShift(model);
+    
+    %% calculate the Brillouin shift for the measurements
+    updateMeasurementBrillouinShift(model);
+end
+
+function weighted = averageCalibration(sample, weight)
+    if weight
+        %% average the single calibrations according to their uncertainty
+        wavelengths = sample.wavelengths(logical(sample.active), :);        % wavelengths from calibration, only select active calibration images
+        weights = repmat(sample.values.error(:,logical(sample.active)).', 1, size(wavelengths,2));    % map of the weights, only select active calibration images
+        weights(isnan(wavelengths)) = NaN;                                  % set weights to NaN in case wavelength is NaN
+        norm = nansum(1./weights,1);                                        % calculate the normalization value
+
+        weighted = nansum((wavelengths ./ weights), 1) ./ norm;             % calculate the weighted average
+    else
+        weighted = nanmean(sample.wavelengths,1);
+    end
+end
+
+function updateMeasurementBrillouinShift(model)
+    wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksRayleigh_pos, model.results.times, model.parameters.calibration);
+    wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksBrillouin_pos, model.results.times, model.parameters.calibration);
+
+    model.results.BrillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
+end
+
+function updateCalibrationBrillouinShift(model)
+    calibration = model.parameters.calibration;
+    samples = fields(model.parameters.calibration.samples);
+    
+    %%
+    startTime = model.file.date;
+    refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    
+    for jj = 1:length(samples)
+        sample = calibration.samples.(samples{jj});
+        if ~isempty(sample.peaksMeasured)
+            datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+            calibration.times(sample.position) = etime(datevec(datestring),datevec(refTime));
+            times = calibration.times(sample.position) * ones(size(sample.peaksMeasured));
+            wavelengths = BE_SharedFunctions.getWavelengthFromMap(sample.peaksMeasured, times, calibration);
+            sample.BrillouinShift = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengths(:,[3, 4]), wavelengths(:,[1, 2])));
+            calibration.samples.(samples{jj}) = sample;
+        end
+    end
+    model.parameters.calibration = calibration;
+end
+
+function toggleExtrapolation(src, ~, model)
+    model.parameters.calibration.extrapolate = get(src, 'Value');
+    
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    updateCalibrationBrillouinShift(model);
+    
+    %% calculate the Brillouin shift for the measurements
+    updateMeasurementBrillouinShift(model);
+end
+
+function toggleWeighting(src, ~, model)
+    model.parameters.calibration.weighted = get(src, 'Value');
+    
+    averageCalibrations(model);
+    
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    updateCalibrationBrillouinShift(model);
+    
+    %% calculate the Brillouin shift for the measurements
+    updateMeasurementBrillouinShift(model);
+end
+
+function averageCalibrations(model)
+    calibration = model.parameters.calibration;
+    samples = fields(model.parameters.calibration.samples);
+    
+    for jj = 1:length(samples)
+        sample = calibration.samples.(samples{jj});
+        if isfield(sample, 'wavelengths') && ~isempty(sample.wavelengths)
+            calibration.wavelength(sample.position,:) = averageCalibration(sample, calibration.weighted);
+        end
+    end
+    model.parameters.calibration = calibration;
 end
 
 function selectSample(src, ~, model)
@@ -124,8 +247,8 @@ function selectPeaks(~, ~, view, model, type)
         
         xd = 1:length(brushed);
         ind = xd(brushed);
-        model.parameters.calibration.samples.(model.parameters.calibration.selected).(type) = ...
-            vertcat(model.parameters.calibration.samples.(model.parameters.calibration.selected).(type), findBorders(ind));
+        model.parameters.calibration.samples.(model.parameters.calibration.selected).(['ind' type]) = ...
+            vertcat(model.parameters.calibration.samples.(model.parameters.calibration.selected).(['ind' type]), findBorders(ind));
     end
 end
 
@@ -155,15 +278,22 @@ function borders = findBorders(ind)
 end
 
 function clearPeaks(~, ~, model, type)
-    model.parameters.calibration.samples.(model.parameters.calibration.selected).(type) = [];
+    model.parameters.calibration.samples.(model.parameters.calibration.selected).(['ind' type]) = [];
 end
 
 function editPeaks(~, table, model, type)
-    model.parameters.calibration.samples.(model.parameters.calibration.selected).(type)(table.Indices(1), table.Indices(2)) = table.NewData;
+    model.parameters.calibration.samples.(model.parameters.calibration.selected).(['ind' type])(table.Indices(1), table.Indices(2)) = table.NewData;
+end
+
+function editStartParameters(~, table, model)
+    fields = {'d', 'n', 'theta', 'x0', 'xs', 'order', 'iterNum'};
+    model.parameters.calibration.start.(fields{table.Indices(2)}) = str2double(table.NewData);
 end
 
 function clearCalibration(~, ~, model)
-    model.parameters.calibration.values = struct( ...
+    calibration = model.parameters.calibration;
+    selectedMeasurement = calibration.selected;
+    calibration.samples.(selectedMeasurement).values = struct( ...
         'd',            [], ... % [m]   width of the cavity
         'n',            [], ... % [1]   refractive index of the VIPA
         'theta',        [], ... % [rad] angle of the VIPA
@@ -172,15 +302,16 @@ function clearCalibration(~, ~, model)
         'xs',           [], ... % [1]   scale factor for fitting
         'error',        []  ... % [1]   uncertainty of the fit
     );
-    model.parameters.calibration.values_mean = struct( ...
-        'd',            NaN, ... % [m]   width of the cavity
-        'n',            NaN, ... % [1]   refractive index of the VIPA
-        'theta',        NaN, ... % [rad] angle of the VIPA
-        'x0Initial',    NaN, ... % [m]   offset for fitting
-        'x0',           NaN, ... % [m]   offset for fitting, corrected for each measurement
-        'xs',           NaN, ... % [1]   scale factor for fitting
-        'error',        NaN  ... % [1]   uncertainty of the fit
-    );
+    pos = calibration.samples.(selectedMeasurement).position;
+    calibration.times(pos) = NaN;
+    calibration.wavelength(pos,:) = NaN;
+    model.parameters.calibration = calibration;
+    
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    updateCalibrationBrillouinShift(model);
+    
+    %% calculate the Brillouin shift for the measurements
+    updateMeasurementBrillouinShift(model);
 end
 
 function zoom(src, ~, str, view)
@@ -290,8 +421,22 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
     %         theta:    [rad]   angle of the VIPA
     %            x0:    [m]     offset for fitting
     %            xs:    [1]     scale factor for fitting
+    
+    %% numer of iterations for every parameter
+    nrIter.d     = 111;
+    nrIter.n     = 1;
+    nrIter.theta = 1;
+    nrIter.x0    = 22;
+    nrIter.xs    = 22;
+    
+    variation.d     = 2.5e-5;
+    variation.n     = 0;%2.0e-5;
+    variation.theta = 0;%0.001;
+    variation.x0    = 0.3;
+    variation.xs    = 0.1;
 
-    orders = VIPAstart.order:(VIPAstart.order + 1);
+    %%
+    startOrders = VIPAstart.order:(VIPAstart.order + 1);
 
     % peaks = peaks - peaks(1);
     peakPos = sort(peakPos, 'ascend');
@@ -300,8 +445,9 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
     lambdaAS = 1/(1/constants.lambda0 + constants.bShiftCal/constants.c);
 
     %% calculation
-
-    total = VIPAstart.iterNum * 11;
+    
+    VIPAparams = struct;
+    total = VIPAstart.iterNum * nrIter.d;
     for gg = 1:1:VIPAstart.iterNum
 
         if exist('ItRun', 'var')
@@ -311,73 +457,70 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
         end
 
         %
-        dVariation = 2.5e-5/(2^ItRun);
+        dVariation = variation.d/(2^ItRun);
         if exist('dInd', 'var')
             dcenter = dRange(dInd);
         else
             dcenter = VIPAstart.d;
         end
-        dRange = linspace((1-dVariation)*dcenter, (1+dVariation)*dcenter, 11);
+        dRange = linspace((1-dVariation)*dcenter, (1+dVariation)*dcenter, nrIter.d);
 
         %
-        nVariation = 2e-5/(2^ItRun);
+        nVariation = variation.n/(2^ItRun);
         if exist('nInd', 'var')
             ncenter = nRange(nInd);
         else
             ncenter = VIPAstart.n;
         end
-        nRange = linspace((1-nVariation)*ncenter, (1+nVariation)*ncenter, 11);
+        nRange = linspace((1-nVariation)*ncenter, (1+nVariation)*ncenter, nrIter.n);
 
         %
-        thetaVariation = 0.001/(2^ItRun);
+        thetaVariation = variation.theta/(2^ItRun);
         if exist('thetaInd', 'var')
             thetacenter = thetaRange(thetaInd);
         else
             thetacenter = VIPAstart.theta;
         end
-        thetaRange = linspace((1-thetaVariation)*thetacenter, (1+thetaVariation)*thetacenter, 11);
+        thetaRange = linspace((1-thetaVariation)*thetacenter, (1+thetaVariation)*thetacenter, nrIter.theta);
 
         %
-        x0Variation = 0.3/(2^ItRun);
+        x0Variation = variation.x0/(2^ItRun);
         if exist('x0Ind', 'var')
             x0center = x0Range(x0Ind);
         else
             x0center = VIPAstart.x0;
         end
-        x0Range = linspace((1-x0Variation)*x0center, (1+x0Variation)*x0center, 11);
+        x0Range = linspace((1-x0Variation)*x0center, (1+x0Variation)*x0center, nrIter.x0);
 
         %
-        xsVariation = 0.1/(2^ItRun);
+        xsVariation = variation.xs/(2^ItRun);
         if exist('xsInd', 'var')
             xscenter = xsRange(xsInd);
         else
             xscenter = VIPAstart.xs;
         end
-        xsRange = linspace((1-xsVariation)*xscenter, (1+xsVariation)*xscenter, 11);
+        xsRange = linspace((1-xsVariation)*xscenter, (1+xsVariation)*xscenter, nrIter.xs);
 
         ErrorVector = NaN(length(dRange), length(nRange), length(thetaRange), length(x0Range), length(xsRange));
-
+        
         for ii = 1:length(dRange)
-            done = 100*((gg-1)*11 + ii)/total;
+            done = 100*((gg-1)*nrIter.d + ii)/total;
             view.calibration.progressBar.setValue(done);
             view.calibration.progressBar.setString(sprintf('%01.0f%%', done));
             for jj = 1:length(nRange)
                 for kk = 1:length(thetaRange)
                     for ll = 1:length(x0Range)
                         for mm = 1:length(xsRange)
-                            VIPAparams = struct;
                             VIPAparams.d     = dRange(ii);
                             VIPAparams.n     = nRange(jj);
                             VIPAparams.theta = thetaRange(kk);
                             VIPAparams.x0    = x0Range(ll);
                             VIPAparams.xs    = xsRange(mm);
 
-                            x_F = NaN(1,4);
-                            % position of the two Rayleigh peaks
-                            [x_F(1,[1 4]), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, orders, constants.lambda0);
-                            % position of the Stokes and Anti-Stokes peaks
-                            [x_F(2), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 1, lambdaAS);
-                            [x_F(3), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 2, lambdaS);
+                            orders = [startOrders(1), 1, 2, startOrders(2)];
+                            lambdas = [constants.lambda0, lambdaAS, lambdaS, constants.lambda0];
+                            % position of the two Rayleigh peaks and the Stokes and Anti-Stokes peaks
+                            [x_F, ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, orders, lambdas);
 
                             % difference between measurement and fit
                             ErrorVector(ii,jj,kk,ll,mm) = sum((peakPos - x_F).^2);
@@ -403,7 +546,7 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
 
     peakPosFitted = NaN(1,4);
     % position of the two Rayleigh peaks
-    [peakPosFitted(1,[1 4]), ~] = BE_SharedFunctions.peakPosition( VIPAparams, constants, orders, constants.lambda0);
+    [peakPosFitted(1,[1 4]), ~] = BE_SharedFunctions.peakPosition( VIPAparams, constants, startOrders, constants.lambda0);
     % position of the Stokes and Anti-Stokes peaks
     [peakPosFitted(2), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 1, lambdaAS);
     [peakPosFitted(3), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 2, lambdaS);
@@ -421,4 +564,41 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
     % fit = plot(x_F*1e3, ones(length(x_F)), 'xb');
     % legend([meas(1), fit(1)], 'Measurement', 'Fit');
 
+end
+
+function openBrillouinShift(~, ~, model)
+    calibration = model.parameters.calibration;
+    
+    BrillouinShifts = NaN(1,2);
+    BrillouinShifts_mean = BrillouinShifts;
+    calibrationFrequency = NaN(1,1);
+    
+    sampleNames = fields(calibration.samples);
+    totalImages = 0;
+    for jj = 1:length(sampleNames)
+        sample = calibration.samples.(sampleNames{jj});
+        if isfield(sample, 'BrillouinShift')
+            nrImages = sample.nrImages;
+            shift = sample.BrillouinShift;
+            BrillouinShifts((totalImages + (1:nrImages)), :) = shift;
+            BrillouinShifts_mean((totalImages + (1:nrImages)), :) = repmat(nanmean(shift,1), nrImages, 1);
+            calibrationFrequency((totalImages + (1:nrImages)), 1) = ones(nrImages,1) * sample.shift;
+        else
+            nrImages = 1;
+            BrillouinShifts((totalImages + (1:nrImages)), :) = NaN(nrImages,2);
+            BrillouinShifts_mean((totalImages + (1:nrImages)), :) = NaN(nrImages,2);
+        end
+        totalImages = totalImages + nrImages;
+    end
+
+    figure;
+    plot(BrillouinShifts);
+    hold on;
+    ax = gca;
+    ax.ColorOrderIndex = 1;
+    plot(BrillouinShifts_mean, 'LineStyle', '--', 'LineWidth', 0.8);
+    plot(calibrationFrequency);
+    xlabel('Calibration image #');
+    ylabel('$f$ [GHz]', 'interpreter', 'latex');
+    legend('Stokes Peak', 'AntiStokes Peak', 'Stokes Peak Mean', 'AntiStokes Peak Mean', 'Calibration Frequency');
 end

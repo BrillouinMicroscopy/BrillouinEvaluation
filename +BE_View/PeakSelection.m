@@ -178,17 +178,24 @@ function plotData(handles, model)
     imgs = model.file.readPayloadData(1, 1, 1, 'data');
     imgs = medfilt1(imgs,3);
     img = imgs(:,:,1);
+    
+    startTime = model.file.date;
+    refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    datestring = model.file.readPayloadData(1, 1, 1, 'date');
+    date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    time = etime(datevec(date),datevec(refTime));
+    
     data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
     if ~isempty(data);
         hold(ax, 'off');
         xLabelString = '$f$ [pix]';
         
         x = 1:length(data);
-        if ~isempty(model.parameters.calibration.values_mean.d) && ~isnan(model.parameters.calibration.values_mean.d)
-            calibration = model.parameters.calibration.values_mean;
-            calibration.x0 = calibration.x0(1,1,1,1);
-            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * x, calibration, model.parameters.constants, 1);
-            x = 1e-9*BE_SharedFunctions.getFrequencyShift(wavelength, model.parameters.constants.lambda0);
+        calibration = model.parameters.calibration;
+        valid = ~isnan(calibration.wavelength);
+        if ~isempty(calibration.wavelength) && sum(valid(:))
+            wavelength = BE_SharedFunctions.getWavelengthFromMap(x, time, calibration);
+            x = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants.lambda0, wavelength);
             
             xLabelString = '$f$ [GHz]';
         end
@@ -215,7 +222,11 @@ function plotData(handles, model)
             ylim(ax, [model.displaySettings.peakSelection.floor model.displaySettings.peakSelection.cap]);
         end
         validx = x(~isnan(data));
-        xlim(ax, [min(validx(:)) max(validx(:))]);
+        xmin = min(validx(:));
+        xmax = max(validx(:));
+        if xmax > xmin
+            xlim(ax, [xmin xmax]);
+        end
         zoom(ax, 'reset');
         xlabel(ax, xLabelString, 'interpreter', 'latex');
         ylabel(ax, '$I$ [a.u.]', 'interpreter', 'latex');
