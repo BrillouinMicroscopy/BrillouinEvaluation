@@ -214,6 +214,8 @@ function initView(handles, model)
     set(handles.autoscale, 'Value', model.displaySettings.peakSelection.autoscale);
     set(handles.cap, 'String', model.displaySettings.peakSelection.cap);
     set(handles.floor, 'String', model.displaySettings.peakSelection.floor);
+    set(handles.extrapolate, 'Value', model.parameters.calibration.extrapolate);
+    set(handles.weighted, 'Value', model.parameters.calibration.weighted);
 end
 
 function onSettings(handles, model)
