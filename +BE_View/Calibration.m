@@ -78,8 +78,9 @@ function handles = initGUI(model, parent)
         'Position', [0.02,0.223,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
     
     valuesTable = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.093 0.22 0.13], ...
-        'ColumnWidth', {50, 50, 50, 50, 50, 50}, 'ColumnName', {'d / m', 'n', '<html>&#920;</html>', '<html>x<sub>0</sub> / m</html>', ...
-        '<html>x<sub>s</sub> / m</html>', '<html>&#963;</html>'}, 'FontSize', 10, 'ColumnEditable', true);
+        'ColumnWidth', {50, 50, 50, 50, 50, 50, 40}, 'ColumnName', {'d / m', 'n', '<html>&#920;</html>', '<html>x<sub>0</sub> / m</html>', ...
+        '<html>x<sub>s</sub> / m</html>', '<html>&#963;</html>', 'active'}, 'FontSize', 10, 'ColumnEditable', true, ...
+        'ColumnFormat',[repmat({[]},1,6),'logical']);
     
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Extrapolate:', 'Units', 'normalized',...
         'Position', [0.02,0.065,0.1,0.028], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -239,7 +240,8 @@ function onSettings(handles, model)
         sprintf('%2.5f',s.x0), sprintf('%2.3f',s.xs), sprintf('%2.0f',s.order), sprintf('%2.0f',s.iterNum)};
     handles.startTable.Data = startValues;
     v = sample.values;
-    fittedValues = [v.d.', v.n.', v.theta.', v.x0.', v.xs.', 1e10*v.error.'];
+    fittedValues = [num2cell(v.d.'), num2cell(v.n.'), num2cell(v.theta.'), num2cell(v.x0.'), num2cell(v.xs.'), ...
+        num2cell(1e10*v.error.'), num2cell(logical(sample.active))];
     handles.valuesTable.Data = fittedValues;
     plotData(handles, model);
 end

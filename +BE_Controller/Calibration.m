@@ -37,6 +37,8 @@ function calibration = Calibration(model, view)
     
     set(view.calibration.openBrillouinShift, 'Callback', {@openBrillouinShift, model});
     
+    set(view.calibration.valuesTable, 'CellEditCallback', {@toggleActiveState, model});
+    
     set(view.calibration.extrapolate, 'Callback', {@toggleExtrapolation, model});
     set(view.calibration.weighted, 'Callback', {@toggleWeighting, model});
     
@@ -144,11 +146,13 @@ function weighted = averageCalibration(sample, weight)
     if weight
         %% average the single calibrations according to their uncertainty
         wavelengths = sample.wavelengths(logical(sample.active), :);        % wavelengths from calibration, only select active calibration images
-        weights = repmat(sample.values.error(:,logical(sample.active)).', 1, size(wavelengths,2));    % map of the weights, only select active calibration images
+        weights = repmat(sample.values.error(:,logical(sample.active)).', 1, size(wavelengths,2));  % map of the weights, only select active calibration images
         weights(isnan(wavelengths)) = NaN;                                  % set weights to NaN in case wavelength is NaN
-        norm = nansum(1./weights,1);                                        % calculate the normalization value
+        norm = repmat(nansum(1./weights,1), size(wavelengths,1), 1);        % calculate the normalization value
+        
+        weights = 1 ./ (norm .* weights);
 
-        weighted = nansum((wavelengths ./ weights), 1) ./ norm;             % calculate the weighted average
+        weighted = nansum((wavelengths .* weights), 1);                     % calculate the weighted average
     else
         weighted = nanmean(sample.wavelengths,1);
     end
@@ -288,6 +292,26 @@ end
 function editStartParameters(~, table, model)
     fields = {'d', 'n', 'theta', 'x0', 'xs', 'order', 'iterNum'};
     model.parameters.calibration.start.(fields{table.Indices(2)}) = str2double(table.NewData);
+end
+
+function toggleActiveState(~, table, model)
+    sample = model.parameters.calibration.samples.(model.parameters.calibration.selected);
+    calibration = model.parameters.calibration;
+    if table.Indices(2) == 7
+        sample.active(table.Indices(1)) = table.NewData;
+    end
+    calibration.samples.(model.parameters.calibration.selected) = sample;
+    
+    if isfield(sample, 'wavelengths') && ~isempty(sample.wavelengths)
+        calibration.wavelength(sample.position,:) = averageCalibration(sample, calibration.weighted);
+    end
+    model.parameters.calibration = calibration;
+    
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    updateCalibrationBrillouinShift(model);
+    
+    %% calculate the Brillouin shift for the measurements
+    updateMeasurementBrillouinShift(model);
 end
 
 function clearCalibration(~, ~, model)
