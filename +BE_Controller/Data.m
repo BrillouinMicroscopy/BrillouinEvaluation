@@ -36,6 +36,9 @@ function loadData(~, ~, model)
             model.parameters = results.results.parameters;
             model.results = results.results.results;
             model.displaySettings = results.results.displaySettings;
+            if ~isfield(model.parameters.calibration, 'correctOffset')
+                model.parameters.calibration.correctOffset = false;
+            end
         else        
             parameters = model.parameters;
             parameters.date = model.file.date;
