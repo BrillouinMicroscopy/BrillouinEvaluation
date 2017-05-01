@@ -595,12 +595,11 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
     VIPAparams.xs    = xsRange(xsInd);
     VIPAparams.error = ErrorVector(ind);
 
-    peakPosFitted = NaN(1,4);
-    % position of the two Rayleigh peaks
-    [peakPosFitted(1,[1 4]), ~] = BE_SharedFunctions.peakPosition( VIPAparams, constants, startOrders, constants.lambda0);
-    % position of the Stokes and Anti-Stokes peaks
-    [peakPosFitted(2), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 1, lambdaAS);
-    [peakPosFitted(3), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 2, lambdaS);
+    orders = [startOrders(1), 1, 2, startOrders(2)];
+    lambdas = [constants.lambda0, lambdaAS, lambdaS, constants.lambda0];
+    % position of the two Rayleigh peaks and the Stokes and Anti-Stokes peaks
+    [peakPosFitted, ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, orders, lambdas);
+    
     peakPosFitted = peakPosFitted / constants.pixelSize;
 
     %% Plot Results
