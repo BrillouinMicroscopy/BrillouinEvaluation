@@ -245,6 +245,7 @@ function onSettings(handles, model)
     set(handles.correctOffset, 'Value', model.parameters.calibration.correctOffset);
     handles.peakTableBrillouin.Data = sample.indBrillouin;
     handles.peakTableRayleigh.Data = sample.indRayleigh;
+    
     if isfield(model.parameters.calibration.samples.(model.parameters.calibration.selected), 'start')
         s = model.parameters.calibration.samples.(model.parameters.calibration.selected).start;
     else
@@ -253,10 +254,20 @@ function onSettings(handles, model)
     startValues = {sprintf('%2.10f',s.d), sprintf('%2.7f',s.n), sprintf('%2.10f',s.theta), ...
         sprintf('%2.5f',s.x0), sprintf('%2.3f',s.xs), sprintf('%2.0f',s.order), sprintf('%2.0f',s.iterNum)};
     handles.startTable.Data = startValues;
+
     v = sample.values;
     if ~isempty(v.d)
-        fittedValues = [num2cell(v.d.'), num2cell(v.n.'), num2cell(v.theta.'), num2cell(v.x0.'), num2cell(v.xs.'), ...
-            num2cell(1e10*v.error.'), num2cell(logical(sample.active))];
+        leng = size(v.d,2);
+        v.error = 1e10 * v.error;
+        parameters = {'d', 'n', 'theta', 'x0', 'xs', 'error'};
+        formats = {'%2.10f', '%2.7f', '%2.10f', '%2.5f', '%2.4f', '%d'};
+        fittedValues = cell(leng,7);
+        for jj = 1:length(parameters)
+            for ii = 1:leng
+                fittedValues{ii,jj} = sprintf(formats{jj},v.(parameters{jj})(1,ii));
+            end
+        end
+        fittedValues(:,7) = num2cell(logical(sample.active));
     else
         fittedValues = [];
     end
