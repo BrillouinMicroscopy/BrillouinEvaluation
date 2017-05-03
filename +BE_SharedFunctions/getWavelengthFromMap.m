@@ -24,6 +24,43 @@ function [ lambda ] = getWavelengthFromMap( peakPos, time, calibration)
     wavelengths_valid = wavelengths(inds,:);
     times_valid = calibration.times(inds);
     
+    %% correct the offset
+    if calibration.correctOffset
+        
+        offset = calibration.offset;
+        offset = offset(inds,:);
+        
+        if size(offset,1) > 3
+            [peaksOffset, times] = meshgrid(calibration.pixels, times_valid);
+
+            % check if extrapolation is wanted and necessary
+            if calibration.extrapolate
+                peakPos_offset = interp2(peaksOffset, times, offset, peakPos, time, 'spline');
+            else
+                peakPos_offset = interp2(peaksOffset, times, wavelengths_offset_valid, peakPos, time, 'spline', NaN);
+            end
+        elseif size(offset,1) > 1
+            [peaksOffset, times] = meshgrid(calibration.pixels, times_valid.');
+
+            % check if extrapolation is wanted and necessary
+            if calibration.extrapolate
+                maxTime = max(times_valid(:));
+                time(time>maxTime) = maxTime;
+            end
+            peakPos_offset = interp2(peaksOffset, times, offset, peakPos, time, 'spline');
+
+        elseif size(offset,1) > 0
+        % if 2D interpolation is not possible ignore the time
+            peakPos_offset = interp1(calibration.pixels, offset, peakPos, 'spline');
+        else
+        % if there is no valid wavelength map at all, return NaN
+            peakPos_offset = NaN(size(peakPos));
+        end
+        
+        peakPos = peakPos - peakPos_offset;
+    end
+    
+    %% calculate the wavelength
     % decide if interpolation is possible (requires at least two sample
     % points)
     if size(wavelengths_valid,1) > 3
@@ -52,6 +89,5 @@ function [ lambda ] = getWavelengthFromMap( peakPos, time, calibration)
     % if there is no valid wavelength map at all, return NaN
         lambda = NaN(size(peakPos));
     end
-
 end
 

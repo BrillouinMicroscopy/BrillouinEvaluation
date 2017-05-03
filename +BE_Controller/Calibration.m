@@ -41,6 +41,7 @@ function calibration = Calibration(model, view)
     
     set(view.calibration.extrapolate, 'Callback', {@toggleExtrapolation, model});
     set(view.calibration.weighted, 'Callback', {@toggleWeighting, model});
+    set(view.calibration.correctOffset, 'Callback', {@toggleOffsetCorrection, model});
     
     calibration = struct( ...
     );
@@ -87,6 +88,7 @@ function calibrate(~, ~, model, view)
                 [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, 1, [6 20], 0);
                 peakPos(jj+2) = tmp+indBrillouin(jj,1)-1;
             end
+            peakPos = sort(peakPos, 'ascend');
             sample.peaksMeasured(mm,:) = peakPos;
 
             %% find the fitted peaks, do the VIPA fit
@@ -100,12 +102,15 @@ function calibrate(~, ~, model, view)
             for jj = 1:length(params)
                 sample.values.(params{jj})(mm) = VIPAparams.(params{jj});
             end
+            peakPos = sort(peakPos, 'ascend');
             sample.peaksFitted(mm,:) = peakPos;
             
             wavelengths = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * calibration.pixels, ...
                 VIPAparams, model.parameters.constants, 1);
             
             sample.wavelengths(mm,:) = wavelengths;
+            
+            sample.offset(mm,1:length(calibration.pixels)) = interp1(sample.peaksFitted(mm,:), sample.peaksMeasured(mm,:) - sample.peaksFitted(mm,:), calibration.pixels, 'spline');
         else
             ex = MException('MATLAB:toLessValues', ...
                     'Please select two Rayleigh and two Brillouin peaks.');
@@ -129,7 +134,9 @@ function calibrate(~, ~, model, view)
         sample.nrImages = size(imgs,3);
     end
     
-    calibration.wavelength(sample.position,:) = averageCalibration(sample, calibration.weighted);
+    [wavelength, offset] = averageCalibration(sample, calibration.weighted);
+    calibration.wavelength(sample.position,:) = wavelength;
+    calibration.offset(sample.position,:) = offset;
     
     %% save the results
     calibration.samples.(selectedMeasurement) = sample;
@@ -142,19 +149,22 @@ function calibrate(~, ~, model, view)
     updateMeasurementBrillouinShift(model);
 end
 
-function weighted = averageCalibration(sample, weight)
+function [wavelength, offset] = averageCalibration(sample, weight)
     if weight
         %% average the single calibrations according to their uncertainty
-        wavelengths = sample.wavelengths(logical(sample.active), :);        % wavelengths from calibration, only select active calibration images
-        weights = repmat(sample.values.error(:,logical(sample.active)).', 1, size(wavelengths,2));  % map of the weights, only select active calibration images
-        weights(isnan(wavelengths)) = NaN;                                  % set weights to NaN in case wavelength is NaN
-        norm = repmat(nansum(1./weights,1), size(wavelengths,1), 1);        % calculate the normalization value
+        wavelength = sample.wavelengths(logical(sample.active), :);         % wavelengths from calibration, only select active calibration images
+        offset = sample.offset(logical(sample.active), :);                  % offset from the calibration, only select active calibration images
+        weights = repmat(sample.values.error(:,logical(sample.active)).', 1, size(wavelength,2));  % map of the weights, only select active calibration images
+        weights(isnan(wavelength)) = NaN;                                   % set weights to NaN in case wavelength is NaN
+        norm = repmat(nansum(1./weights,1), size(wavelength,1), 1);         % calculate the normalization value
         
         weights = 1 ./ (norm .* weights);
 
-        weighted = nansum((wavelengths .* weights), 1);                     % calculate the weighted average
+        wavelength = nansum((wavelength .* weights), 1);                    % calculate the weighted average of the wavelengths
+        offset = nansum((offset .* weights), 1);                            % calculate the weighted average of the offset
     else
-        weighted = nanmean(sample.wavelengths,1);
+        wavelength = nanmean(sample.wavelengths,1);
+        offset = nanmean(sample.offset,1);
     end
 end
 
@@ -180,7 +190,7 @@ function updateCalibrationBrillouinShift(model)
             calibration.times(sample.position) = etime(datevec(datestring),datevec(refTime));
             times = calibration.times(sample.position) * ones(size(sample.peaksMeasured));
             wavelengths = BE_SharedFunctions.getWavelengthFromMap(sample.peaksMeasured, times, calibration);
-            sample.BrillouinShift = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengths(:,[3, 4]), wavelengths(:,[1, 2])));
+            sample.BrillouinShift = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengths(:,[1, 4]), wavelengths(:,[2, 3])));
             calibration.samples.(samples{jj}) = sample;
         end
     end
@@ -209,6 +219,16 @@ function toggleWeighting(src, ~, model)
     updateMeasurementBrillouinShift(model);
 end
 
+function toggleOffsetCorrection(src, ~, model)
+    model.parameters.calibration.correctOffset = get(src, 'Value');
+    
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    updateCalibrationBrillouinShift(model);
+    
+    %% calculate the Brillouin shift for the measurements
+    updateMeasurementBrillouinShift(model);
+end
+
 function averageCalibrations(model)
     calibration = model.parameters.calibration;
     samples = fields(model.parameters.calibration.samples);
@@ -216,7 +236,9 @@ function averageCalibrations(model)
     for jj = 1:length(samples)
         sample = calibration.samples.(samples{jj});
         if isfield(sample, 'wavelengths') && ~isempty(sample.wavelengths)
-            calibration.wavelength(sample.position,:) = averageCalibration(sample, calibration.weighted);
+            [wavelength, offset] = averageCalibration(sample, calibration.weighted);
+            calibration.wavelength(sample.position,:) = wavelength;
+            calibration.offset(sample.position,:) = offset;
         end
     end
     model.parameters.calibration = calibration;
@@ -303,7 +325,9 @@ function toggleActiveState(~, table, model)
     calibration.samples.(model.parameters.calibration.selected) = sample;
     
     if isfield(sample, 'wavelengths') && ~isempty(sample.wavelengths)
-        calibration.wavelength(sample.position,:) = averageCalibration(sample, calibration.weighted);
+        [wavelength, offset] = averageCalibration(sample, calibration.weighted);
+        calibration.wavelength(sample.position,:) = wavelength;
+        calibration.offset(sample.position,:) = offset;
     end
     model.parameters.calibration = calibration;
     
@@ -326,9 +350,12 @@ function clearCalibration(~, ~, model)
         'xs',           [], ... % [1]   scale factor for fitting
         'error',        []  ... % [1]   uncertainty of the fit
     );
+    calibration.samples.(selectedMeasurement).wavelengths = [];
     pos = calibration.samples.(selectedMeasurement).position;
     calibration.times(pos) = NaN;
     calibration.wavelength(pos,:) = NaN;
+    calibration.offset(pos,:) = 0;
+
     model.parameters.calibration = calibration;
     
     %% calculate the Brillouin shift corresponding to each calibration measurement
@@ -568,12 +595,11 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants, vi
     VIPAparams.xs    = xsRange(xsInd);
     VIPAparams.error = ErrorVector(ind);
 
-    peakPosFitted = NaN(1,4);
-    % position of the two Rayleigh peaks
-    [peakPosFitted(1,[1 4]), ~] = BE_SharedFunctions.peakPosition( VIPAparams, constants, startOrders, constants.lambda0);
-    % position of the Stokes and Anti-Stokes peaks
-    [peakPosFitted(2), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 1, lambdaAS);
-    [peakPosFitted(3), ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, 2, lambdaS);
+    orders = [startOrders(1), 1, 2, startOrders(2)];
+    lambdas = [constants.lambda0, lambdaAS, lambdaS, constants.lambda0];
+    % position of the two Rayleigh peaks and the Stokes and Anti-Stokes peaks
+    [peakPosFitted, ~] = BE_SharedFunctions.peakPosition(VIPAparams, constants, orders, lambdas);
+    
     peakPosFitted = peakPosFitted / constants.pixelSize;
 
     %% Plot Results

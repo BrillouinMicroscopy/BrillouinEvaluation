@@ -94,6 +94,12 @@ function handles = initGUI(model, parent)
     weighted = uicontrol('Parent', parent, 'Style', 'checkbox', 'Units', 'normalized',...
         'Position', [0.223,0.063,0.04,0.03], 'FontSize', 11, 'HorizontalAlignment', 'left');
     
+    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Correct offset:', 'Units', 'normalized',...
+        'Position', [0.02,0.002,0.15,0.028], 'FontSize', 11, 'HorizontalAlignment', 'left');
+    
+    correctOffset = uicontrol('Parent', parent, 'Style', 'checkbox', 'Units', 'normalized',...
+        'Position', [0.15,0.0,0.04,0.03], 'FontSize', 11, 'HorizontalAlignment', 'left');
+    
     progressBar = javax.swing.JProgressBar;
     javacomponent(progressBar,[19,13,70,28],parent);
     progressBar.setValue(0);
@@ -206,7 +212,8 @@ function handles = initGUI(model, parent)
         'cursorHandle', cursorHandle, ...
         'openBrillouinShift', openBrillouinShift, ...
         'extrapolate', extrapolate, ...
-        'weighted', weighted ...
+        'weighted', weighted, ...
+        'correctOffset', correctOffset ...
 	);
 end
 
@@ -217,6 +224,7 @@ function initView(handles, model)
     set(handles.floor, 'String', model.displaySettings.peakSelection.floor);
     set(handles.extrapolate, 'Value', model.parameters.calibration.extrapolate);
     set(handles.weighted, 'Value', model.parameters.calibration.weighted);
+    set(handles.correctOffset, 'Value', model.parameters.calibration.correctOffset);
 end
 
 function onSettings(handles, model)
@@ -232,6 +240,9 @@ function onSettings(handles, model)
         set(handles.imageNr, 'Visible', 'off');
     end
     set(handles.BrillouinShift, 'String', sample.shift);
+    set(handles.extrapolate, 'Value', model.parameters.calibration.extrapolate);
+    set(handles.weighted, 'Value', model.parameters.calibration.weighted);
+    set(handles.correctOffset, 'Value', model.parameters.calibration.correctOffset);
     handles.peakTableBrillouin.Data = sample.indBrillouin;
     handles.peakTableRayleigh.Data = sample.indRayleigh;
     s = model.parameters.calibration.start;
@@ -240,8 +251,12 @@ function onSettings(handles, model)
         sprintf('%2.5f',s.x0), sprintf('%2.3f',s.xs), sprintf('%2.0f',s.order), sprintf('%2.0f',s.iterNum)};
     handles.startTable.Data = startValues;
     v = sample.values;
-    fittedValues = [num2cell(v.d.'), num2cell(v.n.'), num2cell(v.theta.'), num2cell(v.x0.'), num2cell(v.xs.'), ...
-        num2cell(1e10*v.error.'), num2cell(logical(sample.active))];
+    if ~isempty(v.d)
+        fittedValues = [num2cell(v.d.'), num2cell(v.n.'), num2cell(v.theta.'), num2cell(v.x0.'), num2cell(v.xs.'), ...
+            num2cell(1e10*v.error.'), num2cell(logical(sample.active))];
+    else
+        fittedValues = [];
+    end
     handles.valuesTable.Data = fittedValues;
     plotData(handles, model);
 end
