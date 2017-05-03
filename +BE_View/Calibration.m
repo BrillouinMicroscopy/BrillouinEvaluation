@@ -245,8 +245,11 @@ function onSettings(handles, model)
     set(handles.correctOffset, 'Value', model.parameters.calibration.correctOffset);
     handles.peakTableBrillouin.Data = sample.indBrillouin;
     handles.peakTableRayleigh.Data = sample.indRayleigh;
-    s = model.parameters.calibration.start;
-%     startValues = [s.d, s.n, s.theta, s.x0, s.xs, s.order, s.iterNum];
+    if isfield(model.parameters.calibration.samples.(model.parameters.calibration.selected), 'start')
+        s = model.parameters.calibration.samples.(model.parameters.calibration.selected).start;
+    else
+        s = model.parameters.calibration.start;
+    end
     startValues = {sprintf('%2.10f',s.d), sprintf('%2.7f',s.n), sprintf('%2.10f',s.theta), ...
         sprintf('%2.5f',s.x0), sprintf('%2.3f',s.xs), sprintf('%2.0f',s.order), sprintf('%2.0f',s.iterNum)};
     handles.startTable.Data = startValues;

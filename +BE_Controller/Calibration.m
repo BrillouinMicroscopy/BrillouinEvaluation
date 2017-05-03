@@ -59,6 +59,10 @@ function calibrate(~, ~, model, view)
 	datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
 	calibration.times(sample.position) = etime(datevec(datestring),datevec(refTime));
     
+    if ~isfield(sample, 'start')
+        sample.start = calibration.start;
+    end
+    
     %% find the positions of the Rayleigh and Brillouin peaks
     if strcmp(selectedMeasurement, 'measurement')
         imgs = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'data');
@@ -95,7 +99,7 @@ function calibrate(~, ~, model, view)
             constants = model.parameters.constants;
             constants.bShiftCal = sample.shift*1e9;
             
-            [VIPAparams, peakPos] = fitVIPA(peakPos, calibration.start, constants, view);
+            [VIPAparams, peakPos] = fitVIPA(peakPos, sample.start, constants, view);
             VIPAparams.x0Initial = VIPAparams.x0;
             
             params = {'d', 'n', 'theta', 'x0Initial', 'x0', 'xs', 'error'};
@@ -323,7 +327,12 @@ end
 
 function editStartParameters(~, table, model)
     fields = {'d', 'n', 'theta', 'x0', 'xs', 'order', 'iterNum'};
-    model.parameters.calibration.start.(fields{table.Indices(2)}) = str2double(table.NewData);
+    if isfield(model.parameters.calibration.samples.(model.parameters.calibration.selected), 'start')
+        model.parameters.calibration.samples.(model.parameters.calibration.selected).start.(fields{table.Indices(2)}) = str2double(table.NewData);
+    else
+        model.parameters.calibration.samples.(model.parameters.calibration.selected).start = model.parameters.calibration.start;
+        model.parameters.calibration.samples.(model.parameters.calibration.selected).start.(fields{table.Indices(2)}) = str2double(table.NewData);
+    end
 end
 
 function toggleActiveState(~, table, model)
