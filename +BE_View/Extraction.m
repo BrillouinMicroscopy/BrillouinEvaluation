@@ -224,7 +224,9 @@ function onDisplaySettings(handles, model)
     if model.displaySettings.extraction.autoscale
         caxis(handles.axesImage,'auto');
     else
-        caxis(handles.axesImage,[model.displaySettings.extraction.floor model.displaySettings.extraction.cap]);
+        if model.displaySettings.extraction.floor < model.displaySettings.extraction.cap
+            caxis(handles.axesImage,[model.displaySettings.extraction.floor model.displaySettings.extraction.cap]);
+        end
     end
     if model.displaySettings.extraction.showBorders
         set(handles.plotBorders, 'Visible', 'on');

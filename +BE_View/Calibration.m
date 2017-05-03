@@ -381,6 +381,8 @@ function onDisplaySettings(handles, model)
     if model.displaySettings.calibration.autoscale
         ylim(handles.axesImage,'auto');
     else
-        ylim(handles.axesImage, [model.displaySettings.calibration.floor model.displaySettings.calibration.cap]);
+        if model.displaySettings.calibration.floor < model.displaySettings.calibration.cap
+            ylim(handles.axesImage, [model.displaySettings.calibration.floor model.displaySettings.calibration.cap]);
+        end
     end
 end

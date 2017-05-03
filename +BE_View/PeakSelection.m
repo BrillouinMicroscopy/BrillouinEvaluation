@@ -168,7 +168,9 @@ function onDisplaySettings(handles, model)
     if model.displaySettings.peakSelection.autoscale
         ylim(handles.axesImage,'auto');
     else
-        ylim(handles.axesImage, [model.displaySettings.peakSelection.floor model.displaySettings.peakSelection.cap]);
+        if model.displaySettings.peakSelection.floor < model.displaySettings.peakSelection.cap
+            ylim(handles.axesImage, [model.displaySettings.peakSelection.floor model.displaySettings.peakSelection.cap]);
+        end
     end
 %     plotData(handles, model);
 end
