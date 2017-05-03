@@ -199,7 +199,9 @@ function onDisplaySettings(handles, model)
     if model.displaySettings.evaluation.autoscale
         caxis(handles.axesImage,'auto');
     else
-        caxis(handles.axesImage,[model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
+        if model.displaySettings.evaluation.floor < model.displaySettings.evaluation.cap
+            caxis(handles.axesImage,[model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
+        end
     end
     plotData(handles, model, 'int', 1);
 end
@@ -321,7 +323,9 @@ function plotData (handles, model, location, full)
 %                 model.displaySettings.evaluation.cap = max(data(:));
                 ylim(ax, 'auto');
             else
-                ylim(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
+                if model.displaySettings.evaluation.floor < model.displaySettings.evaluation.cap
+                    ylim(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
+                end
             end
             zoom(ax, 'reset');
         case 2
@@ -365,7 +369,9 @@ function plotData (handles, model, location, full)
 %                 model.displaySettings.evaluation.cap = cap;
                 caxis(ax, 'auto');
             else
-                caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
+                if model.displaySettings.evaluation.floor < model.displaySettings.evaluation.cap
+                    caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
+                end
             end
             zoom(ax, 'reset');
             view(ax, [az el]);
@@ -395,7 +401,9 @@ function plotData (handles, model, location, full)
 %                 model.displaySettings.evaluation.cap = cap;
                 caxis(ax, 'auto');
             else
-                caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
+                if model.displaySettings.evaluation.floor < model.displaySettings.evaluation.cap
+                    caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
+                end
             end
             zoom(ax, 'reset');
             view(ax, [az el]);
