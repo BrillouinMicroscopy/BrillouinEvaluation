@@ -118,7 +118,8 @@ function calibrate(~, ~, model, view)
         else
             ex = MException('MATLAB:toLessValues', ...
                     'Please select two Rayleigh and two Brillouin peaks.');
-            throw(ex);
+            disp(ex.message);
+            return;
         end
     end
 
