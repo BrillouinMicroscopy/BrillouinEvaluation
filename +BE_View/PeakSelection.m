@@ -176,6 +176,9 @@ function onDisplaySettings(handles, model)
 end
 
 function plotData(handles, model)
+    if isempty(model.file)
+        return;
+    end
     ax = handles.axesImage;
     imgs = model.file.readPayloadData(1, 1, 1, 'data');
     imgs = medfilt1(imgs,3);

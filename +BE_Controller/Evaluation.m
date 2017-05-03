@@ -46,6 +46,11 @@ end
 function evaluate(view, model)
     totalPoints = (model.parameters.resolution.X*model.parameters.resolution.Y*model.parameters.resolution.Z);
     
+    if isempty(model.parameters.peakSelection.Rayleigh) || isempty(model.parameters.peakSelection.Brillouin)
+        disp('Please select at least one Rayleigh and one Brillouin peak.');
+        return;
+    end
+    
     ind_Rayleigh = model.parameters.peakSelection.Rayleigh(1,1):model.parameters.peakSelection.Rayleigh(1,2);
     ind_Brillouin = model.parameters.peakSelection.Brillouin(1,1):model.parameters.peakSelection.Brillouin(1,2);
     

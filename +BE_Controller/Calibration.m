@@ -51,6 +51,9 @@ function calibrate(~, ~, model, view)
     %% store often used values in separate variables for convenience
     calibration = model.parameters.calibration;         % general calibration
     selectedMeasurement = calibration.selected;
+    if strcmp(selectedMeasurement, '')
+        return
+    end
     sample = calibration.samples.(selectedMeasurement); % selected sample
     
     %% 
@@ -194,6 +197,10 @@ function updateCalibrationBrillouinShift(model)
     calibration = model.parameters.calibration;
     samples = fields(model.parameters.calibration.samples);
     
+    if isempty(model.file)
+        return;
+    end
+    
     %%
     startTime = model.file.date;
     refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
@@ -283,6 +290,9 @@ function selectPeaks(~, ~, view, model, type)
         end
         set(view.calibration.brushHandle, 'Enable', 'on', 'color', color);
     else
+        if ~isfield(model.handles, 'calibration')
+            return;
+        end
         brushed = logical(get(model.handles.calibration.plotSpectrum, 'BrushData'));
         set(view.calibration.brushHandle, 'Enable', 'off');
         
@@ -319,10 +329,16 @@ function borders = findBorders(ind)
 end
 
 function clearPeaks(~, ~, model, type)
+    if strcmp(model.parameters.calibration.selected, '')
+        return;
+    end
     model.parameters.calibration.samples.(model.parameters.calibration.selected).(['ind' type]) = [];
 end
 
 function editPeaks(~, table, model, type)
+    if strcmp(model.parameters.calibration.selected, '')
+        return;
+    end
     model.parameters.calibration.samples.(model.parameters.calibration.selected).(['ind' type])(table.Indices(1), table.Indices(2)) = table.NewData;
 end
 
@@ -361,6 +377,9 @@ end
 function clearCalibration(~, ~, model)
     calibration = model.parameters.calibration;
     selectedMeasurement = calibration.selected;
+    if strcmp(selectedMeasurement, '')
+        return;
+    end
     calibration.samples.(selectedMeasurement).values = struct( ...
         'd',            [], ... % [m]   width of the cavity
         'n',            [], ... % [1]   refractive index of the VIPA
@@ -670,5 +689,7 @@ function openBrillouinShift(~, ~, model)
     plot(calibrationFrequency);
     xlabel('Calibration image #');
     ylabel('$f$ [GHz]', 'interpreter', 'latex');
-    legend('Stokes Peak', 'AntiStokes Peak', 'Stokes Peak Mean', 'AntiStokes Peak Mean', 'Calibration Frequency');
+    if ~sum(isnan(BrillouinShifts(:)))
+        legend('Stokes Peak', 'AntiStokes Peak', 'Stokes Peak Mean', 'AntiStokes Peak Mean', 'Calibration Frequency');
+    end
 end

@@ -228,6 +228,9 @@ function initView(handles, model)
 end
 
 function onSettings(handles, model)
+    if isempty(fields(model.parameters.calibration.samples))
+        return;
+    end
     set(handles.samples, 'String', fields(model.parameters.calibration.samples));
     set(handles.samples, 'Value', model.parameters.calibration.selectedValue);
     sample = model.parameters.calibration.samples.(model.parameters.calibration.selected);
