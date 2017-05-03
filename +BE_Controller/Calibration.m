@@ -135,8 +135,8 @@ function calibrate(~, ~, model, view)
     end
     
     [wavelength, offset] = averageCalibration(sample, calibration.weighted);
-    calibration.wavelength(sample.position,:) = wavelength;
-    calibration.offset(sample.position,:) = offset;
+    calibration.wavelength(sample.position,1:size(wavelength,2)) = wavelength;
+    calibration.offset(sample.position,1:size(offset,2)) = offset;
     
     %% save the results
     calibration.samples.(selectedMeasurement) = sample;
@@ -150,29 +150,39 @@ function calibrate(~, ~, model, view)
 end
 
 function [wavelength, offset] = averageCalibration(sample, weight)
-    if weight
-        %% average the single calibrations according to their uncertainty
-        wavelength = sample.wavelengths(logical(sample.active), :);         % wavelengths from calibration, only select active calibration images
-        offset = sample.offset(logical(sample.active), :);                  % offset from the calibration, only select active calibration images
-        weights = repmat(sample.values.error(:,logical(sample.active)).', 1, size(wavelength,2));  % map of the weights, only select active calibration images
-        weights(isnan(wavelength)) = NaN;                                   % set weights to NaN in case wavelength is NaN
-        norm = repmat(nansum(1./weights,1), size(wavelength,1), 1);         % calculate the normalization value
-        
-        weights = 1 ./ (norm .* weights);
+    try
+        if weight
+            %% average the single calibrations according to their uncertainty
+            wavelength = sample.wavelengths(logical(sample.active), :);         % wavelengths from calibration, only select active calibration images
+            offset = sample.offset(logical(sample.active), :);                  % offset from the calibration, only select active calibration images
+            weights = repmat(sample.values.error(:,logical(sample.active)).', 1, size(wavelength,2));  % map of the weights, only select active calibration images
+            weights(isnan(wavelength)) = NaN;                                   % set weights to NaN in case wavelength is NaN
+            norm = repmat(nansum(1./weights,1), size(wavelength,1), 1);         % calculate the normalization value
 
-        wavelength = nansum((wavelength .* weights), 1);                    % calculate the weighted average of the wavelengths
-        offset = nansum((offset .* weights), 1);                            % calculate the weighted average of the offset
-    else
-        wavelength = nanmean(sample.wavelengths,1);
-        offset = nanmean(sample.offset,1);
+            weights = 1 ./ (norm .* weights);
+
+            wavelength = nansum((wavelength .* weights), 1);                    % calculate the weighted average of the wavelengths
+            offset = nansum((offset .* weights), 1);                            % calculate the weighted average of the offset
+        else
+            wavelength = nanmean(sample.wavelengths,1);
+            offset = nanmean(sample.offset,1);
+        end
+    catch
+        disp('Please run the calibration for this sample again.');
+        wavelength = NaN;
+        offset = NaN;
     end
 end
 
 function updateMeasurementBrillouinShift(model)
-    wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksRayleigh_pos, model.results.times, model.parameters.calibration);
-    wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksBrillouin_pos, model.results.times, model.parameters.calibration);
+    try
+        wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksRayleigh_pos, model.results.times, model.parameters.calibration);
+        wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksBrillouin_pos, model.results.times, model.parameters.calibration);
 
-    model.results.BrillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
+        model.results.BrillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
+    catch
+        disp('Please run the evaluation again.');
+    end
 end
 
 function updateCalibrationBrillouinShift(model)
@@ -628,8 +638,8 @@ function openBrillouinShift(~, ~, model)
     for jj = 1:length(sampleNames)
         sample = calibration.samples.(sampleNames{jj});
         if isfield(sample, 'BrillouinShift')
-            nrImages = sample.nrImages;
             shift = sample.BrillouinShift;
+            nrImages = size(shift,1);
             BrillouinShifts((totalImages + (1:nrImages)), :) = shift;
             BrillouinShifts_mean((totalImages + (1:nrImages)), :) = repmat(nanmean(shift,1), nrImages, 1);
             calibrationFrequency((totalImages + (1:nrImages)), 1) = ones(nrImages,1) * sample.shift;

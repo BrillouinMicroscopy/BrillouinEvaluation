@@ -20,8 +20,11 @@ function loadData(~, ~, model)
         
         model.filename = FileName;
         model.file = BE_Utils.HDF5Storage.h5bmread(filePath);
-    
-        delete(model.handles.plotPositions);
+        
+        try
+            delete(model.handles.plotPositions);
+        catch
+        end
         
         model.handles = struct( ...
             'results', NaN, ...
@@ -32,15 +35,169 @@ function loadData(~, ~, model)
         [~, filename, ~] = fileparts(model.filename);
         defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
         if exist(defaultPath, 'file') == 2
-            results = load(defaultPath, 'results');
-            model.parameters = results.results.parameters;
-            model.results = results.results.results;
-            model.displaySettings = results.results.displaySettings;
-            if ~isfield(model.parameters.calibration, 'correctOffset')
-                model.parameters.calibration.correctOffset = false;
+            data = load(defaultPath, 'results');
+            
+            parameters = data.results.parameters;
+            results = data.results.results;
+            displaySettings = data.results.displaySettings;
+            
+            % if no version field is set, file is very old, set to 0.0.0
+            if ~isfield(parameters, 'programVersion')
+                parameters.programVersion = struct( ...
+                    'major', 0, ...
+                    'minor', 0, ...
+                    'patch', 0 ...
+                );
             end
-        else        
+            
+            %% break if file to load is newer than the program
+            if parameters.programVersion.major > model.programVersion.major
+                disp('The file to load was created by a newer version of this program. Please update.');
+                return;
+            end
+            
+            %% migration steps for files coming from versions older than 1.0.0
+            if parameters.programVersion.major < 1
+                fprintf('Migrating evaluation file to version %d.%d.%d.\n', ...
+                    model.programVersion.major, model.programVersion.minor, model.programVersion.patch);
+                
+                % displaySettings
+                if ~isfield(displaySettings.evaluation, 'intFac')
+                    displaySettings.evaluation.intFac = 1;
+                end
+                
+                if ~isfield(displaySettings.evaluation, 'valThreshould')
+                    displaySettings.evaluation.valThreshould = 25;
+                end
+                
+                % calibrations
+                if ~isfield(parameters.calibration, 'wavelength')
+                    parameters.calibration.wavelength = [];
+                end
+
+                if ~isfield(parameters.calibration, 'extrapolate')
+                    parameters.calibration.extrapolate = false;
+                end
+
+                if ~isfield(parameters.calibration, 'weighted')
+                    parameters.calibration.weighted = true;
+                end
+
+                if ~isfield(parameters.calibration, 'correctOffset')
+                    parameters.calibration.correctOffset = false;
+                end
+
+                if ~isfield(parameters.calibration, 'times')
+                    parameters.calibration.times = [];
+                end
+
+                if ~isfield(parameters.calibration, 'pixels')
+                    parameters.calibration.pixels = [];
+                end
+
+                %% read in all calibration measurements
+                if isfield(parameters.calibration, 'values_mean')
+                    parameters.calibration = rmfield(parameters.calibration, 'values_mean');
+                end
+                if isfield(parameters.calibration, 'values')
+                    parameters.calibration = rmfield(parameters.calibration, 'values');
+                end
+                
+                %% check if all calibration samples are present, load them if not
+                oldSamples = parameters.calibration.samples;
+                [allSamples, ~] = readCalibrationSamples(model);
+                allSampleKeys = fields(allSamples);
+                oldSampleKeys = fields(oldSamples);
+                if (length(fields(oldSamples)) < length(allSampleKeys))
+                    parameters.calibration.samples = allSamples;
+                    for jj = 1:length(allSampleKeys)
+                        sample = parameters.calibration.samples.(allSampleKeys{jj});
+                        for ii = 1:length(oldSampleKeys)
+                            oldSample = oldSamples.(oldSampleKeys{ii});
+                            if isfield(oldSample, 'position')
+                                if sample.position == oldSample.position
+                                    if isfield(oldSample, 'Brillouin')
+                                        parameters.calibration.samples.(allSampleKeys{jj}).indBrillouin = oldSample.Brillouin;
+                                    end
+                                    if isfield(oldSample, 'Rayleigh')
+                                        parameters.calibration.samples.(allSampleKeys{jj}).indRayleigh = oldSample.Rayleigh;
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                %% check all calibration samples
+                sampleKeys = fields(parameters.calibration.samples);
+                for jj = 1:length(sampleKeys)
+                    sample = parameters.calibration.samples.(sampleKeys{jj});
+                    
+                    % check if calibration comes from the measurement
+                    if strcmp(sampleKeys{jj}, 'measurement')
+                        % set the position value to the number of calibrations
+                        if ~isfield(sample, 'position')
+                            sample.position = length(sampleKeys);
+                        end
+                        if ~isfield(sample, 'time')
+                            sample.time = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'date');
+                        end
+                    else
+                        if ~isfield(sample, 'time')
+                            sample.time = model.file.readCalibrationData(sample.position,'date');
+                        end
+                        if ~isfield(sample, 'nrImages')
+                            data = model.file.readCalibrationData(sample.position,'data');
+                            nrImages = size(data,3);
+                            sample.nrImages = nrImages;
+                            sample.active = ones(nrImages,1);
+                        end
+                    end
+
+                    if ~isfield(sample, 'indRayleigh') && isfield(sample, 'Rayleigh')
+                        sample.indRayleigh = sample.Rayleigh;
+                        sample = rmfield(sample, 'Rayleigh');
+                    end
+
+                    if ~isfield(sample, 'indBrillouin') && isfield(sample, 'Brillouin')
+                        sample.indBrillouin = sample.Brillouin;
+                        sample = rmfield(sample, 'Brillouin');
+                    end
+                    
+                    if ~isfield(sample, 'values')
+                        sample.values = struct( ...   % struct with all values
+                            'd',        [], ... % [m]   width of the cavity
+                            'n',        [], ... % [1]   refractive index of the VIPA
+                            'theta',    [], ... % [rad] angle of the VIPA
+                            'x0Initial',[], ... % [m]   offset for fitting
+                            'x0',       [], ... % [m]   offset for fitting, corrected for each measurement
+                            'xs',       [], ... % [1]   scale factor for fitting
+                            'error',    []  ... % [1]   uncertainty of the fit
+                        );
+                    end
+                    
+                    parameters.calibration.samples.(sampleKeys{jj}) = sample;
+                end
+                % set version to 1.0.0 to allow further migration steps
+                % possibly necessary for future versions
+                parameters.programVersion = struct( ...
+                    'major', 1, ...
+                    'minor', 0, ...
+                    'patch', 0 ...
+                );
+            end
+            
+            % after all calibration steps, set version to program version
+            parameters.programVersion = model.programVersion;
+            
+            %% actually load data into model
+            model.parameters = parameters;
+            model.results = results;
+            model.displaySettings = displaySettings;
+            
+        else
             parameters = model.parameters;
+            parameters.programVersion = model.programVersion;   % set program versio key to current program version
             parameters.date = model.file.date;
             parameters.comment = model.file.comment;
 
@@ -54,91 +211,21 @@ function loadData(~, ~, model)
             parameters.positions.Y = model.file.positionsY;
             parameters.positions.Z = model.file.positionsZ;
 
-            % check for calibration
-            parameters.calibration.hasCalibration = false;
-            jj = 1;
-            testCalibration = true;
-            parameters.calibration.samples = struct();
-            while testCalibration
-                try
-                    sampleType = model.file.readCalibrationData(jj,'sample');
-                    if ~isempty(sampleType)
-                        parameters.calibration.hasCalibration = true;
-                    end
-                    sampleKey = sampleType;
-                    kk = 0;
-                    while isfield(parameters.calibration.samples, sampleKey)
-                        sampleKey = [sampleType sprintf('_%02d', kk)];
-                        kk = kk + 1;
-                    end
-                    data = model.file.readCalibrationData(jj,'data');
-                    nrImages = size(data,3);
-                    parameters.calibration.samples.(sampleKey) = struct( ...
-                        'sampleType', sampleType, ...
-                        'position', jj, ...
-                        'indRayleigh', [], ...
-                        'indBrillouin', [], ...
-                        'shift', model.file.readCalibrationData(jj,'shift'), ...
-                        'peaksMeasured', [], ...
-                        'peaksFitted', [], ...
-                        'BrillouinShift', NaN(nrImages,2), ...
-                        'nrImages', nrImages, ...
-                        'active', ones(nrImages,1), ...
-                        'time', model.file.readCalibrationData(jj,'date'), ...
-                        'values', struct( ...   % struct with all values
-                            'd',        [], ... % [m]   width of the cavity
-                            'n',        [], ... % [1]   refractive index of the VIPA
-                            'theta',    [], ... % [rad] angle of the VIPA
-                            'x0Initial',[], ... % [m]   offset for fitting
-                            'x0',       [], ... % [m]   offset for fitting, corrected for each measurement
-                            'xs',       [], ... % [1]   scale factor for fitting
-                            'error',    []  ... % [1]   uncertainty of the fit
-                        ) ...
-                    );
-                    jj = jj + 1;
-                catch
-                    testCalibration = false;
-                end
-            end
-            
-            x = 1;
-            y = 1;
-            z = 1;
-            parameters.calibration.samples.measurement = struct( ...
-                'sampleType', 'measurement', ...
-                'position', jj, ...
-                'imageNr', struct( ...
-                    'x', x, ...
-                    'y', y, ...
-                    'z', z ...
-                ), ...
-                'indRayleigh', [47, 85; 255, 284], ...
-                'indBrillouin', [151, 162; 206, 222], ...
-                'shift', 5.1, ...
-                'peaksMeasured', [], ...
-                'peaksFitted', [], ...
-                'time', model.file.readPayloadData(x, y, z, 'date'), ...
-                'values', struct( ...   % struct with all values
-                    'd',        [], ... % [m]   width of the cavity
-                    'n',        [], ... % [1]   refractive index of the VIPA
-                    'theta',    [], ... % [rad] angle of the VIPA
-                    'x0Initial',[], ... % [m]   offset for fitting
-                    'x0',       [], ... % [m]   offset for fitting, corrected for each measurement
-                    'xs',       [], ... % [1]   scale factor for fitting
-                    'error',    []  ... % [1]   uncertainty of the fit
-                ) ....
-            );
-            samples = fields(parameters.calibration.samples);
+            %% read in calibration data
+            [parameters.calibration.samples, parameters.calibration.hasCalibration] = ...
+                readCalibrationSamples(model);
             parameters.calibration.selectedValue = 1;
-            parameters.calibration.selected = samples{1};
+            sampleKeys = fields(parameters.calibration.samples);
+            parameters.calibration.selected = sampleKeys{1};
 
-            % set start values for spectrum axis fitting
+            %% set start values for spectrum axis fitting
             % probably a better algorithm needed
             img = model.file.readPayloadData(1, 1, 1, 'data');
             img = img(:,:,parameters.extraction.imageNr);
             parameters.extraction.circleStart = [1, size(img,1), mean(size(img))];
             model.parameters = parameters;
             
+            %% pre-allocate results structure
             model.results = struct( ...
                 'BrillouinShift',           NaN, ...    % [GHz]  the Brillouin shift
                 'BrillouinShift_frequency', NaN, ...    % [GHz]  the Brillouin shift in Hz
@@ -156,6 +243,83 @@ function loadData(~, ~, model)
             );
         end
     end
+end
+
+function [samples, hasCalibration] = readCalibrationSamples(model)
+    hasCalibration = false;
+    jj = 1;
+    testCalibration = true;
+    samples = struct();
+    while testCalibration
+        try
+            sampleType = model.file.readCalibrationData(jj,'sample');
+            if ~isempty(sampleType)
+                hasCalibration = true;
+            end
+            sampleKey = sampleType;
+            kk = 0;
+            while isfield(samples, sampleKey)
+                sampleKey = [sampleType sprintf('_%02d', kk)];
+                kk = kk + 1;
+            end
+            data = model.file.readCalibrationData(jj,'data');
+            nrImages = size(data,3);
+            samples.(sampleKey) = struct( ...
+                'sampleType', sampleType, ...
+                'position', jj, ...
+                'indRayleigh', [], ...
+                'indBrillouin', [], ...
+                'shift', model.file.readCalibrationData(jj,'shift'), ...
+                'peaksMeasured', [], ...
+                'peaksFitted', [], ...
+                'BrillouinShift', NaN(nrImages,2), ...
+                'nrImages', nrImages, ...
+                'active', ones(nrImages,1), ...
+                'time', model.file.readCalibrationData(jj,'date'), ...
+                'values', struct( ...   % struct with all values
+                    'd',        [], ... % [m]   width of the cavity
+                    'n',        [], ... % [1]   refractive index of the VIPA
+                    'theta',    [], ... % [rad] angle of the VIPA
+                    'x0Initial',[], ... % [m]   offset for fitting
+                    'x0',       [], ... % [m]   offset for fitting, corrected for each measurement
+                    'xs',       [], ... % [1]   scale factor for fitting
+                    'error',    []  ... % [1]   uncertainty of the fit
+                ) ...
+            );
+            jj = jj + 1;
+        catch
+            testCalibration = false;
+        end
+    end
+    
+    x = 1;
+    y = 1;
+    z = 1;
+    nrSamples = length(fields(samples));
+    samples.measurement = struct( ...
+        'sampleType', 'measurement', ...
+        'position', nrSamples + 1, ...
+        'imageNr', struct( ...
+            'x', x, ...
+            'y', y, ...
+            'z', z ...
+        ), ...
+        'indRayleigh', [47, 85; 255, 284], ...
+        'indBrillouin', [151, 162; 206, 222], ...
+        'shift', 5.1, ...
+        'peaksMeasured', [], ...
+        'peaksFitted', [], ...
+        'time', model.file.readPayloadData(x, y, z, 'date'), ...
+        'values', struct( ...   % struct with all values
+            'd',        [], ... % [m]   width of the cavity
+            'n',        [], ... % [1]   refractive index of the VIPA
+            'theta',    [], ... % [rad] angle of the VIPA
+            'x0Initial',[], ... % [m]   offset for fitting
+            'x0',       [], ... % [m]   offset for fitting, corrected for each measurement
+            'xs',       [], ... % [1]   scale factor for fitting
+            'error',    []  ... % [1]   uncertainty of the fit
+        ) ....
+    );
 end
 
 function clear(~, ~, model)
