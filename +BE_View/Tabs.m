@@ -25,7 +25,7 @@ function handles = initGUI(model)
     evaluation = BE_View.Evaluation(evaluation, model);
                  
     % Assign the name to appear in the window title.
-    f.Name = 'Brillouin Evaluation';
+    f.Name = sprintf('Brillouin Evaluation v%d.%d.%d', model.programVersion.major, model.programVersion.minor, model.programVersion.patch);
 
     % Move the window to the center of the screen.
     movegui(f,'center')
