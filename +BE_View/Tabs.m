@@ -10,6 +10,12 @@ function handles = initGUI(model)
     % hide the menubar and prevent resizing
     set(f, 'menubar', 'none', 'Resize','off');
     
+    % set menubar
+    menubar.file = uimenu(f,'Label','File');
+    menubar.fileOpen   = uimenu(menubar.file,'Label','Open');
+    menubar.fileClose  = uimenu(menubar.file,'Label','Close');                 
+    menubar.fileSave   = uimenu(menubar.file,'Label','Save');
+    
     % create the tabgroup for loading, calibrating and evaluating
     tabgroup = uitabgroup('Parent', f);
     data = uitab('Parent', tabgroup, 'Title', 'Data');
@@ -36,6 +42,7 @@ function handles = initGUI(model)
     % return a structure of GUI handles
     handles = struct(...
         'figure', f, ...
+        'menubar', menubar, ...
         'data', data, ...
         'extraction', extraction, ...
         'peakSelection', peakSelection, ...

@@ -2,9 +2,9 @@ function configuration = Data(model, view)
 %% DATA Controller
 
     %% general panel
-    set(view.data.load, 'Callback', {@loadData, model});
-    set(view.data.clear, 'Callback', {@clear, model});
-    set(view.data.save, 'Callback', {@saveData, model});
+    set(view.menubar.fileOpen, 'Callback', {@loadData, model});
+    set(view.menubar.fileClose, 'Callback', {@clear, model});
+    set(view.menubar.fileSave, 'Callback', {@saveData, model});
 
     configuration = struct( ...
         'close', @close ...
