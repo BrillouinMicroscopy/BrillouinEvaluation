@@ -453,6 +453,16 @@ function overlayBrightfield(model)
 end
 
 function getpstn(~, ~, view, model)
+    valids = ~isnan(model.results.brightfield_rot);
+    if isempty(model.results.brightfield_rot) || sum(valids(:)) == 0
+        disp('Please load a brightfield image first.');
+        return;
+    end
+    if isempty(model.file)
+        disp('Please load a Brillouin file first.');
+        return;
+    end
+    
     parent = figure('Position',[500,200,900,650]);
     % hide the menubar and prevent resizing
     set(parent, 'menubar', 'none', 'Resize','off');
