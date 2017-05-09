@@ -72,8 +72,7 @@ function rotate3d(src, ~, view)
     end
 end
 
-
- function getprmtrs(~, ~, view, model)
+function getprmtrs(~, ~, view, model)
     bright = model.results.brightfield_rot;
     dims = {'Y', 'X', 'Z'};
     for jj = 1:length(dims)
@@ -124,12 +123,11 @@ end
     msgbox('Brightfield image has been adapted')
     
     close(view.overlay.parent);
-    
- end
+end
  
- function cancel(~, ~, view)
-   close(view.overlay.parent);
- end
+function cancel(~, ~, view)
+    close(view.overlay.parent);
+end
  
 function zoomslide(source, ~, view, model)
     val = source.Value/20;

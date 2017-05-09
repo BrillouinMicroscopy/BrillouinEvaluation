@@ -130,6 +130,6 @@ function initView(handles, model)
     zoom(gcf,'reset')
     
     if ~sum(isnan(xl)) && ~sum(isnan(yl))
-       axis([xl(1) xl(2) yl(1) yl(2)]);
+        axis([xl(1) xl(2) yl(1) yl(2)]);
     end
 end
