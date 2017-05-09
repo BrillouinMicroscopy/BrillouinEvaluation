@@ -2,16 +2,16 @@ function overlay = Overlay(model, view)
 %% EVALUATION Controller
 
     %% callbacks Overlay
-    set(view.zoomIn, 'Callback', {@zoomCallback, 'in', view});
-    set(view.zoomOut, 'Callback', {@zoomCallback, 'out', view});
-    set(view.panButton, 'Callback', {@pan, view});
-    set(view.rotate3dButton, 'Callback', {@rotate3d, view});
+    set(view.overlay.zoomIn, 'Callback', {@zoomCallback, 'in', view});
+    set(view.overlay.zoomOut, 'Callback', {@zoomCallback, 'out', view});
+    set(view.overlay.panButton, 'Callback', {@pan, view});
+    set(view.overlay.rotate3dButton, 'Callback', {@rotate3d, view});
     
-    set(view.ok, 'Callback', {@getprmtrs, view, model});
-    set(view.cancel, 'Callback', {@cancel, view});
-    set(view.sld1, 'Callback', {@zoomslide, view, model});
-    set(view.sld2, 'Callback', {@transpslide, view, model});
-    set(view.sld3, 'Callback', {@angleslide, view, model});
+    set(view.overlay.ok, 'Callback', {@getprmtrs, view, model});
+    set(view.overlay.cancel, 'Callback', {@cancel, view});
+    set(view.overlay.sld1, 'Callback', {@zoomslide, view, model});
+    set(view.overlay.sld2, 'Callback', {@transpslide, view, model});
+    set(view.overlay.sld3, 'Callback', {@angleslide, view, model});
         
     overlay = struct( ...
     ); 
@@ -20,55 +20,55 @@ end
 function zoomCallback(src, ~, str, view)
     switch get(src, 'UserData')
         case 0
-            set(view.panButton,'UserData',0);
-            set(view.panHandle,'Enable','off');
-            set(view.rotate3dButton,'UserData',0);
-            set(view.rotate3dHandle,'Enable','off');
+            set(view.overlay.panButton,'UserData',0);
+            set(view.overlay.panHandle,'Enable','off');
+            set(view.overlay.rotate3dButton,'UserData',0);
+            set(view.overlay.rotate3dHandle,'Enable','off');
             switch str
                 case 'in'
-                    set(view.zoomHandle,'Enable','on','Direction','in');
-                    set(view.zoomIn,'UserData',1);
-                    set(view.zoomOut,'UserData',0);
+                    set(view.overlay.zoomHandle,'Enable','on','Direction','in');
+                    set(view.overlay.zoomIn,'UserData',1);
+                    set(view.overlay.zoomOut,'UserData',0);
                 case 'out'
-                    set(view.zoomHandle,'Enable','on','Direction','out');
-                    set(view.zoomOut,'UserData',1);
-                    set(view.zoomIn,'UserData',0);
+                    set(view.overlay.zoomHandle,'Enable','on','Direction','out');
+                    set(view.overlay.zoomOut,'UserData',1);
+                    set(view.overlay.zoomIn,'UserData',0);
             end
         case 1
-            set(view.zoomHandle,'Enable','off','Direction','in');
-            set(view.zoomOut,'UserData',0);
-            set(view.zoomIn,'UserData',0);
+            set(view.overlay.zoomHandle,'Enable','off','Direction','in');
+            set(view.overlay.zoomOut,'UserData',0);
+            set(view.overlay.zoomIn,'UserData',0);
     end
 end
 
 function pan(src, ~, view)
-    set(view.zoomHandle,'Enable','off','Direction','in');
-    set(view.zoomOut,'UserData',0);
-    set(view.zoomIn,'UserData',0);
-    set(view.rotate3dButton,'UserData',0);
+    set(view.overlay.zoomHandle,'Enable','off','Direction','in');
+    set(view.overlay.zoomOut,'UserData',0);
+    set(view.overlay.zoomIn,'UserData',0);
+    set(view.overlay.rotate3dButton,'UserData',0);
     switch get(src, 'UserData')
         case 0
-            set(view.panButton,'UserData',1);
-            set(view.panHandle,'Enable','on');
+            set(view.overlay.panButton,'UserData',1);
+            set(view.overlay.panHandle,'Enable','on');
         case 1
-            set(view.panButton,'UserData',0);
-            set(view.panHandle,'Enable','off');
+            set(view.overlay.panButton,'UserData',0);
+            set(view.overlay.panHandle,'Enable','off');
     end
 end
 
 function rotate3d(src, ~, view)
-    set(view.zoomHandle,'Enable','off','Direction','in');
-    set(view.zoomOut,'UserData',0);
-    set(view.zoomIn,'UserData',0);
-    set(view.panHandle,'Enable','off');
-    set(view.panButton,'UserData',0);
+    set(view.overlay.zoomHandle,'Enable','off','Direction','in');
+    set(view.overlay.zoomOut,'UserData',0);
+    set(view.overlay.zoomIn,'UserData',0);
+    set(view.overlay.panHandle,'Enable','off');
+    set(view.overlay.panButton,'UserData',0);
     switch get(src, 'UserData')
         case 0
-            set(view.rotate3dButton,'UserData',1);
-            set(view.rotate3dHandle,'Enable','on');
+            set(view.overlay.rotate3dButton,'UserData',1);
+            set(view.overlay.rotate3dHandle,'Enable','on');
         case 1
-            set(view.rotate3dButton,'UserData',0);
-            set(view.rotate3dHandle,'Enable','off');
+            set(view.overlay.rotate3dButton,'UserData',0);
+            set(view.overlay.rotate3dHandle,'Enable','off');
     end
 end
 
@@ -86,8 +86,8 @@ end
     maxy = max(max(positions.Y_zm));
     miny = min(min(positions.Y_zm));
     
-    xl = get(view.brightfieldImage, 'xlim');
-    yl = get(view.brightfieldImage, 'ylim');
+    xl = get(view.overlay.brightfieldImage, 'xlim');
+    yl = get(view.overlay.brightfieldImage, 'ylim');
     
     model.parameters.evaluation.xl = xl;
     model.parameters.evaluation.yl = yl;
@@ -123,12 +123,12 @@ end
     
     msgbox('Brightfield image has been adapted')
     
-    close(view.parent);
+    close(view.overlay.parent);
     
  end
  
  function cancel(~, ~, view)
-   close(view.parent);
+   close(view.overlay.parent);
  end
  
 function zoomslide(source, ~, view, model)
@@ -138,10 +138,10 @@ function zoomslide(source, ~, view, model)
     halfWidth = size(bright,2)/2;
     halfHeight = size(bright,1)/2;
     
-    xCenter = mean(view.brightfieldImage.XLim);
+    xCenter = mean(view.overlay.brightfieldImage.XLim);
     xLims = [xCenter-halfWidth/val xCenter+halfWidth/val];
 
-    yCenter = mean(view.brightfieldImage.YLim);
+    yCenter = mean(view.overlay.brightfieldImage.YLim);
     yLims = [yCenter-halfHeight/val yCenter+halfHeight/val];
 
     

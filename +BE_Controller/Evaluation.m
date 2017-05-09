@@ -462,13 +462,16 @@ function getpstn(~, ~, view, model)
         disp('Please load a Brillouin file first.');
         return;
     end
-    
-    parent = figure('Position',[500,200,900,650]);
-    % hide the menubar and prevent resizing
-    set(parent, 'menubar', 'none', 'Resize','off');
+    if isfield(view.overlay, 'parent') && ishandle(view.overlay.parent)
+        return;
+    else
+        parent = figure('Position',[500,200,900,650]);
+        % hide the menubar and prevent resizing
+        set(parent, 'menubar', 'none', 'Resize','off');
+    end
 
-    overlay = BE_View.Overlay(parent, model);
+    view.overlay = BE_View.Overlay(parent, model);
 
-    view.overlay = BE_Controller.Overlay(model, overlay);
+    BE_Controller.Overlay(model, view);
 end
 

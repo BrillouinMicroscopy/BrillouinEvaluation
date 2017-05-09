@@ -1,11 +1,11 @@
-function handles = Tabs(model)
+function Tabs(model, view)
 %% TABS View
 
     % build the GUI
-    handles = initGUI(model);
+    initGUI(model, view);
 end
 
-function handles = initGUI(model)
+function initGUI(model, view)
     f = figure('Visible','off','Position',[-1000,200,900,650]);
     % hide the menubar and prevent resizing
     set(f, 'menubar', 'none', 'Resize','off');
@@ -40,13 +40,11 @@ function handles = initGUI(model)
     f.Visible = 'on';
     
     % return a structure of GUI handles
-    handles = struct(...
-        'figure', f, ...
-        'menubar', menubar, ...
-        'data', data, ...
-        'extraction', extraction, ...
-        'peakSelection', peakSelection, ...
-        'calibration', calibration, ...
-        'evaluation', evaluation ...
-    );
+    view.figure = f;
+    view.menubar = menubar;
+    view.data = data;
+    view.extraction = extraction;
+    view.peakSelection = peakSelection;
+    view.calibration = calibration;
+    view.evaluation = evaluation;
 end

@@ -6,7 +6,9 @@ function BrillouinEvaluation
     
     includePath(model);
     
-    view = BE_View.Tabs(model);    % view has a reference of the model
+    view = BE_View.View();
+    
+    BE_View.Tabs(model, view);    % view has a reference of the model
     
     controllers = controller(model, view);
     
