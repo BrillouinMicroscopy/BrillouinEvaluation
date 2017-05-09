@@ -329,6 +329,9 @@ end
 
 function saveData(~, ~, model)
     % Save the results file
+    if isempty(model.filename)
+        return
+    end
     [~, filename, ~] = fileparts(model.filename);
     defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
     [FileName,PathName,~] = uiputfile('*.mat','Save results as', defaultPath);
