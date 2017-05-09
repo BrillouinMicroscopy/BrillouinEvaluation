@@ -12,9 +12,9 @@ function handles = initGUI(model)
     
     % set menubar
     menubar.file = uimenu(f,'Label','File');
-    menubar.fileOpen   = uimenu(menubar.file,'Label','Open');
-    menubar.fileClose  = uimenu(menubar.file,'Label','Close');                 
-    menubar.fileSave   = uimenu(menubar.file,'Label','Save');
+    menubar.fileOpen   = uimenu(menubar.file,'Label','Open','Accelerator','O');
+    menubar.fileClose  = uimenu(menubar.file,'Label','Close','Accelerator','W');                 
+    menubar.fileSave   = uimenu(menubar.file,'Label','Save','Accelerator','S');
     
     % create the tabgroup for loading, calibrating and evaluating
     tabgroup = uitabgroup('Parent', f);
