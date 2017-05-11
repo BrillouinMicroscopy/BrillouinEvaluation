@@ -48,7 +48,7 @@ function handles = initGUI(model, parent)
     validity = uicontrol('Parent', parent, 'Style', 'edit', 'Units', 'normalized',...
         'Position', [0.18,0.698,0.06,0.04], 'FontSize', 11, 'HorizontalAlignment', 'center');
     
-    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Interpolate by factor:', 'Units', 'normalized',...
+    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Refinement factor:', 'Units', 'normalized',...
         'Position', [0.02,0.65,0.15,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
     intFac = uicontrol('Parent', parent, 'Style', 'edit', 'Units', 'normalized',...
@@ -299,8 +299,8 @@ function plotData (handles, model, location, full)
             %% 1D data
             d = squeeze(data);
             p = squeeze(positions.([nsdims{1} '_zm']));
-            if intFac > 1
-                interpolationValue = intFac * round(length(p));
+            if intFac > 0
+                interpolationValue = (intFac + 1) * round(length(p));
                 pn = linspace(min(p(:)),max(p(:)),interpolationValue);
                 
                 d = interp1(p,d,pn);
@@ -328,26 +328,27 @@ function plotData (handles, model, location, full)
         case 2
             %% 2D data
             d = squeeze(data);
-%             p1 = squeeze(positions.([nsdims{2} '_zm']));
-%             p2 = squeeze(positions.([nsdims{1} '_zm']));
-%             if intFac > 1
-%                 interpolationValue1 = intFac * round(size(p1,1));
-%                 interpolationValue2 = intFac * round(size(p2,1)); 
-%                 p1lin = linspace(min(p1(:)),max(p1(:)),interpolationValue1);
-%                 p2lin = linspace(min(p2(:)),max(p2(:)),interpolationValue2);
-%                 [p1n, p2n] = meshgrid(p1lin, p2lin);
-% 
-%                 d = interp2(p1,p2,d,p1n,p2n);
-%                 p1 = p1n;
-%                 p2 = p2n;
-%             end
-            px = squeeze(positions.X_zm);
-            py = squeeze(positions.Y_zm);
-            pz = squeeze(positions.Z_zm);
-            hold(ax,'off');
-%             hndl = surf(ax, p1, p2, d);
+            pos.X = squeeze(positions.X_zm);
+            pos.Y = squeeze(positions.Y_zm);
+            pos.Z = squeeze(positions.Z_zm);
 
-            hndl = surf(ax, px, py, pz, d);
+            if intFac > 0
+                for jj = 1:length(dims)
+                    pos.([dims{jj} '_int']) = interp2(pos.(dims{jj}), intFac);
+                end
+                
+                d = interp2(pos.(nsdims{2}), ...
+                            pos.(nsdims{1}), ...
+                            d, ...
+                            pos.([nsdims{2} '_int']), ...
+                            pos.([nsdims{1} '_int']));
+                        
+                for jj = 1:length(dims)
+                    pos.([dims{jj}]) = pos.([dims{jj} '_int']);
+                end
+            end
+            hold(ax,'off');
+            hndl = surf(ax, pos.X, pos.Y, pos.Z, d);
             title(ax,labels.titleString);
             shading(ax, 'flat');
             axis(ax, 'equal');
