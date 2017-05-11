@@ -207,7 +207,7 @@ function onDisplaySettings(handles, model)
 end
 
 function plotData (handles, model, location, full)
-    intFac = model.displaySettings.evaluation.intFac;
+    intFac = model.displaySettings.evaluation.intFac - 1;
     
     data = model.results.(model.displaySettings.evaluation.type);
     data = double(data);
