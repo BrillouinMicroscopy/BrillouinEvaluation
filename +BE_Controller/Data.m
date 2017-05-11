@@ -225,6 +225,9 @@ function loadData(~, ~, model)
             parameters.extraction.circleStart = [1, size(img,1), mean(size(img))];
             model.parameters = parameters;
             
+            %% set version to program version
+            parameters.programVersion = model.programVersion;
+            
             %% pre-allocate results structure
             model.results = struct( ...
                 'BrillouinShift',           NaN, ...    % [GHz]  the Brillouin shift
@@ -337,9 +340,13 @@ function saveData(~, ~, model)
     [FileName,PathName,~] = uiputfile('*.mat','Save results as', defaultPath);
     if ~isequal(FileName,0) && ~isequal(PathName,0)
         filePath = [PathName FileName];
+        
+        %% set version to program version
+        parameters = model.parameters;
+        parameters.programVersion = model.programVersion;
 
         results = struct( ...
-            'parameters', model.parameters, ...
+            'parameters', parameters, ...
             'results', model.results, ...
             'displaySettings', model.displaySettings ...
         ); %#ok<NASGU>
