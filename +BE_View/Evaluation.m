@@ -282,14 +282,13 @@ function plotData (handles, model, location, full)
         positions.X_zm = model.parameters.positions_brightfield.X;
         positions.Y_zm = model.parameters.positions_brightfield.Y;
         positions.Z_zm = model.parameters.positions_brightfield.Z;
-    elseif strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')    
-        positions.t_zm = model.results.calibrationTime;
     else
         for jj = 1:length(dims)
             positions.([dims{jj} '_zm']) = ...
                 model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
         end
     end
+    
     %% plot data for different dimensions
     switch dimension
         case 0
@@ -322,10 +321,8 @@ function plotData (handles, model, location, full)
 %                 model.displaySettings.evaluation.floor = min(data(:));
 %                 model.displaySettings.evaluation.cap = max(data(:));
                 ylim(ax, 'auto');
-            else
-                if model.displaySettings.evaluation.floor < model.displaySettings.evaluation.cap
-                    ylim(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
-                end
+            elseif model.displaySettings.evaluation.floor < model.displaySettings.evaluation.cap
+                ylim(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
             end
             zoom(ax, 'reset');
         case 2
@@ -368,10 +365,8 @@ function plotData (handles, model, location, full)
 %                 model.displaySettings.evaluation.floor = floor;
 %                 model.displaySettings.evaluation.cap = cap;
                 caxis(ax, 'auto');
-            else
-                if model.displaySettings.evaluation.floor < model.displaySettings.evaluation.cap
-                    caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
-                end
+            elseif model.displaySettings.evaluation.floor < model.displaySettings.evaluation.cap
+                caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
             end
             zoom(ax, 'reset');
             view(ax, [az el]);
@@ -400,10 +395,8 @@ function plotData (handles, model, location, full)
 %                 model.displaySettings.evaluation.floor = floor;
 %                 model.displaySettings.evaluation.cap = cap;
                 caxis(ax, 'auto');
-            else
-                if model.displaySettings.evaluation.floor < model.displaySettings.evaluation.cap
-                    caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
-                end
+            elseif model.displaySettings.evaluation.floor < model.displaySettings.evaluation.cap
+                caxis(ax, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
             end
             zoom(ax, 'reset');
             view(ax, [az el]);
