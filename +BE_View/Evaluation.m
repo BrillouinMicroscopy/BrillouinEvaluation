@@ -299,6 +299,8 @@ function plotData (handles, model, location, full)
             %% 1D data
             d = squeeze(data);
             p = squeeze(positions.([nsdims{1} '_zm']));
+            
+            %% interpolate data
             if intFac > 0
                 interpolationValue = (intFac + 1) * round(length(p));
                 pn = linspace(min(p(:)),max(p(:)),interpolationValue);
@@ -306,6 +308,8 @@ function plotData (handles, model, location, full)
                 d = interp1(p,d,pn);
                 p = pn;
             end
+            
+            %% plot
             hold(ax,'off');
             hndl = plot(ax,p,d);
             title(ax,labels.titleString);
@@ -331,7 +335,8 @@ function plotData (handles, model, location, full)
             pos.X = squeeze(positions.X_zm);
             pos.Y = squeeze(positions.Y_zm);
             pos.Z = squeeze(positions.Z_zm);
-
+            
+            %% interpolate data
             if intFac > 0
                 for jj = 1:length(dims)
                     pos.([dims{jj} '_int']) = interp2(pos.(dims{jj}), intFac);
@@ -347,6 +352,8 @@ function plotData (handles, model, location, full)
                     pos.([dims{jj}]) = pos.([dims{jj} '_int']);
                 end
             end
+            
+            %% plot
             hold(ax,'off');
             hndl = surf(ax, pos.X, pos.Y, pos.Z, d);
             title(ax,labels.titleString);
@@ -373,10 +380,35 @@ function plotData (handles, model, location, full)
             view(ax, [az el]);
         case 3
             %% 3D data
+            d = squeeze(data);
+            pos.X = squeeze(positions.X_zm);
+            pos.Y = squeeze(positions.Y_zm);
+            pos.Z = squeeze(positions.Z_zm);
+            
+            %% interpolate data
+            if intFac > 0
+                for jj = 1:length(dims)
+                    pos.([dims{jj} '_int']) = interp3(pos.(dims{jj}), intFac);
+                end
+                
+                d = interp3(pos.X, ...
+                            pos.Y, ...
+                            pos.Z, ...
+                            d, ...
+                            pos.X_int, ...
+                            pos.Y_int, ...
+                            pos.Z_int);
+                        
+                for jj = 1:length(dims)
+                    pos.([dims{jj}]) = pos.([dims{jj} '_int']);
+                end
+            end
+            
+            %% plot
             hold(ax,'off');
-            hndl = NaN(size(data,3),1);
-            for jj = 1:size(data,3)
-                hndl(jj) = surf(ax,positions.X_zm(:,:,jj),positions.Y_zm(:,:,jj),positions.Z_zm(:,:,jj),data(:,:,jj));
+            hndl = NaN(size(d,3),1);
+            for jj = 1:size(d,3)
+                hndl(jj) = surf(ax,pos.X(:,:,jj),pos.Y(:,:,jj),pos.Z(:,:,jj),d(:,:,jj));
                 hold(ax,'on');
             end
             title(ax,labels.titleString);
