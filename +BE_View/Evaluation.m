@@ -194,6 +194,7 @@ function onDisplaySettings(handles, model)
     set(handles.autoscale, 'Value', model.displaySettings.evaluation.autoscale);
     set(handles.cap, 'String', model.displaySettings.evaluation.cap);
     set(handles.floor, 'String', model.displaySettings.evaluation.floor);
+    set(handles.discardInvalid, 'Value', model.displaySettings.evaluation.discardInvalid);
     set(handles.intFac, 'String', model.displaySettings.evaluation.intFac);
     set(handles.validity, 'String', model.displaySettings.evaluation.valThreshould);
     if model.displaySettings.evaluation.autoscale
