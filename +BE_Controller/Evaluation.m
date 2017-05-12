@@ -285,7 +285,12 @@ function selectPlotType(src, ~, model)
 end
 
 function toggleLivePreview(~, ~, view, model)
-    model.displaySettings.evaluation.preview = get(view.evaluation.livePreview, 'Value');
+    evaluation = model.displaySettings.evaluation;
+    evaluation.preview = get(view.evaluation.livePreview, 'Value');
+    if evaluation.preview
+        evaluation.intFac = 1;
+    end
+    model.displaySettings.evaluation = evaluation;
 end
 
 function toggleDiscardInvalid(~, ~, view, model)
