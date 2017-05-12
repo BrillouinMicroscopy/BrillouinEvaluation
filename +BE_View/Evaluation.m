@@ -302,12 +302,16 @@ function plotData (handles, model, location, full)
             p = squeeze(positions.([nsdims{1} '_zm']));
             
             %% interpolate data
-            if intFac > 0
-                interpolationValue = (intFac + 1) * round(length(p));
-                pn = linspace(min(p(:)),max(p(:)),interpolationValue);
-                
-                d = interp1(p,d,pn);
-                p = pn;
+            try
+                if intFac > 0
+                    interpolationValue = (intFac + 1) * round(length(p));
+                    pn = linspace(min(p(:)),max(p(:)),interpolationValue);
+
+                    d = interp1(p,d,pn);
+                    p = pn;
+                end
+            catch
+                disp('Interpolation is not possible.');
             end
             
             %% plot
@@ -338,20 +342,24 @@ function plotData (handles, model, location, full)
             pos.Z = squeeze(positions.Z_zm);
             
             %% interpolate data
-            if intFac > 0
-                for jj = 1:length(dims)
-                    pos.([dims{jj} '_int']) = interp2(pos.(dims{jj}), intFac);
+            try
+                if intFac > 0
+                    for jj = 1:length(dims)
+                        pos.([dims{jj} '_int']) = interp2(pos.(dims{jj}), intFac);
+                    end
+
+                    d = interp2(pos.(nsdims{2}), ...
+                                pos.(nsdims{1}), ...
+                                d, ...
+                                pos.([nsdims{2} '_int']), ...
+                                pos.([nsdims{1} '_int']));
+
+                    for jj = 1:length(dims)
+                        pos.([dims{jj}]) = pos.([dims{jj} '_int']);
+                    end
                 end
-                
-                d = interp2(pos.(nsdims{2}), ...
-                            pos.(nsdims{1}), ...
-                            d, ...
-                            pos.([nsdims{2} '_int']), ...
-                            pos.([nsdims{1} '_int']));
-                        
-                for jj = 1:length(dims)
-                    pos.([dims{jj}]) = pos.([dims{jj} '_int']);
-                end
+            catch
+                disp('Interpolation is not possible.');
             end
             
             %% plot
@@ -387,22 +395,26 @@ function plotData (handles, model, location, full)
             pos.Z = squeeze(positions.Z_zm);
             
             %% interpolate data
-            if intFac > 0
-                for jj = 1:length(dims)
-                    pos.([dims{jj} '_int']) = interp3(pos.(dims{jj}), intFac);
+            try
+                if intFac > 0
+                    for jj = 1:length(dims)
+                        pos.([dims{jj} '_int']) = interp3(pos.(dims{jj}), intFac);
+                    end
+
+                    d = interp3(pos.X, ...
+                                pos.Y, ...
+                                pos.Z, ...
+                                d, ...
+                                pos.X_int, ...
+                                pos.Y_int, ...
+                                pos.Z_int);
+
+                    for jj = 1:length(dims)
+                        pos.([dims{jj}]) = pos.([dims{jj} '_int']);
+                    end
                 end
-                
-                d = interp3(pos.X, ...
-                            pos.Y, ...
-                            pos.Z, ...
-                            d, ...
-                            pos.X_int, ...
-                            pos.Y_int, ...
-                            pos.Z_int);
-                        
-                for jj = 1:length(dims)
-                    pos.([dims{jj}]) = pos.([dims{jj} '_int']);
-                end
+            catch
+                disp('Interpolation is not possible.');
             end
             
             %% plot
