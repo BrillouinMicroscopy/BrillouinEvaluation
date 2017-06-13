@@ -101,7 +101,7 @@ classdef Model < handle
                         'x0',   0.0021, ...         % [m]   offset for fitting
                         'xs',   1.0000, ...         % [1]   scale factor for fitting
                         'order', 1, ...             % [1]   observed order of the VIPA spectrum
-                        'iterNum', 4 ...            % [1]   number of iterations for the fit
+                        'iterNum', 8 ...            % [1]   number of iterations for the fit
                     ), ...
                     'wavelength', [], ...           % [m]   the wavelength corresponding to every pixel
                     'times', [], ...                % [s]   the time vector of the calibration measurements
