@@ -217,6 +217,10 @@ function loadData(~, ~, model)
             parameters.calibration.selectedValue = 1;
             sampleKeys = fields(parameters.calibration.samples);
             parameters.calibration.selected = sampleKeys{1};
+            
+            parameters.calibration.times(:) = NaN;
+            parameters.calibration.wavelength(:) = NaN;
+            parameters.calibration.offset(:) = 0;
 
             %% set start values for spectrum axis fitting
             % probably a better algorithm needed
