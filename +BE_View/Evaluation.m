@@ -197,6 +197,14 @@ function onDisplaySettings(handles, model)
     set(handles.discardInvalid, 'Value', model.displaySettings.evaluation.discardInvalid);
     set(handles.intFac, 'String', model.displaySettings.evaluation.intFac);
     set(handles.validity, 'String', model.displaySettings.evaluation.valThreshould);
+    % set dropdown to correct value
+    options = get(handles.plotTypes, 'String');
+    for jj = 1:length(options)
+        if strcmp(options{jj}, model.displaySettings.evaluation.type)
+            set(handles.plotTypes, 'Value', jj);
+            break;
+        end
+    end
     if model.displaySettings.evaluation.autoscale
         caxis(handles.axesImage,'auto');
     else
