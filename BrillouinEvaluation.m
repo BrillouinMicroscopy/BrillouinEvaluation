@@ -1,4 +1,4 @@
-function BrillouinEvaluation
+function varargout = BrillouinEvaluation
 %% MAINCONTROLLER  MainController
 
     % controller knows about model and view
@@ -12,7 +12,11 @@ function BrillouinEvaluation
     
     controllers = controller(model, view);
     
-    set(view.figure, 'CloseRequestFcn', {@closeGUI, model, controllers});    
+    set(view.figure, 'CloseRequestFcn', {@closeGUI, model, controllers});
+    
+    if nargout
+        varargout{1} = controllers;
+    end
 end
 
 function closeGUI(~, ~, model, controllers)

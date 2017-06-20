@@ -30,8 +30,9 @@ function acquisition = Evaluation(model, view)
     set(view.evaluation.decreaseFloor, 'Callback', {@changeClim, model, -1});
     set(view.evaluation.increaseCap, 'Callback', {@changeClim, model, 1});
     set(view.evaluation.decreaseCap, 'Callback', {@changeClim, model, -1});
-        
+    
     acquisition = struct( ...
+        'startEvaluation', @()startEvaluation(0, 0, view, model) ...
     ); 
 end
 
