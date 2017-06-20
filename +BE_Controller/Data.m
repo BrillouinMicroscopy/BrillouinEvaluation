@@ -2,17 +2,18 @@ function configuration = Data(model, view)
 %% DATA Controller
 
     %% general panel
-    set(view.menubar.fileOpen, 'Callback', {@select, model});
+    set(view.menubar.fileOpen, 'Callback', {@selectLoadData, model});
     set(view.menubar.fileClose, 'Callback', {@clear, model});
-    set(view.menubar.fileSave, 'Callback', {@saveData, model});
+    set(view.menubar.fileSave, 'Callback', {@selectSaveData, model});
 
     configuration = struct( ...
         'close', @close, ...
-        'load', @(filePath)loadData(model, filePath) ...
+        'load', @(filePath)loadData(model, filePath), ...
+        'save', @(filePath)saveData(model, filePath)...
     );
 end
 
-function select(~, ~, model)
+function selectLoadData(~, ~, model)
     [FileName,PathName,~] = uigetfile('*.h5','Select the Brillouin file to evaluate.');
     filePath = [PathName FileName];
     loadData(model, filePath);
@@ -357,7 +358,7 @@ function clear(~, ~, model)
     model.filename = [];
 end
 
-function saveData(~, ~, model)
+function selectSaveData(~, ~, model)
     % Save the results file
     if isempty(model.filename)
         return
@@ -365,8 +366,19 @@ function saveData(~, ~, model)
     [~, filename, ~] = fileparts(model.filename);
     defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
     [FileName,PathName,~] = uiputfile('*.mat','Save results as', defaultPath);
+    filePath = [PathName, FileName];
+    saveData(model, filePath)
+end
+
+function saveData(model, filePath)
+    % Save the results file
+    if isempty(model.filename)
+        return
+    end
+    
+    [PathName, FileName, ~] = fileparts(filePath);
     if ~isequal(FileName,0) && ~isequal(PathName,0)
-        filePath = [PathName FileName];
+%         filePath = [PathName FileName];
         
         %% set version to program version
         parameters = model.parameters;
