@@ -2,23 +2,29 @@ function configuration = Data(model, view)
 %% DATA Controller
 
     %% general panel
-    set(view.menubar.fileOpen, 'Callback', {@loadData, model});
+    set(view.menubar.fileOpen, 'Callback', {@select, model});
     set(view.menubar.fileClose, 'Callback', {@clear, model});
     set(view.menubar.fileSave, 'Callback', {@saveData, model});
 
     configuration = struct( ...
-        'close', @close ...
+        'close', @close, ...
+        'load', @(filePath)loadData(model, filePath) ...
     );
 end
 
-function loadData(~, ~, model)
-% Load the h5bm data file
+function select(~, ~, model)
     [FileName,PathName,~] = uigetfile('*.h5','Select the Brillouin file to evaluate.');
-    model.filepath = PathName;
     filePath = [PathName FileName];
+    loadData(model, filePath);
+end
+
+function loadData(model, filePath)
+% Load the h5bm data file
+    [PathName, name, extension] = fileparts(filePath);
+    model.filepath = [PathName '\'];
     if ~isequal(PathName,0) && exist(filePath, 'file')
         
-        model.filename = FileName;
+        model.filename = [name extension];
         model.file = BE_Utils.HDF5Storage.h5bmread(filePath);
         
         try
