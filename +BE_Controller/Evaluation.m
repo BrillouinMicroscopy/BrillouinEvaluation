@@ -72,6 +72,8 @@ function evaluate(view, model)
     peaksBrillouin_fwhm = peaksBrillouin_pos;
     peaksBrillouin_int = peaksBrillouin_pos;
     peaksRayleigh_pos = peaksBrillouin_pos;
+    peaksRayleigh_fwhm = peaksBrillouin_pos;
+    peaksRayleigh_int = peaksBrillouin_pos;
     times = peaksBrillouin_pos;
     validity = true(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
     
@@ -107,9 +109,11 @@ function evaluate(view, model)
                         intensity(kk, jj, ll, mm) = sum(img(:));
 
                         spectrumSection = spectrum(ind_Rayleigh);
-                        [peakPos, ~, ~] = ...
+                        [peakPos, fwhm, int] = ...
                             BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
                         peaksRayleigh_pos(kk, jj, ll, mm, :) = peakPos + min(ind_Rayleigh(:)) - 1;
+                        peaksRayleigh_fwhm(kk, jj, ll, mm, :) = fwhm;
+                        peaksRayleigh_int(kk, jj, ll, mm, :) = int;
                         shift = round(peakPos - initRayleighPos);
                         
                         %% check if peak position is valid
@@ -156,6 +160,8 @@ function evaluate(view, model)
                         results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the intensity of the Brillouin peak(s)
                         results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
                         results.peaksRayleigh_pos         = peaksRayleigh_pos;        % [pix]  the position of the Rayleigh peak(s) in the spectrum
+                        results.peaksRayleigh_int         = peaksRayleigh_int;        % [a.u.] the intensity of the Rayleigh peak(s)
+                        results.peaksRayleigh_fwhm        = peaksRayleigh_fwhm;       % [pix]  the FWHM of the Rayleigh peak(s)
                         results.intensity                 = intensity;                % [a.u.] the overall intensity of the image
                         results.validity                  = validity;                 % [logical] the validity of the results
                         results.times                     = times;                    % [s]    time of the measurement
@@ -195,6 +201,8 @@ function evaluate(view, model)
     results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the intensity of the Brillouin peak(s)
     results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
     results.peaksRayleigh_pos         = peaksRayleigh_pos;        % [pix]  the position of the Rayleigh peak(s) in the spectrum
+    results.peaksRayleigh_int         = peaksRayleigh_int;        % [a.u.] the intensity of the Rayleigh peak(s)
+    results.peaksRayleigh_fwhm        = peaksRayleigh_fwhm;       % [pix]  the FWHM of the Rayleigh peak(s)
     results.intensity                 = intensity;                % [a.u.] the overall intensity of the image
     results.validity                  = validity;                 % [logical] the validity of the results
     results.times                     = times;                    % [s]    time of the measurement

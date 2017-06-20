@@ -192,7 +192,18 @@ function loadData(~, ~, model)
                     'preRelease', '' ...
                 );
             end
-            
+            if parameters.programVersion.major <= 1 && parameters.programVersion.minor < 1
+                results.peaksRayleigh_int = NaN(size(results.peaksRayleigh_pos));
+                results.peaksRayleigh_fwhm = NaN(size(results.peaksRayleigh_pos));
+                % set version to 1.1.0 to allow further migration steps
+                % possibly necessary for future versions
+                parameters.programVersion = struct( ...
+                    'major', 1, ...
+                    'minor', 1, ...
+                    'patch', 0, ...
+                    'preRelease', '' ...
+                );
+            end
             % after all calibration steps, set version to program version
             parameters.programVersion = model.programVersion;
             
