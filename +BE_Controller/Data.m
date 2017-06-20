@@ -378,8 +378,6 @@ function saveData(model, filePath)
     
     [PathName, FileName, ~] = fileparts(filePath);
     if ~isequal(FileName,0) && ~isequal(PathName,0)
-%         filePath = [PathName FileName];
-        
         %% set version to program version
         parameters = model.parameters;
         parameters.programVersion = model.programVersion;
