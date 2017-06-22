@@ -21,6 +21,9 @@ end
 
 function loadData(model, filePath)
 % Load the h5bm data file
+    if ~filePath
+        return
+    end
     [PathName, name, extension] = fileparts(filePath);
     model.filepath = [PathName '\'];
     if ~isequal(PathName,0) && exist(filePath, 'file')
