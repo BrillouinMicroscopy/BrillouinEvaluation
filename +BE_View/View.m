@@ -11,6 +11,7 @@ classdef View < handle
         calibration;
         evaluation;
         overlay;
+        masking;
     end
 
     methods

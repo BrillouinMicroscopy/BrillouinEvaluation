@@ -14,6 +14,7 @@ function acquisition = Evaluation(model, view)
     set(view.evaluation.showSpectrum, 'Callback', {@showSpectrum, view, model});
     set(view.evaluation.selectbright, 'Callback', {@selectbright, view, model});
     set(view.evaluation.getbrightposition, 'Callback', {@getpstn, view, model});
+    set(view.evaluation.startMasking, 'Callback', {@startMasking, view, model});
     
     set(view.evaluation.zoomIn, 'Callback', {@zoom, 'in', view});
     set(view.evaluation.zoomOut, 'Callback', {@zoom, 'out', view});
@@ -487,5 +488,19 @@ function getpstn(~, ~, view, model)
     view.overlay = BE_View.Overlay(parent, model);
 
     BE_Controller.Overlay(model, view);
+end
+
+function startMasking(~, ~, view, model)
+    if isfield(view.masking, 'parent') && ishandle(view.masking.parent)
+        return;
+    else
+        parent = figure('Position',[500,200,900,650]);
+        % hide the menubar and prevent resizing
+        set(parent, 'menubar', 'none', 'Resize','off');
+    end
+
+    view.masking = BE_View.Masking(parent, model);
+
+    BE_Controller.Masking(model, view);
 end
 
