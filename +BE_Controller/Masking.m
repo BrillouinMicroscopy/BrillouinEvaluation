@@ -6,11 +6,82 @@ function masking = Masking(model, view)
     set(view.masking.zoomOut, 'Callback', {@zoomCallback, 'out', view});
     set(view.masking.panButton, 'Callback', {@pan, view});
     set(view.masking.rotate3dButton, 'Callback', {@rotate3d, view});
+    set(view.masking.brushAdd, 'Callback', {@setMode, model, 1});
+    set(view.masking.brushRemove, 'Callback', {@setMode, model, 0});
+    
+    set(view.masking.masksTable, 'CellSelectionCallback', {@selectMask, model, view});
     
     set(view.masking.cancel, 'Callback', {@cancel, view});
-        
+    
+    set(view.masking.showOverlay, 'Callback', {@toggleOverlay, view, model});
+    
+    %% make mask global for now to improve performance
+    global mask;
+    selectedMask = model.displaySettings.masking.selected;
+    if ~isempty(selectedMask)
+        mask = model.results.masks.(selectedMask);
+    end
+    
+    %% Callbacks related to masking
+    % Motion function
+    dims = {'X', 'Y', 'Z'};
+    for kk = 1:length(dims)
+        pos.([dims{kk} '_zm']) = ...
+            model.parameters.positions.(dims{kk}) - ...
+            mean(model.parameters.positions.(dims{kk})(:))*ones(size(model.parameters.positions.(dims{kk})));
+        pos.([dims{kk} '_zm']) = squeeze(pos.([dims{kk} '_zm']));
+    end
+    brushSize = model.parameters.masking.brushSize;
+%     axInfo = getAxInfo(view.masking.axesImage);
+    MotionFcnCallback = @(src, data) DrawPointer(src, data, view.masking.parent, view.masking.axesImage, view.masking.hPointer, pos, brushSize);
+    set(view.masking.parent, 'WindowButtonMotionFcn', MotionFcnCallback);
+    % ButtonDown function
+    set(view.masking.parent,'WindowButtonDownFcn',{@StartDrawing, MotionFcnCallback, view.masking.hMask, model});
+    % ButtonUp function
+    set(view.masking.parent, 'WindowButtonUpFcn', {@EndDrawing, MotionFcnCallback, model});
+    
+    %%
     masking = struct( ...
-    ); 
+    );
+end
+
+function [] = setMode(~, ~, model, mode)
+    model.parameters.masking.adding = mode;
+end
+
+function [] = StartDrawing(src, ~, MotionFcnCallback, hMask, model)
+    adding = model.parameters.masking.adding;
+    movedraw(0, 0, MotionFcnCallback, hMask, adding);
+    set(src, 'WindowButtonMotionFcn', {@movedraw, MotionFcnCallback, hMask, adding})
+end
+
+function movedraw(~, ~, MotionFcnCallback, hMask, adding)
+    m = MotionFcnCallback(0,0);
+    UpdateMask(hMask, m, adding);
+end
+
+function UpdateMask(hMask, m, adding)
+    global mask;
+    mask.mask(logical(m)) = adding;
+    set(hMask,'AlphaData',0.4*double(mask.mask));
+end
+
+function EndDrawing(src, ~, MotionFcnCallback, model)
+    set(src, 'WindowButtonMotionFcn', MotionFcnCallback);
+    selectedMask = model.displaySettings.masking.selected;
+    global mask;
+    model.results.masks.(selectedMask) = mask;
+end
+
+function pointer = DrawPointer(~, ~, fh, axInfo, hPointer, pos, brushSize)
+    cp = getCurrentAxesPoint(fh, axInfo);
+    
+    if ~isempty(cp)
+        pointer = sqrt((pos.X_zm-cp(1)).^2+(pos.Y_zm-cp(2)).^2) <= (brushSize);
+        set(hPointer, 'AlphaData', 0.6*pointer);
+    else
+        pointer = [];
+    end
 end
 
 function zoomCallback(src, ~, str, view)
@@ -68,60 +139,57 @@ function rotate3d(src, ~, view)
     end
 end
 
-function getprmtrs(~, ~, view, model)
-    bright = model.results.brightfield_rot;
-    dims = {'Y', 'X', 'Z'};
-    for jj = 1:length(dims)
-        positions.([dims{jj} '_zm']) = ...
-            model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
-    end
-    
-    maxx = max(max(positions.X_zm));
-    minx = min(min(positions.X_zm));
-    maxy = max(max(positions.Y_zm));
-    miny = min(min(positions.Y_zm));
-    
-    xl = get(view.masking.brightfieldImage, 'xlim');
-    yl = get(view.masking.brightfieldImage, 'ylim');
-    
-    model.parameters.evaluation.xl = xl;
-    model.parameters.evaluation.yl = yl;
-    
-    xlmin = round(min(xl));
-    if xlmin < 1
-        xlmin = 1;
-    end
-    xlmax = round(max(xl));
-    if xlmax > size(bright,2)
-        xlmax = size(bright,2);
-    end
-    
-    ylmin = round(min(yl));
-    if ylmin < 1
-        ylmin = 1;
-    end
-    ylmax = round(max(yl));
-    if ylmax > size(bright,1)
-        ylmax = size(bright,1);
-    end
-    
-    cut = bright(ylmin:ylmax , xlmin:xlmax);
-    x = linspace(minx, maxx ,size(cut,2));
-    y = linspace(miny, maxy ,size(cut,1));
-    
-    [X,Y,Z] = meshgrid(x, y, 1);
-    
-    model.parameters.positions_brightfield.X = X;
-    model.parameters.positions_brightfield.Y = Y;
-    model.parameters.positions_brightfield.Z = Z;
-    model.results.brightfield = cut;
-    
-    msgbox('Brightfield image has been adapted')
-    
-    close(view.masking.parent);
+function selectMask(~, data, model, view)
+    type = data.Source.Data{data.Indices(1), data.Indices(2)};
+    model.displaySettings.masking.selected = type;
+    global mask;
+    mask = model.results.masks.(type);
+    maskRGB = cat(3, mask.color(1)*ones(size(mask.mask)), mask.color(2)*ones(size(mask.mask)), mask.color(3)*ones(size(mask.mask)));
+    view.masking.hMask.CData = maskRGB;
+    view.masking.hMask.AlphaData = 0.4*double(mask.mask);
 end
  
 function cancel(~, ~, view)
     close(view.masking.parent);
+end
+
+function toggleOverlay(~, ~, view, model)
+    model.displaySettings.masking.showOverlay = get(view.masking.showOverlay, 'Value');
+end
+
+%% function for returning the current point
+function point = getCurrentAxesPoint(fh, ax)
+
+    axInfo = getAxInfo(ax);
+    %% get the current point inside the figure
+    cp = get(fh, 'currentpoint');
+
+    %% check if current point is over axes
+    tf1 = axInfo.Pos(1) <= cp(1) && cp(1) <= axInfo.Pos(1) + axInfo.Pos(3);
+    tf2 = axInfo.Pos(2) <= cp(2) && cp(2) <= axInfo.Pos(2) + axInfo.Pos(4);
+
+    if tf1 && tf2
+        %% calculate the current point
+        Cx = axInfo.LimX(1) + (cp(1)-axInfo.Pos(1)).*(axInfo.DifX/axInfo.Pos(3));
+        Cy = axInfo.LimY(1) + (cp(2)-axInfo.Pos(2)).*(axInfo.DifY/axInfo.Pos(4));
+        point = [Cx, Cy];
+    else
+        point = [];
+    end
+end
+
+function axInfo = getAxInfo(ax)
+    %% set axes units to pixels for easier calculations
+    set(ax,'units','pixels');
+
+    %% get position, x-limit and y-limit
+    axInfo.Pos = get(ax, 'pos');
+    axInfo.LimX = get(ax, 'xlim');
+    axInfo.LimY = get(ax, 'ylim');
+    axInfo.DifX = diff(axInfo.LimX);
+    axInfo.DifY = diff(axInfo.LimY);
+
+    %% reset the axes units
+    set(ax, 'units', 'normalized');
 end
  

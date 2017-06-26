@@ -118,6 +118,10 @@ classdef Model < handle
                     'scaling', 0.086, ...       % [micro m / pix]   scaling factor
                     'xl', NaN, ...              %
                     'yl', NaN ...               %
+                ), ...
+                'masking', struct( ...
+                    'brushSize', 20, ...        % [micro m] size of the brush
+                    'adding', 1 ...             % [logical] add or delete mask
                 ) ...
             );
 %% Results of the evaluation
@@ -137,7 +141,8 @@ classdef Model < handle
                 'times',                    NaN, ...    % [s]    time of the measurement
                 'brightfield',              NaN, ...    % [a.u.] the intensity of the brightfield image (usefull for 2D xy images)
                 'brightfield_raw',          NaN, ...    % [a.u.] the complete brightfield image
-                'brightfield_rot',          NaN  ...    % [a.u.] the rotated brightfield image
+                'brightfield_rot',          NaN, ...    % [a.u.] the rotated brightfield image
+                'masks',                    struct() ...%        struct for the masks
             );
 %% Display settings of the plots
             obj.displaySettings = struct( ...
@@ -168,6 +173,10 @@ classdef Model < handle
                     'discardInvalid', false, ...% [logical] discard invalid results
                     'valThreshould', 25, ...    % [1]       threshould for the validity
                     'intFac', 1 ...             % [1]       interpolation factor
+                ), ...
+                'masking', struct( ...
+                    'selected', '', ...
+                    'showOverlay', true ...
                 ) ...
             );
 %% Status of the GUI

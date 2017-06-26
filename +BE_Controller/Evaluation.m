@@ -496,7 +496,7 @@ function startMasking(~, ~, view, model)
     else
         parent = figure('Position',[500,200,900,650]);
         % hide the menubar and prevent resizing
-        set(parent, 'menubar', 'none', 'Resize','off');
+        set(parent, 'menubar', 'none', 'Resize','off', 'units', 'pixels');
     end
 
     view.masking = BE_View.Masking(parent, model);
