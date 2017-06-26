@@ -1,5 +1,5 @@
 function handles = Masking(parent, model)
-%% OVERLAY View
+%% MASKING View
 
     % build the GUI
     handles = initGUI(model, parent);
@@ -10,7 +10,7 @@ function handles = Masking(parent, model)
     listener = addlistener(model, 'results', 'PostSet', ...
         @(o,e) initView(handles, e.AffectedObject));
     
-    set(parent, 'CloseRequestFcn', {@closeOverlay, listener});    
+    set(parent, 'CloseRequestFcn', {@closeMasking, listener});    
 end
 
 function handles = initGUI(model, parent)
@@ -137,7 +137,7 @@ function handles = initGUI(model, parent)
     );
 end
 
-function closeOverlay(source, ~, listener)
+function closeMasking(source, ~, listener)
     delete(listener);
     delete(source);
 end

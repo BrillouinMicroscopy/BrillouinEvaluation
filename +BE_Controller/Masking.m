@@ -1,7 +1,7 @@
-function overlay = Masking(model, view)
+function masking = Masking(model, view)
 %% EVALUATION Controller
 
-    %% callbacks Overlay
+    %% callbacks Masking
     set(view.masking.zoomIn, 'Callback', {@zoomCallback, 'in', view});
     set(view.masking.zoomOut, 'Callback', {@zoomCallback, 'out', view});
     set(view.masking.panButton, 'Callback', {@pan, view});
@@ -9,62 +9,62 @@ function overlay = Masking(model, view)
     
     set(view.masking.cancel, 'Callback', {@cancel, view});
         
-    overlay = struct( ...
+    masking = struct( ...
     ); 
 end
 
 function zoomCallback(src, ~, str, view)
     switch get(src, 'UserData')
         case 0
-            set(view.overlay.panButton,'UserData',0);
-            set(view.overlay.panHandle,'Enable','off');
-            set(view.overlay.rotate3dButton,'UserData',0);
-            set(view.overlay.rotate3dHandle,'Enable','off');
+            set(view.masking.panButton,'UserData',0);
+            set(view.masking.panHandle,'Enable','off');
+            set(view.masking.rotate3dButton,'UserData',0);
+            set(view.masking.rotate3dHandle,'Enable','off');
             switch str
                 case 'in'
-                    set(view.overlay.zoomHandle,'Enable','on','Direction','in');
-                    set(view.overlay.zoomIn,'UserData',1);
-                    set(view.overlay.zoomOut,'UserData',0);
+                    set(view.masking.zoomHandle,'Enable','on','Direction','in');
+                    set(view.masking.zoomIn,'UserData',1);
+                    set(view.masking.zoomOut,'UserData',0);
                 case 'out'
-                    set(view.overlay.zoomHandle,'Enable','on','Direction','out');
-                    set(view.overlay.zoomOut,'UserData',1);
-                    set(view.overlay.zoomIn,'UserData',0);
+                    set(view.masking.zoomHandle,'Enable','on','Direction','out');
+                    set(view.masking.zoomOut,'UserData',1);
+                    set(view.masking.zoomIn,'UserData',0);
             end
         case 1
-            set(view.overlay.zoomHandle,'Enable','off','Direction','in');
-            set(view.overlay.zoomOut,'UserData',0);
-            set(view.overlay.zoomIn,'UserData',0);
+            set(view.masking.zoomHandle,'Enable','off','Direction','in');
+            set(view.masking.zoomOut,'UserData',0);
+            set(view.masking.zoomIn,'UserData',0);
     end
 end
 
 function pan(src, ~, view)
-    set(view.overlay.zoomHandle,'Enable','off','Direction','in');
-    set(view.overlay.zoomOut,'UserData',0);
-    set(view.overlay.zoomIn,'UserData',0);
-    set(view.overlay.rotate3dButton,'UserData',0);
+    set(view.masking.zoomHandle,'Enable','off','Direction','in');
+    set(view.masking.zoomOut,'UserData',0);
+    set(view.masking.zoomIn,'UserData',0);
+    set(view.masking.rotate3dButton,'UserData',0);
     switch get(src, 'UserData')
         case 0
-            set(view.overlay.panButton,'UserData',1);
-            set(view.overlay.panHandle,'Enable','on');
+            set(view.masking.panButton,'UserData',1);
+            set(view.masking.panHandle,'Enable','on');
         case 1
-            set(view.overlay.panButton,'UserData',0);
-            set(view.overlay.panHandle,'Enable','off');
+            set(view.masking.panButton,'UserData',0);
+            set(view.masking.panHandle,'Enable','off');
     end
 end
 
 function rotate3d(src, ~, view)
-    set(view.overlay.zoomHandle,'Enable','off','Direction','in');
-    set(view.overlay.zoomOut,'UserData',0);
-    set(view.overlay.zoomIn,'UserData',0);
-    set(view.overlay.panHandle,'Enable','off');
-    set(view.overlay.panButton,'UserData',0);
+    set(view.masking.zoomHandle,'Enable','off','Direction','in');
+    set(view.masking.zoomOut,'UserData',0);
+    set(view.masking.zoomIn,'UserData',0);
+    set(view.masking.panHandle,'Enable','off');
+    set(view.masking.panButton,'UserData',0);
     switch get(src, 'UserData')
         case 0
-            set(view.overlay.rotate3dButton,'UserData',1);
-            set(view.overlay.rotate3dHandle,'Enable','on');
+            set(view.masking.rotate3dButton,'UserData',1);
+            set(view.masking.rotate3dHandle,'Enable','on');
         case 1
-            set(view.overlay.rotate3dButton,'UserData',0);
-            set(view.overlay.rotate3dHandle,'Enable','off');
+            set(view.masking.rotate3dButton,'UserData',0);
+            set(view.masking.rotate3dHandle,'Enable','off');
     end
 end
 
@@ -81,8 +81,8 @@ function getprmtrs(~, ~, view, model)
     maxy = max(max(positions.Y_zm));
     miny = min(min(positions.Y_zm));
     
-    xl = get(view.overlay.brightfieldImage, 'xlim');
-    yl = get(view.overlay.brightfieldImage, 'ylim');
+    xl = get(view.masking.brightfieldImage, 'xlim');
+    yl = get(view.masking.brightfieldImage, 'ylim');
     
     model.parameters.evaluation.xl = xl;
     model.parameters.evaluation.yl = yl;
@@ -118,10 +118,10 @@ function getprmtrs(~, ~, view, model)
     
     msgbox('Brightfield image has been adapted')
     
-    close(view.overlay.parent);
+    close(view.masking.parent);
 end
  
 function cancel(~, ~, view)
-    close(view.overlay.parent);
+    close(view.masking.parent);
 end
  
