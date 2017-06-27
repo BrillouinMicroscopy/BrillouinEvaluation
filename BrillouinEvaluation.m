@@ -12,14 +12,18 @@ function varargout = BrillouinEvaluation
     
     controllers = controller(model, view);
     
-    set(view.figure, 'CloseRequestFcn', {@closeGUI, model, controllers});
+    set(view.figure, 'CloseRequestFcn', {@closeGUI, model, view, controllers});
     
     if nargout
         varargout{1} = controllers;
     end
 end
 
-function closeGUI(~, ~, model, controllers)
+function closeGUI(~, ~, model, view, controllers)
+    if isfield(view.masking, 'parent') && ishandle(view.masking.parent)
+        close(view.masking.parent);
+        delete(view.masking.parent);
+    end
     controllers.data.close('', '', model);
     delete(gcf);
 end
