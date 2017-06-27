@@ -12,6 +12,8 @@ function masking = Masking(model, view)
     set(view.masking.masksTable, 'CellSelectionCallback', {@selectMask, model, view});
     set(view.masking.masksTable, 'CellEditCallback', {@renameMask, model});
     
+    set(view.masking.addMask, 'Callback', {@addMask, model});
+    
     set(view.masking.cancel, 'Callback', {@cancel, view});
     
     set(view.masking.showOverlay, 'Callback', {@toggleOverlay, view, model});
@@ -141,13 +143,15 @@ function rotate3d(src, ~, view)
 end
 
 function selectMask(~, data, model, view)
-    type = sprintf('m%01.0d', data.Indices(1));
-    model.displaySettings.masking.selected = type;
     global mask;
-    mask = model.results.masks.(type);
-    maskRGB = cat(3, mask.color(1)*ones(size(mask.mask)), mask.color(2)*ones(size(mask.mask)), mask.color(3)*ones(size(mask.mask)));
-    view.masking.hMask.CData = maskRGB;
-    view.masking.hMask.AlphaData = 0.4*double(mask.mask);
+    if ~isempty(data.Indices)
+        type = sprintf('m%01.0d', data.Indices(1));
+        model.displaySettings.masking.selected = type;
+        mask = model.results.masks.(type);
+        maskRGB = cat(3, mask.color(1)*ones(size(mask.mask)), mask.color(2)*ones(size(mask.mask)), mask.color(3)*ones(size(mask.mask)));
+        view.masking.hMask.CData = maskRGB;
+        view.masking.hMask.AlphaData = 0.4*double(mask.mask);
+    end
 end
 
 function renameMask(~, data, model)
@@ -158,6 +162,29 @@ function renameMask(~, data, model)
         case 2
             model.results.masks.(type).transparency = data.NewData;
     end
+end
+
+function addMask(~, ~, model)
+    masks = model.results.masks;
+    maskFields = fields(masks);
+    lastField = maskFields{end};
+    jj = 1;
+    lastNumber = str2double(lastField(2:end));
+    newField = sprintf('m%01.0d', lastNumber + jj);
+    while isfield(masks, newField)
+        jj = jj + 1;
+        newField = sprintf('m%01.0d', lastNumber + jj);
+    end
+    newName = 'newMask';
+    
+    res = model.parameters.resolution;
+    masks.(newField) = struct( ...
+        'name',         newName, ...
+        'mask',         zeros(res.Y,res.X,res.Z), ...
+        'transparency', 0.4, ...
+        'color',        [1 0 0] ...
+    );
+    model.results.masks = masks;
 end
  
 function cancel(~, ~, view)
