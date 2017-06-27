@@ -13,6 +13,7 @@ function masking = Masking(model, view)
     set(view.masking.masksTable, 'CellEditCallback', {@renameMask, model});
     
     set(view.masking.addMask, 'Callback', {@addMask, model});
+    set(view.masking.deleteMask, 'Callback', {@deleteMask, model});
     
     set(view.masking.cancel, 'Callback', {@cancel, view});
     
@@ -145,23 +146,42 @@ end
 function selectMask(~, data, model, view)
     global mask;
     if ~isempty(data.Indices)
-        type = sprintf('m%01.0d', data.Indices(1));
-        model.displaySettings.masking.selected = type;
-        mask = model.results.masks.(type);
+        masks = model.results.masks;
+        maskFields = fieldnames(masks);
+        selectedMask = maskFields{data.Indices(1)};
+        model.displaySettings.masking.selected = selectedMask;
+        mask = model.results.masks.(selectedMask);
         maskRGB = cat(3, mask.color(1)*ones(size(mask.mask)), mask.color(2)*ones(size(mask.mask)), mask.color(3)*ones(size(mask.mask)));
         view.masking.hMask.CData = maskRGB;
         view.masking.hMask.AlphaData = 0.4*double(mask.mask);
     end
 end
 
-function renameMask(~, data, model)
-    type = sprintf('m%01.0d', data.Indices(1));
+function renameMask(~, data, model)        
+    masks = model.results.masks;
+    maskFields = fieldnames(masks);
+    selectedMask = maskFields{data.Indices(1)};
     switch data.Indices(2)
         case 1
-            model.results.masks.(type).name = data.NewData;
+            model.results.masks.(selectedMask).name = data.NewData;
         case 2
-            model.results.masks.(type).transparency = data.NewData;
+            model.results.masks.(selectedMask).transparency = data.NewData;
     end
+end
+
+function deleteMask(~, ~, model)
+    masks = model.results.masks;
+    selected = model.displaySettings.masking.selected;
+    if isfield(masks, selected)
+        masks = rmfield(masks, selected);
+    end
+    maskFields = fields(masks);
+    if ~isempty(maskFields)
+        model.displaySettings.masking.selected = maskFields{1};
+    else
+        model.displaySettings.masking.selected = '';
+    end
+    model.results.masks = masks;
 end
 
 function addMask(~, ~, model)
