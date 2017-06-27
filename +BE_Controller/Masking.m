@@ -10,6 +10,7 @@ function masking = Masking(model, view)
     set(view.masking.brushRemove, 'Callback', {@setMode, model, 0});
     
     set(view.masking.masksTable, 'CellSelectionCallback', {@selectMask, model, view});
+    set(view.masking.masksTable, 'CellEditCallback', {@renameMask, model});
     
     set(view.masking.cancel, 'Callback', {@cancel, view});
     
@@ -18,7 +19,7 @@ function masking = Masking(model, view)
     %% make mask global for now to improve performance
     global mask;
     selectedMask = model.displaySettings.masking.selected;
-    if ~isempty(selectedMask)
+    if isfield(model.results.masks, selectedMask)
         mask = model.results.masks.(selectedMask);
     end
     
@@ -140,13 +141,23 @@ function rotate3d(src, ~, view)
 end
 
 function selectMask(~, data, model, view)
-    type = data.Source.Data{data.Indices(1), data.Indices(2)};
+    type = sprintf('m%01.0d', data.Indices(1));
     model.displaySettings.masking.selected = type;
     global mask;
     mask = model.results.masks.(type);
     maskRGB = cat(3, mask.color(1)*ones(size(mask.mask)), mask.color(2)*ones(size(mask.mask)), mask.color(3)*ones(size(mask.mask)));
     view.masking.hMask.CData = maskRGB;
     view.masking.hMask.AlphaData = 0.4*double(mask.mask);
+end
+
+function renameMask(~, data, model)
+    type = sprintf('m%01.0d', data.Indices(1));
+    switch data.Indices(2)
+        case 1
+            model.results.masks.(type).name = data.NewData;
+        case 2
+            model.results.masks.(type).transparency = data.NewData;
+    end
 end
  
 function cancel(~, ~, view)

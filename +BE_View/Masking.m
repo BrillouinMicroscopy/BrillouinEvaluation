@@ -166,7 +166,7 @@ function initView(handles, model)
     names = fields(masks);
     masksData = cell(length(names),2);
     for jj = 1:length(names)
-        masksData{jj,1} = names{jj};
+        masksData{jj,1} = masks.(names{jj}).name;
         masksData{jj,2} = masks.(names{jj}).transparency;
     end
     
@@ -264,7 +264,7 @@ function plotBrillouinImage(handles, model)
     handles.hPointer.CData = pointerRGB;
     handles.hPointer.AlphaData = 0.4*double(pointer);
     selectedMask = model.displaySettings.masking.selected;
-    if ~isempty(selectedMask)
+    if isfield(model.results.masks, selectedMask)
         mask = model.results.masks.(selectedMask);
         maskRGB = cat(3, mask.color(1)*ones(size(mask.mask)), mask.color(2)*ones(size(mask.mask)), mask.color(3)*ones(size(mask.mask)));
         handles.hMask.CData = maskRGB;
