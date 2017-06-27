@@ -9,6 +9,8 @@ function masking = Masking(model, view)
     set(view.masking.brushAdd, 'Callback', {@setMode, model, 1});
     set(view.masking.brushRemove, 'Callback', {@setMode, model, 0});
     
+    set(view.masking.brushSize, 'Callback', {@setValue, model, 'brushSize'});
+    
     set(view.masking.masksTable, 'CellSelectionCallback', {@selectMask, model, view});
     set(view.masking.masksTable, 'CellEditCallback', {@renameMask, model});
     
@@ -35,9 +37,10 @@ function masking = Masking(model, view)
             mean(model.parameters.positions.(dims{kk})(:))*ones(size(model.parameters.positions.(dims{kk})));
         pos.([dims{kk} '_zm']) = squeeze(pos.([dims{kk} '_zm']));
     end
+    global brushSize;
     brushSize = model.parameters.masking.brushSize;
 %     axInfo = getAxInfo(view.masking.axesImage);
-    MotionFcnCallback = @(src, data) DrawPointer(src, data, view.masking.parent, view.masking.axesImage, view.masking.hPointer, pos, brushSize);
+    MotionFcnCallback = @(src, data) DrawPointer(src, data, view.masking.parent, view.masking.axesImage, view.masking.hPointer, pos);
     set(view.masking.parent, 'WindowButtonMotionFcn', MotionFcnCallback);
     % ButtonDown function
     set(view.masking.parent,'WindowButtonDownFcn',{@StartDrawing, MotionFcnCallback, view.masking.hMask, model});
@@ -51,6 +54,14 @@ end
 
 function [] = setMode(~, ~, model, mode)
     model.parameters.masking.adding = mode;
+end
+
+function setValue(src, ~, model, value)
+    global brushSize
+    model.parameters.masking.(value) = str2double(get(src, 'String'));
+    if strcmp(value, 'brushSize')
+        brushSize = str2double(get(src, 'String'));
+    end
 end
 
 function [] = StartDrawing(src, ~, MotionFcnCallback, hMask, model)
@@ -77,11 +88,12 @@ function EndDrawing(src, ~, MotionFcnCallback, model)
     model.results.masks.(selectedMask) = mask;
 end
 
-function pointer = DrawPointer(~, ~, fh, axInfo, hPointer, pos, brushSize)
+function pointer = DrawPointer(~, ~, fh, axInfo, hPointer, pos)
     cp = getCurrentAxesPoint(fh, axInfo);
+    global brushSize;
     
     if ~isempty(cp)
-        pointer = sqrt((pos.X_zm-cp(1)).^2+(pos.Y_zm-cp(2)).^2) <= (brushSize);
+        pointer = sqrt((pos.X_zm-cp(1)).^2+(pos.Y_zm-cp(2)).^2) <= (brushSize/2);
         set(hPointer, 'AlphaData', 0.6*pointer);
     else
         pointer = [];

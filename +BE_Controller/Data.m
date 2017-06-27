@@ -211,7 +211,7 @@ function loadData(model, filePath)
                 end
                 if ~isfield(parameters, 'masking')
                     parameters.masking = struct( ...
-                        'brushSize', 20, ...        % [micro m] size of the brush
+                        'brushSize', 40, ...        % [micro m] size of the brush
                         'adding', 1 ...             % [logical] add or delete mask
                     );
                 end
