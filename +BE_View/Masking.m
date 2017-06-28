@@ -10,7 +10,7 @@ function handles = Masking(parent, model)
     listener(1) = addlistener(model, 'tmp', 'PostSet', ...
         @(o,e) initView(handles, e.AffectedObject));
     listener(2) = addlistener(model, 'displaySettings', 'PostSet', ...
-        @(o,e) toggleOverlay(handles, e.AffectedObject));
+        @(o,e) onDisplaySettings(handles, e.AffectedObject));
     
     set(parent, 'CloseRequestFcn', {@closeMasking, listener, model});    
 end
@@ -183,7 +183,7 @@ function initView(handles, model)
     
     handles.masksTable.Data = masksData;
     
-    plotBrillouinImage(handles, model);
+    onDisplaySettings(handles, model);
 end
 
 function plotBrillouinImage(handles, model)
@@ -256,13 +256,13 @@ function plotBrillouinImage(handles, model)
             cb = colorbar(handles.axesImage);
             title(cb,labels.dataLabel, 'interpreter', 'latex');
             box(handles.axesImage, 'on');
-            if model.displaySettings.evaluation.autoscale
+            if model.displaySettings.masking.autoscale
         %                 [floor, cap] = checkCaxis(min(data(:)), max(data(:)));
-        %                 model.displaySettings.evaluation.floor = floor;
-        %                 model.displaySettings.evaluation.cap = cap;
+        %                 model.displaySettings.masking.floor = floor;
+        %                 model.displaySettings.masking.cap = cap;
                 caxis(handles.axesImage, 'auto');
-            elseif model.displaySettings.evaluation.floor < model.displaySettings.evaluation.cap
-                caxis(handles.axesImage, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
+            elseif model.displaySettings.masking.floor < model.displaySettings.masking.cap
+                caxis(handles.axesImage, [model.displaySettings.masking.floor model.displaySettings.masking.cap]);
             end
             zoom(handles.axesImage, 'reset');
             set(handles.axesImage, 'YDir', 'normal');
@@ -295,7 +295,11 @@ function plotBrillouinImage(handles, model)
     end
 end
 
-function toggleOverlay(handles, model)
+function onDisplaySettings(handles, model)
+    set(handles.autoscale, 'Value', model.displaySettings.masking.autoscale);
+    set(handles.cap, 'String', model.displaySettings.masking.cap);
+    set(handles.floor, 'String', model.displaySettings.masking.floor);
+    
     data = model.results.(model.displaySettings.evaluation.type);
     data = double(data);
     if ~strcmp(model.displaySettings.evaluation.type, 'brightfield') && ~strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')
@@ -312,4 +316,6 @@ function toggleOverlay(handles, model)
     else
         handles.hImage.AlphaData = ~isnan(data);
     end
+    
+    plotBrillouinImage(handles, model);
 end

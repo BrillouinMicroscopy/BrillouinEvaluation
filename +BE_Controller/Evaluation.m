@@ -508,6 +508,10 @@ function startMasking(~, ~, view, model)
     end
     
     model.tmp.masks = model.results.masks;
+    
+    model.displaySettings.masking.autoscale = model.displaySettings.evaluation.autoscale;
+    model.displaySettings.masking.floor = model.displaySettings.evaluation.floor;
+    model.displaySettings.masking.cap = model.displaySettings.evaluation.cap;
 
     view.masking = BE_View.Masking(parent, model);
 

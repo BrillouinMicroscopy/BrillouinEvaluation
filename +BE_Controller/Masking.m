@@ -22,6 +22,15 @@ function masking = Masking(model, view)
     
     set(view.masking.showOverlay, 'Callback', {@toggleOverlay, view, model});
     
+    set(view.masking.autoscale, 'Callback', {@toggleAutoscale, model, view});
+    set(view.masking.cap, 'Callback', {@setClim, model});
+    set(view.masking.floor, 'Callback', {@setClim, model});
+    
+    set(view.masking.increaseFloor, 'Callback', {@changeClim, model, 1});
+    set(view.masking.decreaseFloor, 'Callback', {@changeClim, model, -1});
+    set(view.masking.increaseCap, 'Callback', {@changeClim, model, 1});
+    set(view.masking.decreaseCap, 'Callback', {@changeClim, model, -1});
+    
     %% make mask global for now to improve performance
     clear global mask;
     global mask;
@@ -162,6 +171,27 @@ function rotate3d(src, ~, view)
             set(view.masking.rotate3dButton,'UserData',0);
             set(view.masking.rotate3dHandle,'Enable','off');
     end
+end
+
+function setClim(UIControl, ~, model)
+    masking = model.displaySettings.masking;
+    field = get(UIControl, 'Tag');
+    masking.(field) = str2double(get(UIControl, 'String'));
+    masking.autoscale = 0;
+    model.displaySettings.masking = masking;
+end
+
+function toggleAutoscale(~, ~, model, view)
+    model.displaySettings.masking.autoscale = get(view.masking.autoscale, 'Value');
+end
+
+function changeClim(UIControl, ~, model, sign)
+    masking = model.displaySettings.masking;
+    field = get(UIControl, 'Tag');
+    dif = abs(0.1*(masking.cap - masking.floor));
+    masking.autoscale = 0;
+    masking.(field) = masking.(field) + sign * dif;
+    model.displaySettings.masking = masking;
 end
 
 function selectMask(~, data, model, view)
