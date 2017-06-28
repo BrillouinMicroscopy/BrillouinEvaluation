@@ -491,6 +491,14 @@ function getpstn(~, ~, view, model)
 end
 
 function startMasking(~, ~, view, model)
+    data = nanmean(model.results.BrillouinShift,4);
+    dimensions = size(data);
+    dimension = sum(dimensions > 1);
+    if dimension ~= 2
+        disp('Masking is only available for 2D data yet.');
+        return;
+    end
+    
     if isfield(view.masking, 'parent') && ishandle(view.masking.parent)
         return;
     else

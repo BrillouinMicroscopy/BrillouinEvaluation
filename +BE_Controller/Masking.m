@@ -22,11 +22,15 @@ function masking = Masking(model, view)
     set(view.masking.showOverlay, 'Callback', {@toggleOverlay, view, model});
     
     %% make mask global for now to improve performance
+    clear global mask;
     global mask;
     selectedMask = model.displaySettings.masking.selected;
     if isfield(model.results.masks, selectedMask)
         mask = model.results.masks.(selectedMask);
+    else
+        model.displaySettings.masking.selected = '';
     end
+        
     
     %% Callbacks related to masking
     % Motion function
@@ -77,15 +81,19 @@ end
 
 function UpdateMask(hMask, m, adding)
     global mask;
-    mask.mask(logical(m)) = adding;
-    set(hMask,'AlphaData',0.4*double(mask.mask));
+    if ~isempty(mask)
+        mask.mask(logical(m)) = adding;
+        set(hMask,'AlphaData',0.4*double(mask.mask));
+    end
 end
 
 function EndDrawing(src, ~, MotionFcnCallback, model)
     set(src, 'WindowButtonMotionFcn', MotionFcnCallback);
     selectedMask = model.displaySettings.masking.selected;
     global mask;
-    model.results.masks.(selectedMask) = mask;
+    if isfield(model.results.masks, selectedMask)
+        model.results.masks.(selectedMask) = mask;
+    end
 end
 
 function pointer = DrawPointer(~, ~, fh, axInfo, hPointer, pos)

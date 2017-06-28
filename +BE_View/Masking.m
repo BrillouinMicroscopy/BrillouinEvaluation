@@ -227,59 +227,65 @@ function plotBrillouinImage(handles, model)
     pos.X_zm = squeeze(positions.X_zm);
     pos.Y_zm = squeeze(positions.Y_zm);
     pos.Z_zm = squeeze(positions.Z_zm);
+    
+    dimensions = size(d);
+    dimension = sum(dimensions > 1);
 
     %% plot
-    hold(handles.axesImage,'off');
-    handles.hImage.XData = pos.X_zm(1,:);
-    handles.hImage.YData = pos.Y_zm(:,1);
-    handles.hImage.CData = d;
-    handles.hImage.AlphaData = ~isnan(d);
-    title(handles.axesImage,labels.titleString);
-    axis(handles.axesImage, 'equal');
-%             xlim([min(px(:)), max(px(:))]);
-%             ylim([min(py(:)), max(py(:))]);
-%             zlim([min(pz(:)), max(pz(:))]);
-    xlabel(handles.axesImage, '$x$ [$\mu$m]', 'interpreter', 'latex');
-    ylabel(handles.axesImage, '$y$ [$\mu$m]', 'interpreter', 'latex');
-    zlabel(handles.axesImage, '$z$ [$\mu$m]', 'interpreter', 'latex');
-    cb = colorbar(handles.axesImage);
-    title(cb,labels.dataLabel, 'interpreter', 'latex');
-    box(handles.axesImage, 'on');
-    if model.displaySettings.evaluation.autoscale
-%                 [floor, cap] = checkCaxis(min(data(:)), max(data(:)));
-%                 model.displaySettings.evaluation.floor = floor;
-%                 model.displaySettings.evaluation.cap = cap;
-        caxis(handles.axesImage, 'auto');
-    elseif model.displaySettings.evaluation.floor < model.displaySettings.evaluation.cap
-        caxis(handles.axesImage, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
-    end
-    zoom(handles.axesImage, 'reset');
-    set(handles.axesImage, 'YDir', 'normal');
+    switch dimension
+        case 2
+            hold(handles.axesImage,'off');
+            handles.hImage.XData = pos.X_zm(1,:);
+            handles.hImage.YData = pos.Y_zm(:,1);
+            handles.hImage.CData = d;
+            handles.hImage.AlphaData = ~isnan(d);
+            title(handles.axesImage,labels.titleString);
+            axis(handles.axesImage, 'equal');
+        %             xlim([min(px(:)), max(px(:))]);
+        %             ylim([min(py(:)), max(py(:))]);
+        %             zlim([min(pz(:)), max(pz(:))]);
+            xlabel(handles.axesImage, '$x$ [$\mu$m]', 'interpreter', 'latex');
+            ylabel(handles.axesImage, '$y$ [$\mu$m]', 'interpreter', 'latex');
+            zlabel(handles.axesImage, '$z$ [$\mu$m]', 'interpreter', 'latex');
+            cb = colorbar(handles.axesImage);
+            title(cb,labels.dataLabel, 'interpreter', 'latex');
+            box(handles.axesImage, 'on');
+            if model.displaySettings.evaluation.autoscale
+        %                 [floor, cap] = checkCaxis(min(data(:)), max(data(:)));
+        %                 model.displaySettings.evaluation.floor = floor;
+        %                 model.displaySettings.evaluation.cap = cap;
+                caxis(handles.axesImage, 'auto');
+            elseif model.displaySettings.evaluation.floor < model.displaySettings.evaluation.cap
+                caxis(handles.axesImage, [model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
+            end
+            zoom(handles.axesImage, 'reset');
+            set(handles.axesImage, 'YDir', 'normal');
 
-    %% plot the selected mask
-    pointer = zeros(size(d));
-    pointerColor = [0 0 1];
-    pointerRGB = cat(3, pointerColor(1)*ones(size(pointer)), pointerColor(2)*ones(size(pointer)), pointerColor(3)*ones(size(pointer)));
-    % update mask data
-    handles.hMask.XData = pos.X_zm(1,:);
-    handles.hMask.YData = pos.Y_zm(:,1);
-    % update pointer data
-    handles.hPointer.XData = pos.X_zm(1,:);
-    handles.hPointer.YData = pos.Y_zm(:,1);
-    handles.hPointer.CData = pointerRGB;
-    handles.hPointer.AlphaData = 0.4*double(pointer);
-    selectedMask = model.displaySettings.masking.selected;
-    if isfield(model.results.masks, selectedMask)
-        mask = model.results.masks.(selectedMask);
-        maskRGB = cat(3, mask.color(1)*ones(size(mask.mask)), mask.color(2)*ones(size(mask.mask)), mask.color(3)*ones(size(mask.mask)));
-        handles.hMask.CData = maskRGB;
-        handles.hMask.AlphaData = 0.4*double(mask.mask);
-    else
-        handles.hMask.CData = zeros(size(d));
-        handles.hMask.AlphaData = zeros(size(d));
-    end
-    if ~model.displaySettings.masking.showOverlay
-        handles.hImage.AlphaData = zeros(size(d));
+            %% plot the selected mask
+            pointer = zeros(size(d));
+            pointerColor = [0 0 1];
+            pointerRGB = cat(3, pointerColor(1)*ones(size(pointer)), pointerColor(2)*ones(size(pointer)), pointerColor(3)*ones(size(pointer)));
+            % update mask data
+            handles.hMask.XData = pos.X_zm(1,:);
+            handles.hMask.YData = pos.Y_zm(:,1);
+            % update pointer data
+            handles.hPointer.XData = pos.X_zm(1,:);
+            handles.hPointer.YData = pos.Y_zm(:,1);
+            handles.hPointer.CData = pointerRGB;
+            handles.hPointer.AlphaData = 0.4*double(pointer);
+            selectedMask = model.displaySettings.masking.selected;
+            if isfield(model.results.masks, selectedMask)
+                mask = model.results.masks.(selectedMask);
+                maskRGB = cat(3, mask.color(1)*ones(size(mask.mask)), mask.color(2)*ones(size(mask.mask)), mask.color(3)*ones(size(mask.mask)));
+                handles.hMask.CData = maskRGB;
+                handles.hMask.AlphaData = 0.4*double(mask.mask);
+            else
+                handles.hMask.CData = zeros(size(d));
+                handles.hMask.AlphaData = zeros(size(d));
+            end
+            if ~model.displaySettings.masking.showOverlay
+                handles.hImage.AlphaData = zeros(size(d));
+            end
     end
 end
 
