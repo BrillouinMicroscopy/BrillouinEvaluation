@@ -11,6 +11,8 @@ function handles = Masking(parent, model)
         @(o,e) initView(handles, e.AffectedObject));
     listener(2) = addlistener(model, 'displaySettings', 'PostSet', ...
         @(o,e) onDisplaySettings(handles, e.AffectedObject));
+    listener(2) = addlistener(model, 'parameters', 'PostSet', ...
+        @(o,e) onParameters(handles, e.AffectedObject));
     
     set(parent, 'CloseRequestFcn', {@closeMasking, listener, model});    
 end
@@ -27,11 +29,11 @@ function handles = initGUI(model, parent)
         'Position', [0.02,0.765,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
     
     brushAdd = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...
-        'String','Add','Position',[0.19,0.762,0.05,0.045],...
+        'String',BE_SharedFunctions.iconString([model.pp '/images/brush.png']),'Position',[0.20,0.762,0.04,0.045],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
 
     brushRemove = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...
-        'String','Remove','Position',[0.135,0.762,0.05,0.045],...
+        'String',BE_SharedFunctions.iconString([model.pp '/images/rubber.png']),'Position',[0.155,0.762,0.04,0.045],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     masksTable = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.35 0.22 0.3], ...
@@ -173,6 +175,12 @@ function initView(handles, model)
     set(handles.brushSize, 'String', model.parameters.masking.brushSize);
     set(handles.showOverlay, 'Value', model.displaySettings.masking.showOverlay);
     
+    if model.parameters.masking.adding
+        set(handles.brushAdd, 'BackgroundColor', [0.5 0.8 1]);
+    else
+        set(handles.brushRemove, 'BackgroundColor', [0.5 0.8 1]);
+    end
+    
     masks = model.tmp.masks;
     names = fields(masks);
     masksData = cell(length(names),2);
@@ -184,6 +192,16 @@ function initView(handles, model)
     handles.masksTable.Data = masksData;
     
     onDisplaySettings(handles, model);
+end
+
+function onParameters(handles, model) 
+    if model.parameters.masking.adding
+        set(handles.brushAdd, 'BackgroundColor', [0.5 0.8 1]);
+        set(handles.brushRemove, 'BackgroundColor', [0.94 0.94 0.94]);
+    else
+        set(handles.brushAdd, 'BackgroundColor', [0.94 0.94 0.94]);
+        set(handles.brushRemove, 'BackgroundColor', [0.5 0.8 1]);
+    end
 end
 
 function plotBrillouinImage(handles, model)
