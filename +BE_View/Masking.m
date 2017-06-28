@@ -7,12 +7,12 @@ function handles = Masking(parent, model)
 
     % observe on model changes and update view accordingly
     % (tie listener to model object lifecycle)
-    listener(1) = addlistener(model, 'results', 'PostSet', ...
+    listener(1) = addlistener(model, 'tmp', 'PostSet', ...
         @(o,e) initView(handles, e.AffectedObject));
     listener(2) = addlistener(model, 'displaySettings', 'PostSet', ...
         @(o,e) toggleOverlay(handles, e.AffectedObject));
     
-    set(parent, 'CloseRequestFcn', {@closeMasking, listener});    
+    set(parent, 'CloseRequestFcn', {@closeMasking, listener, model});    
 end
 
 function handles = initGUI(model, parent)
@@ -157,17 +157,23 @@ function handles = initGUI(model, parent)
     );
 end
 
-function closeMasking(source, ~, listener)
+function closeMasking(source, ~, listener, model)
+    if isfield(model.tmp, 'masks')
+        model.tmp = rmfield(model.tmp, 'masks');
+    end
     delete(listener);
     delete(source);
 end
 
 function initView(handles, model) 
 %% Initialize the view
+    if ~isfield(model.tmp, 'masks')
+        return;
+    end
     set(handles.brushSize, 'String', model.parameters.masking.brushSize);
     set(handles.showOverlay, 'Value', model.displaySettings.masking.showOverlay);
     
-    masks = model.results.masks;
+    masks = model.tmp.masks;
     names = fields(masks);
     masksData = cell(length(names),2);
     for jj = 1:length(names)
@@ -274,8 +280,8 @@ function plotBrillouinImage(handles, model)
             handles.hPointer.CData = pointerRGB;
             handles.hPointer.AlphaData = 0.4*double(pointer);
             selectedMask = model.displaySettings.masking.selected;
-            if isfield(model.results.masks, selectedMask)
-                mask = model.results.masks.(selectedMask);
+            if isfield(model.tmp.masks, selectedMask)
+                mask = model.tmp.masks.(selectedMask);
                 maskRGB = cat(3, mask.color(1)*ones(size(mask.mask)), mask.color(2)*ones(size(mask.mask)), mask.color(3)*ones(size(mask.mask)));
                 handles.hMask.CData = maskRGB;
                 handles.hMask.AlphaData = 0.4*double(mask.mask);

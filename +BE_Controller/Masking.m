@@ -18,6 +18,7 @@ function masking = Masking(model, view)
     set(view.masking.deleteMask, 'Callback', {@deleteMask, model});
     
     set(view.masking.cancel, 'Callback', {@cancel, view});
+    set(view.masking.ok, 'Callback', {@ok, model, view});
     
     set(view.masking.showOverlay, 'Callback', {@toggleOverlay, view, model});
     
@@ -25,8 +26,8 @@ function masking = Masking(model, view)
     clear global mask;
     global mask;
     selectedMask = model.displaySettings.masking.selected;
-    if isfield(model.results.masks, selectedMask)
-        mask = model.results.masks.(selectedMask);
+    if isfield(model.tmp.masks, selectedMask)
+        mask = model.tmp.masks.(selectedMask);
     else
         model.displaySettings.masking.selected = '';
     end
@@ -91,8 +92,8 @@ function EndDrawing(src, ~, MotionFcnCallback, model)
     set(src, 'WindowButtonMotionFcn', MotionFcnCallback);
     selectedMask = model.displaySettings.masking.selected;
     global mask;
-    if isfield(model.results.masks, selectedMask)
-        model.results.masks.(selectedMask) = mask;
+    if isfield(model.tmp.masks, selectedMask)
+        model.tmp.masks.(selectedMask) = mask;
     end
 end
 
@@ -166,11 +167,11 @@ end
 function selectMask(~, data, model, view)
     global mask;
     if ~isempty(data.Indices)
-        masks = model.results.masks;
+        masks = model.tmp.masks;
         maskFields = fieldnames(masks);
         selectedMask = maskFields{data.Indices(1)};
         model.displaySettings.masking.selected = selectedMask;
-        mask = model.results.masks.(selectedMask);
+        mask = model.tmp.masks.(selectedMask);
         maskRGB = cat(3, mask.color(1)*ones(size(mask.mask)), mask.color(2)*ones(size(mask.mask)), mask.color(3)*ones(size(mask.mask)));
         view.masking.hMask.CData = maskRGB;
         view.masking.hMask.AlphaData = 0.4*double(mask.mask);
@@ -178,19 +179,19 @@ function selectMask(~, data, model, view)
 end
 
 function renameMask(~, data, model)        
-    masks = model.results.masks;
+    masks = model.tmp.masks;
     maskFields = fieldnames(masks);
     selectedMask = maskFields{data.Indices(1)};
     switch data.Indices(2)
         case 1
-            model.results.masks.(selectedMask).name = data.NewData;
+            model.tmp.masks.(selectedMask).name = data.NewData;
         case 2
-            model.results.masks.(selectedMask).transparency = data.NewData;
+            model.tmp.masks.(selectedMask).transparency = data.NewData;
     end
 end
 
 function deleteMask(~, ~, model)
-    masks = model.results.masks;
+    masks = model.tmp.masks;
     selected = model.displaySettings.masking.selected;
     if isfield(masks, selected)
         masks = rmfield(masks, selected);
@@ -201,11 +202,11 @@ function deleteMask(~, ~, model)
     else
         model.displaySettings.masking.selected = '';
     end
-    model.results.masks = masks;
+    model.tmp.masks = masks;
 end
 
 function addMask(~, ~, model)
-    masks = model.results.masks;
+    masks = model.tmp.masks;
     maskFields = fields(masks);
     lastField = maskFields{end};
     jj = 1;
@@ -224,10 +225,15 @@ function addMask(~, ~, model)
         'transparency', 0.4, ...
         'color',        [1 0 0] ...
     );
-    model.results.masks = masks;
+    model.tmp.masks = masks;
 end
  
 function cancel(~, ~, view)
+    close(view.masking.parent);
+end
+ 
+function ok(~, ~, model, view)
+    model.results.masks = model.tmp.masks;
     close(view.masking.parent);
 end
 

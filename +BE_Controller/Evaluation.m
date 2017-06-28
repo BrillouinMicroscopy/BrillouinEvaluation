@@ -506,6 +506,8 @@ function startMasking(~, ~, view, model)
         % hide the menubar and prevent resizing
         set(parent, 'menubar', 'none', 'Resize','off', 'units', 'pixels');
     end
+    
+    model.tmp.masks = model.results.masks;
 
     view.masking = BE_View.Masking(parent, model);
 
