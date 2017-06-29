@@ -14,6 +14,7 @@ function acquisition = Evaluation(model, view)
     set(view.evaluation.showSpectrum, 'Callback', {@showSpectrum, view, model});
     set(view.evaluation.selectbright, 'Callback', {@selectbright, view, model});
     set(view.evaluation.getbrightposition, 'Callback', {@getpstn, view, model});
+    set(view.evaluation.startMasking, 'Callback', {@startMasking, view, model});
     
     set(view.evaluation.zoomIn, 'Callback', {@zoom, 'in', view});
     set(view.evaluation.zoomOut, 'Callback', {@zoom, 'out', view});
@@ -487,5 +488,33 @@ function getpstn(~, ~, view, model)
     view.overlay = BE_View.Overlay(parent, model);
 
     BE_Controller.Overlay(model, view);
+end
+
+function startMasking(~, ~, view, model)
+    data = nanmean(model.results.BrillouinShift,4);
+    dimensions = size(data);
+    dimension = sum(dimensions > 1);
+    if dimension ~= 2
+        disp('Masking is only available for 2D data yet.');
+        return;
+    end
+    
+    if isfield(view.masking, 'parent') && ishandle(view.masking.parent)
+        return;
+    else
+        parent = figure('Position',[500,200,900,650]);
+        % hide the menubar and prevent resizing
+        set(parent, 'menubar', 'none', 'Resize','off', 'units', 'pixels');
+    end
+    
+    model.tmp.masks = model.results.masks;
+    
+    model.displaySettings.masking.autoscale = model.displaySettings.evaluation.autoscale;
+    model.displaySettings.masking.floor = model.displaySettings.evaluation.floor;
+    model.displaySettings.masking.cap = model.displaySettings.evaluation.cap;
+
+    view.masking = BE_View.Masking(parent, model);
+
+    BE_Controller.Masking(model, view);
 end
 
