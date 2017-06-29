@@ -54,7 +54,7 @@ function masking = Masking(model, view)
     global brushSize;
     brushSize = model.parameters.masking.brushSize;
 %     axInfo = getAxInfo(view.masking.axesImage);
-    MotionFcnCallback = @(src, data) DrawPointer(src, data, view.masking.parent, view.masking.axesImage, view.masking.hPointer, pos);
+    MotionFcnCallback = @(src, data) DrawPointer(src, data, view.masking.axesImage, view.masking.hPointer, pos);
     set(view.masking.parent, 'WindowButtonMotionFcn', MotionFcnCallback);
     % ButtonDown function
     set(view.masking.parent,'WindowButtonDownFcn',{@StartDrawing, MotionFcnCallback, view.masking.hMask, model});
@@ -106,8 +106,9 @@ function EndDrawing(src, ~, MotionFcnCallback, model)
     end
 end
 
-function pointer = DrawPointer(~, ~, fh, axInfo, hPointer, pos)
-    cp = getCurrentAxesPoint(fh, axInfo);
+function pointer = DrawPointer(~, ~, axInfo, hPointer, pos)
+    cp = get(axInfo, 'currentpoint');
+    cp = [cp(1,1), cp(1,2)];
     global brushSize;
     
     if ~isempty(cp)
@@ -270,40 +271,3 @@ end
 function toggleOverlay(~, ~, view, model)
     model.displaySettings.masking.showOverlay = get(view.masking.showOverlay, 'Value');
 end
-
-%% function for returning the current point
-function point = getCurrentAxesPoint(fh, ax)
-
-    axInfo = getAxInfo(ax);
-    %% get the current point inside the figure
-    cp = get(fh, 'currentpoint');
-
-    %% check if current point is over axes
-    tf1 = axInfo.Pos(1) <= cp(1) && cp(1) <= axInfo.Pos(1) + axInfo.Pos(3);
-    tf2 = axInfo.Pos(2) <= cp(2) && cp(2) <= axInfo.Pos(2) + axInfo.Pos(4);
-
-    if tf1 && tf2
-        %% calculate the current point
-        Cx = axInfo.LimX(1) + (cp(1)-axInfo.Pos(1)).*(axInfo.DifX/axInfo.Pos(3));
-        Cy = axInfo.LimY(1) + (cp(2)-axInfo.Pos(2)).*(axInfo.DifY/axInfo.Pos(4));
-        point = [Cx, Cy];
-    else
-        point = [];
-    end
-end
-
-function axInfo = getAxInfo(ax)
-    %% set axes units to pixels for easier calculations
-    set(ax,'units','pixels');
-
-    %% get position, x-limit and y-limit
-    axInfo.Pos = get(ax, 'pos');
-    axInfo.LimX = get(ax, 'xlim');
-    axInfo.LimY = get(ax, 'ylim');
-    axInfo.DifX = diff(axInfo.LimX);
-    axInfo.DifY = diff(axInfo.LimY);
-
-    %% reset the axes units
-    set(ax, 'units', 'normalized');
-end
- 
