@@ -265,9 +265,13 @@ function plotBrillouinImage(handles, model)
             handles.hImage.AlphaData = ~isnan(d);
             title(handles.axesImage,labels.titleString);
             axis(handles.axesImage, 'equal');
-        %             xlim([min(px(:)), max(px(:))]);
-        %             ylim([min(py(:)), max(py(:))]);
-        %             zlim([min(pz(:)), max(pz(:))]);
+            xdif = diff(pos.X_zm,1,2);
+            xdif = floor(1000*mean(xdif(:)))/1000;
+            ydif = diff(pos.Y_zm,1,1);
+            ydif = floor(1000*mean(ydif(:)))/1000;
+            xlim(handles.axesImage, [min(pos.X_zm(:)) - xdif/2, max(pos.X_zm(:)) + xdif/2]);
+            ylim(handles.axesImage, [min(pos.Y_zm(:)) - ydif/2, max(pos.Y_zm(:)) + ydif/2]);
+
             xlabel(handles.axesImage, '$x$ [$\mu$m]', 'interpreter', 'latex');
             ylabel(handles.axesImage, '$y$ [$\mu$m]', 'interpreter', 'latex');
             zlabel(handles.axesImage, '$z$ [$\mu$m]', 'interpreter', 'latex');
