@@ -203,10 +203,11 @@ function loadData(model, filePath)
                 );
             end
             %% migration steps for files coming from versions older than 1.1.0
-            if parameters.programVersion.major <= 1 && parameters.programVersion.minor < 1
+            if parameters.programVersion.major <= 1 && parameters.programVersion.minor < 1 
                 results.peaksRayleigh_int = NaN(size(results.peaksRayleigh_pos));
                 results.peaksRayleigh_fwhm = NaN(size(results.peaksRayleigh_pos));
-                if ~isfield(results, 'masks')                
+                results.peaksBrillouin_fwhm_frequency = NaN(size(results.peaksRayleigh_pos));
+                if ~isfield(results, 'masks')
                     results.masks = struct();
                 end
                 if ~isfield(parameters, 'masking')

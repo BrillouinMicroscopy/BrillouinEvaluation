@@ -153,6 +153,11 @@ function evaluate(view, model)
                         
                         brillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
                         
+                        wavelengthLeftSlope = BE_SharedFunctions.getWavelengthFromMap(peaksBrillouin_pos - peaksBrillouin_fwhm/2, times, calibration);
+                        wavelengthRightSlope = BE_SharedFunctions.getWavelengthFromMap(peaksBrillouin_pos + peaksBrillouin_fwhm/2, times, calibration);
+                        
+                        peaksBrillouin_fwhm_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthLeftSlope, wavelengthRightSlope));
+                        
                         %% save the results
                         results = model.results;
                         results.BrillouinShift            = brillouinShift;           % [pix]  the Brillouin shift in pixels
@@ -161,6 +166,7 @@ function evaluate(view, model)
                         results.peaksBrillouin_dev        = peaksBrillouin_dev;       % [pix]  the deviation of the Brillouin fit
                         results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the intensity of the Brillouin peak(s)
                         results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
+                        results.peaksBrillouin_fwhm_frequency = peaksBrillouin_fwhm_frequency;  % [GHz] the FWHM of the Brillouin peak in GHz
                         results.peaksRayleigh_pos         = peaksRayleigh_pos;        % [pix]  the position of the Rayleigh peak(s) in the spectrum
                         results.peaksRayleigh_int         = peaksRayleigh_int;        % [a.u.] the intensity of the Rayleigh peak(s)
                         results.peaksRayleigh_fwhm        = peaksRayleigh_fwhm;       % [pix]  the FWHM of the Rayleigh peak(s)
@@ -194,6 +200,11 @@ function evaluate(view, model)
     
     brillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
     
+    wavelengthLeftSlope = BE_SharedFunctions.getWavelengthFromMap(peaksBrillouin_pos - peaksBrillouin_fwhm/2, times, calibration);
+    wavelengthRightSlope = BE_SharedFunctions.getWavelengthFromMap(peaksBrillouin_pos + peaksBrillouin_fwhm/2, times, calibration);
+
+    peaksBrillouin_fwhm_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthLeftSlope, wavelengthRightSlope));
+    
     %% save the results
     results = model.results;
     results.BrillouinShift            = brillouinShift;           % [pix]  the Brillouin shift in pixels
@@ -202,6 +213,7 @@ function evaluate(view, model)
     results.peaksBrillouin_dev        = peaksBrillouin_dev;       % [pix]  the deviation of the Brillouin fit
     results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the intensity of the Brillouin peak(s)
     results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
+    results.peaksBrillouin_fwhm_frequency = peaksBrillouin_fwhm_frequency;  % [GHz] the FWHM of the Brillouin peak in GHz
     results.peaksRayleigh_pos         = peaksRayleigh_pos;        % [pix]  the position of the Rayleigh peak(s) in the spectrum
     results.peaksRayleigh_int         = peaksRayleigh_int;        % [a.u.] the intensity of the Rayleigh peak(s)
     results.peaksRayleigh_fwhm        = peaksRayleigh_fwhm;       % [pix]  the FWHM of the Rayleigh peak(s)
