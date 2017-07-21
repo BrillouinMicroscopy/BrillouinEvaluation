@@ -79,6 +79,8 @@ function evaluate(view, model)
     times = peaksBrillouin_pos;
     validity = true(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
     
+%     spectra = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), size(model.parameters.extraction.interpolationPositions.x,2));
+    
     for jj = 1:1:model.parameters.resolution.X
         if ~model.status.evaluation.evaluate
             break
@@ -107,6 +109,8 @@ function evaluate(view, model)
                         img = imgs(:,:,mm);
                         
                         spectrum = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
+                        
+%                         spectra(kk, jj, ll, mm, :) = spectrum;
                         %%
                         intensity(kk, jj, ll, mm) = sum(img(:));
 
@@ -188,6 +192,7 @@ function evaluate(view, model)
         end
     end
     
+%     save('Brillouin_spectra.mat', 'spectra');
     
     %% calculate the Brillouin shift in [pix]
     brillouinShift = abs(peaksRayleigh_pos-peaksBrillouin_pos);
