@@ -5,6 +5,7 @@ function extraction = Extraction(model, view)
     set(view.extraction.selectPeaks, 'Callback', {@selectPeaks, view, model});
     set(view.extraction.optimizePeaks, 'Callback', {@optimizePeaks, model});
     set(view.extraction.clearPeaks, 'Callback', {@clearPeaks, model});
+    set(view.extraction.autoPeaks, 'Callback', {@findPeaks, model});
     
     set(view.extraction.extractionAxis, 'Callback', {@changeSettings, view, model});
     set(view.extraction.interpolationDirection, 'Callback', {@changeSettings, view, model});
@@ -30,7 +31,88 @@ function extraction = Extraction(model, view)
     set(view.extraction.decreaseCap, 'Callback', {@changeClim, model, -1});
     
     extraction = struct( ...
+        'findPeaks', @()findPeaks(0, 0, model) ...
     );
+end
+
+function findPeaks(~, ~, model)
+    if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
+
+        % first clear all existing peaks
+        clearPeaks(0, 0, model);
+        peaks.x = [];
+        peaks.y = [];
+        % get the image
+        img = model.file.readPayloadData(1, 1, 1, 'data');
+        img = img(:,:,model.parameters.extraction.imageNr);
+        r=30;
+        siz=size(img);
+        % do a median filtering to prevent finding maxixums which are none,
+        % reduce radius if medfilt2 is not possible (license checkout
+        % failure)
+        try
+            img = medfilt2(img);
+        catch
+        end
+        
+        %% find the (hopefully) four Rayleigh peaks
+        % assumes that Rayleigh peaks are stronger than Brillouin peaks
+        % this might become a problem later on :(
+        tmpImg = img;
+        for jj = 1:4
+            % find highest value in the image
+            [~, ind] = max(tmpImg(:));
+            [cy,cx] = ind2sub(siz,ind);
+            % set peak region to zero for finding new peak
+            [x,y]=meshgrid(-(cx-1):(siz(2)-cx),-(cy-1):(siz(1)-cy));
+            mask=((x.^2+y.^2)<=r^2);
+            tmpImg(mask) = 0;
+            % select Rayleigh peaks in upper left and lower right corner
+            if ((cy < siz(2)/2) && (cx < siz(1)/2)) || ((cy > siz(2)/2) && (cx > siz(1)/2))
+                peaks.x = [peaks.x cx];
+                peaks.y = [peaks.y cy];
+            end
+        end
+        
+        %% Select only the area between the Rayleigh peaks
+        m = (peaks.y(1) - peaks.y(2))/(peaks.x(1) - peaks.x(2));
+        n = peaks.y(1) - m*peaks.x(1);
+
+        mask = zeros(size(img));
+        width = 50;
+        for jj = 1:siz(1)
+            for kk = 1:siz(2)
+                if (jj > (m * kk) + n - width) && (jj < (m * kk) + n + width/2)
+                    mask(jj,kk) = 1;
+                end
+            end
+        end
+        tmpImg(mask == 0) = NaN;
+        
+        %% find two Brillouin peaks
+        for jj = 1:2
+            % find highest value in the image
+            [~, ind] = max(tmpImg(:));
+            [cy,cx] = ind2sub(siz,ind);
+            % set peak region to zero for finding new peak
+            [x,y]=meshgrid(-(cx-1):(siz(2)-cx),-(cy-1):(siz(1)-cy));
+            mask=((x.^2+y.^2)<=r^2);
+            tmpImg(mask) = 0;
+            % add peaks
+            peaks.x = [peaks.x cx];
+            peaks.y = [peaks.y cy];
+        end
+        
+        % sort the peaks (just nice to have)
+        [~,order] = sort(peaks.x);
+        peaks.x = peaks.x(order);
+        peaks.y = peaks.y(order);
+        
+        % store new peak positions
+        model.parameters.extraction.peaks = peaks;
+        % optimize the peak position
+        optimizePeaks(0, 0, model);
+    end
 end
 
 function selectPeaks(~, ~, view, model)
