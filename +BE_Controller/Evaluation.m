@@ -1,4 +1,4 @@
-function acquisition = Evaluation(model, view)
+function evaluation = Evaluation(model, view)
 %% EVALUATION Controller
 
     %% callbacks Calibration
@@ -32,7 +32,7 @@ function acquisition = Evaluation(model, view)
     set(view.evaluation.increaseCap, 'Callback', {@changeClim, model, 1});
     set(view.evaluation.decreaseCap, 'Callback', {@changeClim, model, -1});
     
-    acquisition = struct( ...
+    evaluation = struct( ...
         'startEvaluation', @()startEvaluation(0, 0, view, model) ...
     ); 
 end
