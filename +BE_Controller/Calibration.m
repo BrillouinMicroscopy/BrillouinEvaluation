@@ -52,7 +52,10 @@ function calibration = Calibration(model, view)
 end
 
 function calibrateAll(model, view)
-    calibrate(0, 0, model, view);
+    try
+        calibrate(0, 0, model, view);
+    catch
+    end
 end
 
 function findPeaks(model, types)
