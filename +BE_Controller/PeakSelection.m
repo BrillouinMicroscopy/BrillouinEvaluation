@@ -26,7 +26,47 @@ function calibration = PeakSelection(model, view)
     set(view.peakSelection.decreaseCap, 'Callback', {@changeClim, model, -1});
     
     calibration = struct( ...
+        'selectFrequencyRangeRayleigh', @(range, units)selectFrequencyRange(model, 'Rayleigh', range, units), ...
+        'selectFrequencyRangeBrillouin', @(range, units)selectFrequencyRange(model, 'Brillouin', range, units) ...
     );
+end
+
+function selectFrequencyRange(model, type, range, units)
+    imgs = model.file.readPayloadData(1, 1, 1, 'data');
+    imgs = medfilt1(imgs,3);
+    img = imgs(:,:,1);
+
+    startTime = model.file.date;
+    refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    datestring = model.file.readPayloadData(1, 1, 1, 'date');
+    date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    time = etime(datevec(date),datevec(refTime));
+
+    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
+    if ~isempty(data)
+        % if units is GHz then calculate the indices from the calibrated
+        % frequency axis
+        if strcmp(units, 'GHz')
+            x = 1:length(data);
+            calibration = model.parameters.calibration;
+            valid = ~isnan(calibration.wavelength);
+            if ~isempty(calibration.wavelength) && sum(valid(:))
+                wavelength = BE_SharedFunctions.getWavelengthFromMap(x, time, calibration);
+                x = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants.lambda0, wavelength);
+
+                [~, ind1] = min(abs(x - range(1)));
+                [~, ind2] = min(abs(x - range(2)));
+                range = [ind1 ind2];
+            else
+                disp('No calibration available, please set this parameter in [pix].');
+                return;
+            end
+        end
+        model.parameters.peakSelection.(type) = range;
+    else
+        disp('Cannot set this parameter, no data was loaded.');
+        return;
+    end
 end
 
 function selectPeaks(~, ~, view, model, type)
