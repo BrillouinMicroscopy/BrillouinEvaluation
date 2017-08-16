@@ -44,8 +44,70 @@ function calibration = Calibration(model, view)
     set(view.calibration.correctOffset, 'Callback', {@toggleOffsetCorrection, model});
     
     calibration = struct( ...
-        'setActive', @()setActive(view) ...
+        'setActive', @()setActive(view), ...
+        'findPeaks', @(types)findPeaks(model, types), ...
+        'setDefaultParameters', @()setDefaultParameters(model), ...
+        'calibrateAll', @()calibrateAll(model, view) ...
     );
+end
+
+function calibrateAll(model, view)
+    calibrate(0, 0, model, view);
+end
+
+function findPeaks(model, types)
+    %% store often used values in separate variables for convenience
+    calibration = model.parameters.calibration;         % general calibration
+    selectedMeasurement = calibration.selected;
+    sample = calibration.samples.(selectedMeasurement); % selected sample
+    
+    mm = 1;     % selected image
+    %% Plot
+    if strcmp(selectedMeasurement, 'measurement')
+        imgs = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'data');
+    else
+        imgs = model.file.readCalibrationData(sample.position, 'data');
+    end
+    imgs = medfilt1(imgs,3);
+    img = imgs(:,:,mm);
+    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
+    
+    [peaks.height,peaks.locations,peaks.widths,peaks.proms] = findpeaks(data,'Annotate','extents','MinPeakProminence',20);
+    
+    peaks.types = types;
+    
+    sample.indRayleigh = [];
+    sample.indBrillouin = [];
+    for jj = 1:length(types)
+        try
+            % find Rayleigh peaks
+            if strcmp(peaks.types{jj}, 'R')
+                sample.indRayleigh = [sample.indRayleigh; round(peaks.locations(jj) + peaks.widths(jj) * [-3 3])];
+            end
+            % find Brillouin peaks
+            if strcmp(peaks.types{jj}, 'B1')
+                sample.indBrillouin = [sample.indBrillouin; round(peaks.locations(jj) + peaks.widths(jj) * [-1.5 1.5])];
+            end
+        catch
+        end
+    end
+    calibration.samples.(selectedMeasurement) = sample; % selected sample
+    model.parameters.calibration = calibration;         % general calibration
+end
+
+function setDefaultParameters(model)
+    
+    calibration = model.parameters.calibration;
+    calibration.correctOffset = 0;
+    calibration.extrapolate = 1;
+    calibration.weighted = 0;
+    model.parameters.calibration = calibration;
+
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    updateCalibrationBrillouinShift(model);
+    
+    %% calculate the Brillouin shift for the measurements
+    updateMeasurementBrillouinShift(model);
 end
 
 function setActive(view)
