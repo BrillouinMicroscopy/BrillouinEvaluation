@@ -51,7 +51,7 @@ function findPeaks(~, ~, model)
         % get the image
         img = model.file.readPayloadData(1, 1, 1, 'data');
         img = img(:,:,model.parameters.extraction.imageNr);
-        r=50;
+        r=70;
         siz=size(img);
         % do a median filtering to prevent finding maxixums which are none,
         % reduce radius if medfilt2 is not possible (license checkout
