@@ -72,7 +72,7 @@ function findPeaks(model, types)
     img = imgs(:,:,mm);
     data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
     
-    [peaks.height,peaks.locations,peaks.widths,peaks.proms] = findpeaks(data,'Annotate','extents','MinPeakProminence',20);
+    [peaks.height,peaks.locations,peaks.widths,peaks.proms] = findpeaks(data,'Annotate','extents','MinPeakProminence',15);
     
     peaks.types = types;
     
@@ -98,7 +98,7 @@ end
 function setDefaultParameters(model)
     
     calibration = model.parameters.calibration;
-    calibration.correctOffset = 0;
+    calibration.correctOffset = 1;
     calibration.extrapolate = 1;
     calibration.weighted = 0;
     model.parameters.calibration = calibration;
