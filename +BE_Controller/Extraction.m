@@ -45,7 +45,7 @@ function findPeaks(~, ~, model)
         % get the image
         img = model.file.readPayloadData(1, 1, 1, 'data');
         img = img(:,:,model.parameters.extraction.imageNr);
-        r=30;
+        r=50;
         siz=size(img);
         % do a median filtering to prevent finding maxixums which are none,
         % reduce radius if medfilt2 is not possible (license checkout
@@ -78,15 +78,21 @@ function findPeaks(~, ~, model)
         m = (peaks.y(1) - peaks.y(2))/(peaks.x(1) - peaks.x(2));
         n = peaks.y(1) - m*peaks.x(1);
 
+        [~,order] = sort(peaks.x);
+        peaks.x = peaks.x(order);
+        peaks.y = peaks.y(order);
+        
         mask = zeros(size(img));
         width = 50;
-        for jj = 1:siz(1)
-            for kk = 1:siz(2)
+        % only select point inbetween the Rayleigh peaks
+        for jj = peaks.y(1):peaks.y(2)
+            for kk = peaks.x(1):peaks.x(2)
                 if (jj > (m * kk) + n - width) && (jj < (m * kk) + n + width/2)
                     mask(jj,kk) = 1;
                 end
             end
         end
+        
         tmpImg(mask == 0) = NaN;
         
         %% find two Brillouin peaks
