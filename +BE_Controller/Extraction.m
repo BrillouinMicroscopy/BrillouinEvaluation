@@ -31,8 +31,14 @@ function extraction = Extraction(model, view)
     set(view.extraction.decreaseCap, 'Callback', {@changeClim, model, -1});
     
     extraction = struct( ...
+        'setActive', @()setActive(view), ...
         'findPeaks', @()findPeaks(0, 0, model) ...
     );
+end
+
+function setActive(view)
+    tabgroup = get(view.extraction.parent, 'parent');
+    tabgroup.SelectedTab = view.extraction.parent;
 end
 
 function findPeaks(~, ~, model)

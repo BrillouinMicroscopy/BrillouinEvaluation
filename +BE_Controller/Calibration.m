@@ -44,7 +44,13 @@ function calibration = Calibration(model, view)
     set(view.calibration.correctOffset, 'Callback', {@toggleOffsetCorrection, model});
     
     calibration = struct( ...
+        'setActive', @()setActive(view) ...
     );
+end
+
+function setActive(view)
+    tabgroup = get(view.calibration.parent, 'parent');
+    tabgroup.SelectedTab = view.calibration.parent;
 end
 
 function calibrate(~, ~, model, view)

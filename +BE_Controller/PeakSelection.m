@@ -26,9 +26,15 @@ function calibration = PeakSelection(model, view)
     set(view.peakSelection.decreaseCap, 'Callback', {@changeClim, model, -1});
     
     calibration = struct( ...
+        'setActive', @()setActive(view), ...
         'selectFrequencyRangeRayleigh', @(range, units)selectFrequencyRange(model, 'Rayleigh', range, units), ...
         'selectFrequencyRangeBrillouin', @(range, units)selectFrequencyRange(model, 'Brillouin', range, units) ...
     );
+end
+
+function setActive(view)
+    tabgroup = get(view.peakSelection.parent, 'parent');
+    tabgroup.SelectedTab = view.peakSelection.parent;
 end
 
 function selectFrequencyRange(model, type, range, units)

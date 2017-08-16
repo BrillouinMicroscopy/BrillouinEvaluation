@@ -7,10 +7,16 @@ function configuration = Data(model, view)
     set(view.menubar.fileSave, 'Callback', {@selectSaveData, model});
 
     configuration = struct( ...
+        'setActive', @()setActive(view), ...
         'close', @close, ...
         'load', @(filePath)loadData(model, filePath), ...
         'save', @(filePath)saveData(model, filePath)...
     );
+end
+
+function setActive(view)
+    tabgroup = get(view.data.parent, 'parent');
+    tabgroup.SelectedTab = view.data.parent;
 end
 
 function selectLoadData(~, ~, model)

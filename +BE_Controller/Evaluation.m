@@ -33,8 +33,14 @@ function evaluation = Evaluation(model, view)
     set(view.evaluation.decreaseCap, 'Callback', {@changeClim, model, -1});
     
     evaluation = struct( ...
+        'setActive', @()setActive(view), ...
         'startEvaluation', @()startEvaluation(0, 0, view, model) ...
     ); 
+end
+
+function setActive(view)
+    tabgroup = get(view.evaluation.parent, 'parent');
+    tabgroup.SelectedTab = view.evaluation.parent;
 end
 
 function startEvaluation(~, ~, view, model)
