@@ -1,21 +1,22 @@
-function handles = Calibration(parent, model)
+function Calibration(view, model)
 %% CALIBRATION View
 
     % build the GUI
-    handles = initGUI(model, parent);
-    initView(handles, model);    % populate with initial values
+    initGUI(model, view);
+    initView(view, model);    % populate with initial values
 
     % observe on model changes and update view accordingly
     % (tie listener to model object lifecycle)
     addlistener(model, 'parameters', 'PostSet', ...
-        @(o,e) onSettings(handles, e.AffectedObject));
+        @(o,e) onSettings(view, e.AffectedObject));
     addlistener(model, 'displaySettings', 'PostSet', ...
-        @(o,e) onDisplaySettings(handles, e.AffectedObject));
+        @(o,e) onDisplaySettings(view, e.AffectedObject));
     addlistener(model, 'status', 'PostSet', ...
-        @(o,e) onStatus(handles, e.AffectedObject));
+        @(o,e) onStatus(view, e.AffectedObject));
 end
 
-function handles = initGUI(model, parent)
+function initGUI(model, view)
+    parent = view.calibration.parent;
 
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Select sample:', 'Units', 'normalized',...
         'Position', [0.02,0.94,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -178,7 +179,7 @@ function handles = initGUI(model, parent)
     cursorHandle = datacursormode;
     
     %% Return handles
-    handles = struct(...
+    view.calibration = struct(...
         'parent', parent, ...
         'samples', samples, ...
         'imageNrLabel', imageNrLabel, ...
@@ -218,8 +219,9 @@ function handles = initGUI(model, parent)
 	);
 end
 
-function initView(handles, model)
+function initView(view, model)
 %% Initialize the view
+    handles = view.calibration;
     set(handles.autoscale, 'Value', model.displaySettings.peakSelection.autoscale);
     set(handles.cap, 'String', model.displaySettings.peakSelection.cap);
     set(handles.floor, 'String', model.displaySettings.peakSelection.floor);
@@ -228,7 +230,8 @@ function initView(handles, model)
     set(handles.correctOffset, 'Value', model.parameters.calibration.correctOffset);
 end
 
-function onSettings(handles, model)
+function onSettings(view, model)
+    handles = view.calibration;
     if isempty(fields(model.parameters.calibration.samples))
         return;
     end
@@ -277,9 +280,53 @@ function onSettings(handles, model)
     end
     handles.valuesTable.Data = fittedValues;
     plotData(handles, model);
+    updateBrillouinShifts(view, model);
 end
 
-function onStatus(handles, model)
+function updateBrillouinShifts(view, model)
+    if isfield(view.calibration, 'BrillouinShiftView') && ishandle(view.calibration.BrillouinShiftView)
+        calibration = model.parameters.calibration;
+
+        BrillouinShifts = NaN(1,2);
+        BrillouinShifts_mean = BrillouinShifts;
+        calibrationFrequency = NaN(1,1);
+
+        sampleNames = fields(calibration.samples);
+        totalImages = 0;
+        for jj = 1:length(sampleNames)
+            sample = calibration.samples.(sampleNames{jj});
+            if isfield(sample, 'BrillouinShift')
+                shift = sample.BrillouinShift;
+                nrImages = size(shift,1);
+                BrillouinShifts((totalImages + (1:nrImages)), :) = shift;
+                BrillouinShifts_mean((totalImages + (1:nrImages)), :) = repmat(nanmean(shift,1), nrImages, 1);
+                calibrationFrequency((totalImages + (1:nrImages)), 1) = ones(nrImages,1) * sample.shift;
+            else
+                nrImages = 1;
+                BrillouinShifts((totalImages + (1:nrImages)), :) = NaN(nrImages,2);
+                BrillouinShifts_mean((totalImages + (1:nrImages)), :) = NaN(nrImages,2);
+            end
+            totalImages = totalImages + nrImages;
+        end
+        
+        figure(view.calibration.BrillouinShiftView);
+        hold off;
+        plot(BrillouinShifts);
+        hold on;
+        ax = gca;
+        ax.ColorOrderIndex = 1;
+        plot(BrillouinShifts_mean, 'LineStyle', '--', 'LineWidth', 0.8);
+        plot(calibrationFrequency);
+        xlabel('Calibration image #');
+        ylabel('$f$ [GHz]', 'interpreter', 'latex');
+        if sum(~isnan(BrillouinShifts(:)))
+            legend('Stokes Peak', 'AntiStokes Peak', 'Stokes Peak Mean', 'AntiStokes Peak Mean', 'Calibration Frequency');
+        end
+    end
+end
+
+function onStatus(view, model)
+    handles = view.calibration;
     buttons = {'Brillouin', 'Rayleigh'};
     for jj = 1:length(buttons)
         if model.status.calibration.(['select' buttons{jj}])
@@ -378,7 +425,8 @@ function plotData(handles, model)
     end
 end
 
-function onDisplaySettings(handles, model)
+function onDisplaySettings(view, model)
+    handles = view.calibration;
     set(handles.autoscale, 'Value', model.displaySettings.calibration.autoscale);
     set(handles.cap, 'String', model.displaySettings.calibration.cap);
     set(handles.floor, 'String', model.displaySettings.calibration.floor);

@@ -35,7 +35,7 @@ function calibration = Calibration(model, view)
     set(view.calibration.increaseCap, 'Callback', {@changeClim, model, 1});
     set(view.calibration.decreaseCap, 'Callback', {@changeClim, model, -1});
     
-    set(view.calibration.openBrillouinShift, 'Callback', {@openBrillouinShift, model});
+    set(view.calibration.openBrillouinShift, 'Callback', {@openBrillouinShift, model, view});
     
     set(view.calibration.valuesTable, 'CellEditCallback', {@toggleActiveState, model});
     
@@ -769,7 +769,7 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants)
 
 end
 
-function openBrillouinShift(~, ~, model)
+function openBrillouinShift(~, ~, model, view)
     calibration = model.parameters.calibration;
     
     BrillouinShifts = NaN(1,2);
@@ -793,8 +793,20 @@ function openBrillouinShift(~, ~, model)
         end
         totalImages = totalImages + nrImages;
     end
-
-    figure;
+    
+    if isfield(view.calibration, 'BrillouinShiftView') && ishandle(view.calibration.BrillouinShiftView)
+        return;
+    else
+        width = 500;
+        height = 400;
+        figPos = view.figure.Position;
+        x = figPos(1) + (figPos(3) - width)/2;
+        y = figPos(2) + (figPos(4) - height)/2;
+        BrillouinShiftView = figure('Position',[x,y,width,height]);
+        % hide the menubar and prevent resizing
+        view.calibration.BrillouinShiftView = BrillouinShiftView;
+    end
+    
     plot(BrillouinShifts);
     hold on;
     ax = gca;
