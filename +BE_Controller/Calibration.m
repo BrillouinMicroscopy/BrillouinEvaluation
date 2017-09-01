@@ -803,7 +803,7 @@ function openBrillouinShift(~, ~, model)
     plot(calibrationFrequency);
     xlabel('Calibration image #');
     ylabel('$f$ [GHz]', 'interpreter', 'latex');
-    if ~sum(isnan(BrillouinShifts(:)))
+    if sum(~isnan(BrillouinShifts(:)))
         legend('Stokes Peak', 'AntiStokes Peak', 'Stokes Peak Mean', 'AntiStokes Peak Mean', 'Calibration Frequency');
     end
 end
