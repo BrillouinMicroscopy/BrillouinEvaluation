@@ -12,6 +12,7 @@ classdef View < handle
         evaluation;
         overlay;
         masking;
+        help;
     end
 
     methods

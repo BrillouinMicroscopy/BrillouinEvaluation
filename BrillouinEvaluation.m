@@ -24,6 +24,10 @@ function closeGUI(~, ~, model, view, controllers)
         close(view.masking.parent);
         delete(view.masking.parent);
     end
+    if isfield(view.help, 'parent') && ishandle(view.help.parent)
+        close(view.help.parent);
+        delete(view.help.parent);
+    end
     controllers.data.close('', '', model);
     delete(gcf);
 end
@@ -34,12 +38,14 @@ function controllers = controller(model, view)
     peakSelection = BE_Controller.PeakSelection(model, view);
     calibration = BE_Controller.Calibration(model, view);
     evaluation = BE_Controller.Evaluation(model, view);
+    help = BE_Controller.Help(model, view);
     controllers = struct( ...
         'data', data, ...
         'extraction', extraction, ...
         'calibration', calibration, ...
         'peakSelection', peakSelection, ...
-        'evaluation', evaluation ...
+        'evaluation', evaluation, ...
+        'help', help ...
     );
 end
 

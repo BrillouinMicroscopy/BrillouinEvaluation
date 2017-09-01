@@ -16,6 +16,9 @@ function initGUI(model, view)
     menubar.fileClose  = uimenu(menubar.file,'Label','Close','Accelerator','W');                 
     menubar.fileSave   = uimenu(menubar.file,'Label','Save','Accelerator','S');
     
+    menubar.help = uimenu(f,'Label','Help');
+    menubar.helpAbout  = uimenu(menubar.help,'Label','About','Accelerator','A');
+    
     % create the tabgroup for loading, calibrating and evaluating
     tabgroup = uitabgroup('Parent', f);
     data = uitab('Parent', tabgroup, 'Title', 'Data');
