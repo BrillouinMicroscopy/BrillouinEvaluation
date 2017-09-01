@@ -279,6 +279,7 @@ end
 
 function programVersion = getProgramVersion()
     %% check if git commit can be found
+    commit = '';
     try
         [status,com] = system('git log -n 1 --format=format:"%H"');
         if ~status
