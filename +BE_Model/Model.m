@@ -280,8 +280,10 @@ end
 function programVersion = getProgramVersion()
     %% check if git commit can be found
     commit = '';
+    fp = mfilename('fullpath');
+    [path,~,~] = fileparts(fp);
     try
-        [status,com] = system('git log -n 1 --format=format:"%H"');
+        [status,com] = system(['git -C "' path '" log -n 1 --format=format:%H']);
         if ~status
             commit = com;
         end
