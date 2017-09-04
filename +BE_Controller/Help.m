@@ -12,7 +12,7 @@ function openAbout(~, ~, model, view)
     if isfield(view.help, 'parent') && ishandle(view.help.parent)
         return;
     else
-        width = 460;
+        width = 470;
         height = 140;
         figPos = view.figure.Position;
         x = figPos(1) + (figPos(3) - width)/2;

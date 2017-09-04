@@ -17,7 +17,7 @@ function handles = initGUI(model, parent)
     labelStr = ['Brillouin Evalution version ' version];
     jLabel = javaObjectEDT('javax.swing.JLabel', labelStr);
     jLabel.setFont(jLabel.getFont().deriveFont(20));
-    javacomponent(jLabel, [10,110,290,30], parent);
+    javacomponent(jLabel, [10,110,380,30], parent);
     
     %% Commit
     labelStr = '<html>Commit:</html>';
@@ -40,12 +40,12 @@ function handles = initGUI(model, parent)
     %% Author
     labelStr = '<html>Author:</html>';
     jLabel = javaObjectEDT('javax.swing.JLabel', labelStr);
-    javacomponent(jLabel, [10,50,290,20], parent);
+    javacomponent(jLabel, [10,50,300,20], parent);
     
     % Create and display the text label
     labelStr = ['<html><a href="">' model.programVersion.author ' &lt;' model.programVersion.email '&gt;' '</a></html>'];
     jLabel = javaObjectEDT('javax.swing.JLabel', labelStr);
-    [hjLabel,~] = javacomponent(jLabel, [xPos,50,306,20], parent);
+    [hjLabel,~] = javacomponent(jLabel, [xPos,50,310,20], parent);
 
     % Modify the mouse cursor when hovering on the label
     hjLabel.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
@@ -64,7 +64,7 @@ function handles = initGUI(model, parent)
     % Create and display the text label
     labelStr = ['<html><a href="">' model.programVersion.website '</a></html>'];
     jLabel = javaObjectEDT('javax.swing.JLabel', labelStr);
-    [hjLabel,~] = javacomponent(jLabel, [xPos,20,370,20], parent);
+    [hjLabel,~] = javacomponent(jLabel, [xPos,20,378,20], parent);
 
     % Modify the mouse cursor when hovering on the label
     hjLabel.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
