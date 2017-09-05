@@ -2,10 +2,12 @@ function varargout = BrillouinEvaluation
 %% MAINCONTROLLER  MainController
 
     % controller knows about model and view
+    clear model;
     model = BE_Model.Model();      % model is independent
     
     includePath(model);
     
+    clear view;
     view = BE_View.View();
     
     BE_View.Tabs(model, view);    % view has a reference of the model
