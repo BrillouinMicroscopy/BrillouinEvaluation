@@ -37,6 +37,18 @@ function handles = initGUI(model, parent)
     % Set the mouse-click callback
     set(hjLabel, 'MouseClickedCallback', @(h,e)web([model.programVersion.link], '-browser'))
     
+    %% Clean state of the repository
+    
+    if model.programVersion.cleanRepo
+        str = 'Yes';
+    else
+        str = 'No';
+    end
+    labelStr = ['<html>Clean: ' str '</html>'];
+    jLabel = javaObjectEDT('javax.swing.JLabel', labelStr);
+    javacomponent(jLabel, [375,80,60,20], parent);
+    
+    
     %% Author
     labelStr = '<html>Author:</html>';
     jLabel = javaObjectEDT('javax.swing.JLabel', labelStr);

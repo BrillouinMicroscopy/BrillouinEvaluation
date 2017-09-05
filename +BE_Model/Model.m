@@ -280,12 +280,17 @@ end
 function programVersion = getProgramVersion()
     %% check if git commit can be found
     commit = '';
+    cleanRepo = 'False';
     fp = mfilename('fullpath');
     [path,~,~] = fileparts(fp);
     try
         [status,com] = system(['git -C "' path '" log -n 1 --format=format:%H']);
         if ~status
             commit = com;
+        end
+        [status,clean] = system(['git -C "' path '" ls-files --exclude-standard -d -m -o -k']);
+        if ~status
+            cleanRepo = isempty(clean);
         end
     catch
         % program folder does not contain git folder
@@ -297,6 +302,7 @@ function programVersion = getProgramVersion()
         'patch', 0, ...
         'preRelease', 'alpha', ...
         'commit', commit, ...
+        'cleanRepo', cleanRepo, ...
         'website', 'https://gitlab.rschluessler.com/BrillouinMicroscopy/BrillouinEvaluation', ...
         'author', 'Raimund Schlüßler', ...
         'email', 'raimund.schluessler@tu-dresden.de', ...
