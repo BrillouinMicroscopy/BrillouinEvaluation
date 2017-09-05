@@ -61,9 +61,12 @@ function calibrateAll(model, view, types)
                 break;
             else
                 model.parameters.calibration.selected = cals{jj};
+                model.parameters.calibration.selectedValue = jj;
             end
             findPeaks(model, types);
+            drawnow;
             calibrate(0, 0, model, view);
+            drawnow;
         catch
         end
     end
