@@ -220,8 +220,23 @@ function loadData(model, filePath)
                 if ~isfield(results, 'peaksBrillouin_fwhm_frequency')
                     results.peaksBrillouin_fwhm_frequency = NaN(size(results.peaksRayleigh_pos));
                 end
+                if ~isfield(results, 'peaksRayleigh_pos_exact')
+                    results.peaksRayleigh_pos_exact = NaN(size(results.peaksRayleigh_pos));
+                end
+                if ~isfield(results, 'peaksRayleigh_pos_interp')
+                    results.peaksRayleigh_pos_interp = NaN(size(results.peaksRayleigh_pos));
+                end
+                if ~isfield(results, 'validity_Rayleigh')
+                    results.validity_Rayleigh = results.validity;
+                end
+                if ~isfield(results, 'validity_Brillouin')
+                    results.validity_Brillouin = results.validity;
+                end
                 if ~isfield(results, 'masks')
                     results.masks = struct();
+                end
+                if ~isfield(parameters.evaluation, 'interpRayleigh')
+                    parameters.evaluation.interpRayleigh = false;
                 end
                 if ~isfield(parameters, 'masking')
                     parameters.masking = struct( ...

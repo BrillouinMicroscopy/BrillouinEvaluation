@@ -109,7 +109,8 @@ classdef Model < handle
                 'evaluation', struct( ...
                     'fwhm', 5, ...              % [pix] initial value for the FWHM of the Brillouin peak
                     'gap', 10, ...              % [pix] minimum x and y distance of maxima to the edges of the image
-                    'rotationAngle', NaN, ...  % [degree]          angle of rotation
+                    'interpRayleigh', false, ...% [bool] whether or not invalid Rayleigh peak positions (e.g. due to saturation) should be interpolated 
+                    'rotationAngle', NaN, ...   % [degree]          angle of rotation
                     'centerx', 800, ...         % [pix]             x-center of the image
                     'centery', 860, ...         % [pix]             y-center of the image
                     'scaling', 0.086, ...       % [micro m / pix]   scaling factor
@@ -131,11 +132,15 @@ classdef Model < handle
                 'peaksBrillouin_int',       NaN, ...    % [a.u.] the intensity of the Brillouin peak(s)
                 'peaksBrillouin_fwhm',      NaN, ...    % [pix]  the FWHM of the Brillouin peak
                 'peaksBrillouin_fwhm_frequency', NaN,...% [GHz]  the FWHM of the Brillouin peak in GHz
+                'peaksRayleigh_pos_interp', NaN, ...    % [pix]  the position of the Rayleigh peak(s) in the spectrum (interpoalted)
+                'peaksRayleigh_pos_exact',  NaN, ...    % [pix]  the position of the Rayleigh peak(s) in the spectrum (exact)
                 'peaksRayleigh_pos',        NaN, ...    % [pix]  the position of the Rayleigh peak(s) in the spectrum
                 'peaksRayleigh_int',        NaN, ...    % [a.u.] the intensity of the Rayleigh peak(s)
                 'peaksRayleigh_fwhm',       NaN, ...    % [pix]  the FWHM of the Rayleigh peak(s)
                 'intensity',                NaN, ...    % [a.u.] the overall intensity of the image
-                'validity',                 NaN, ...    % [logical] the validity of the results
+                'validity_Rayleigh',        NaN, ...    % [logical] the validity of the Rayleigh peaks
+                'validity_Brillouin',       NaN, ...    % [logical] the validity of the Brillouin peaks
+                'validity',                 NaN, ...    % [logical] the validity of the general results
                 'times',                    NaN, ...    % [s]    time of the measurement
                 'brightfield',              NaN, ...    % [a.u.] the intensity of the brightfield image (usefull for 2D xy images)
                 'brightfield_raw',          NaN, ...    % [a.u.] the complete brightfield image
