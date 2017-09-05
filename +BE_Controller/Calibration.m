@@ -47,14 +47,25 @@ function calibration = Calibration(model, view)
         'setActive', @()setActive(view), ...
         'findPeaks', @(types)findPeaks(model, types), ...
         'setDefaultParameters', @()setDefaultParameters(model), ...
-        'calibrateAll', @()calibrateAll(model, view) ...
+        'calibrateAll', @(types)calibrateAll(model, view, types) ...
     );
 end
 
-function calibrateAll(model, view)
-    try
-        calibrate(0, 0, model, view);
-    catch
+function calibrateAll(model, view, types)
+    calibration = model.parameters.calibration;
+    cals = fields(calibration.samples);
+    for jj = 1:length(cals)
+        try
+            name = calibration.samples.(cals{jj}).sampleType;
+            if strcmp(name, 'measurement')
+                break;
+            else
+                model.parameters.calibration.selected = cals{jj};
+            end
+            findPeaks(model, types);
+            calibrate(0, 0, model, view);
+        catch
+        end
     end
 end
 
@@ -89,7 +100,7 @@ function findPeaks(model, types)
             end
             % find Brillouin peaks
             if strcmp(peaks.types{jj}, 'B1')
-                sample.indBrillouin = [sample.indBrillouin; round(peaks.locations(jj) + peaks.widths(jj) * [-1.5 1.5])];
+                sample.indBrillouin = [sample.indBrillouin; round(peaks.locations(jj) + peaks.widths(jj) * [-2 2])];
             end
         catch
         end
@@ -101,7 +112,7 @@ end
 function setDefaultParameters(model)
     
     calibration = model.parameters.calibration;
-    calibration.correctOffset = 1;
+    calibration.correctOffset = 0;
     calibration.extrapolate = 1;
     calibration.weighted = 0;
     model.parameters.calibration = calibration;
