@@ -309,18 +309,17 @@ function updateBrillouinShifts(view, model)
             totalImages = totalImages + nrImages;
         end
         
-        figure(view.calibration.BrillouinShiftView);
-        hold off;
-        plot(BrillouinShifts);
-        hold on;
-        ax = gca;
+        ax = view.calibration.BrillouinShiftView.CurrentAxes;
+        hold(ax,'off');
+        plot(ax, BrillouinShifts);
+        hold(ax, 'on');
         ax.ColorOrderIndex = 1;
-        plot(BrillouinShifts_mean, 'LineStyle', '--', 'LineWidth', 0.8);
-        plot(calibrationFrequency);
-        xlabel('Calibration image #');
-        ylabel('$f$ [GHz]', 'interpreter', 'latex');
+        plot(ax,BrillouinShifts_mean, 'LineStyle', '--', 'LineWidth', 0.8);
+        plot(ax,calibrationFrequency);
+        xlabel(ax,'Calibration image #');
+        ylabel(ax,'$f$ [GHz]', 'interpreter', 'latex');
         if sum(~isnan(BrillouinShifts(:)))
-            legend('Stokes Peak', 'AntiStokes Peak', 'Stokes Peak Mean', 'AntiStokes Peak Mean', 'Calibration Frequency');
+            legend(ax,'Stokes Peak', 'AntiStokes Peak', 'Stokes Peak Mean', 'AntiStokes Peak Mean', 'Calibration Frequency');
         end
     end
 end
