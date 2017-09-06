@@ -44,11 +44,32 @@ function calibration = Calibration(model, view)
     set(view.calibration.correctOffset, 'Callback', {@toggleOffsetCorrection, model});
     
     calibration = struct( ...
+        'testCavitySlope', @()testCavitySlope(model, view), ...
         'setActive', @()setActive(view), ...
         'findPeaks', @(types)findPeaks(model, types), ...
         'setDefaultParameters', @()setDefaultParameters(model), ...
         'calibrateAll', @(types)calibrateAll(model, view, types) ...
     );
+end
+
+function testCavitySlope(model, view)
+    d = linspace(0.006791, 0.006797, 20);
+    calibration = model.parameters.calibration;         % general calibration
+    selectedMeasurement = calibration.selected;
+    sample = calibration.samples.(selectedMeasurement); % selected sample
+    fac = NaN(1,4);
+    
+    for jj = 1:length(d)
+        sample.start.d = d(jj);
+        calibration.samples.(selectedMeasurement) = sample; % selected sample
+        model.parameters.calibration = calibration;         % general calibration
+        calibrate(0, 0, model, view);
+        fac(jj) = model.parameters.calibration.samples.(selectedMeasurement).fac;
+        disp(jj);
+    end
+    
+    figure;
+    plot(d, fac);
 end
 
 function calibrateAll(model, view, types)
@@ -178,7 +199,6 @@ function calibrate(~, ~, model, view)
     pixels = calibration.pixels;
     constants = model.parameters.constants;
     constants.bShiftCal = sample.shift*1e9;
-    start = sample.start;
     pixelSize = model.parameters.constants.pixelSize;
     
     interpolationPositions = model.parameters.extraction.interpolationPositions;
@@ -192,65 +212,100 @@ function calibrate(~, ~, model, view)
     clc;
     view.calibration.progressBar.setValue(0);
     view.calibration.progressBar.setString(sprintf('%01.0f%%', 0));
-    parfor mm = 1:totalRuns
-        data = BE_SharedFunctions.getIntensity1D(imgs(:,:,mm), interpolationPositions);
-        
-%         nrPositions = size(data,2)/0.1;
-%         calibration.pixels = linspace(1,size(data,2),nrPositions);
-        
-        %% find the measured peaks
-        peakPos = NaN(1,4);
-        for jj = 1:length(indRayleigh)
-            spectrumSection = data(indRayleigh(jj,1):indRayleigh(jj,2));
-            [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, 1, [6 20], 0);
-            peakPos(jj) = tmp+indRayleigh(jj,1)-1;
+    
+    % in order to optimize the cavity width, three runs are necessary
+    cavityWidths = NaN(1,3);
+    facs = NaN(1,3);
+    for ii = 1:3
+        cavityWidths(ii) = sample.start.d;
+        start = sample.start;
+        parfor mm = 1:totalRuns
+            data = BE_SharedFunctions.getIntensity1D(imgs(:,:,mm), interpolationPositions);
+
+    %         nrPositions = size(data,2)/0.1;
+    %         calibration.pixels = linspace(1,size(data,2),nrPositions);
+
+            %% find the measured peaks
+            peakPos = NaN(1,4);
+            for jj = 1:length(indRayleigh)
+                spectrumSection = data(indRayleigh(jj,1):indRayleigh(jj,2));
+                [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, 1, [6 20], 0);
+                peakPos(jj) = tmp+indRayleigh(jj,1)-1;
+            end
+            for jj = 1:length(indBrillouin)
+                spectrumSection = data(indBrillouin(jj,1):indBrillouin(jj,2));
+                [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, 1, [6 20], 0);
+                peakPos(jj+2) = tmp+indBrillouin(jj,1)-1;
+            end
+            peakPos = sort(peakPos, 'ascend');
+            peaksMeasured(mm,:) = peakPos;
+
+            %% find the fitted peaks, do the VIPA fit            
+            [VIPAparams, peakPos] = fitVIPA(peakPos, start, constants);
+            VIPAparams.x0Initial = VIPAparams.x0;
+
+            d(mm) = VIPAparams.d;
+            n(mm) = VIPAparams.n;
+            theta(mm) = VIPAparams.theta;
+            x0Initial(mm) = VIPAparams.x0Initial;
+            x0(mm) = VIPAparams.x0;
+            xs(mm) = VIPAparams.xs;
+            error(mm) = VIPAparams.error;
+    %             params = {'d', 'n', 'theta', 'x0Initial', 'x0', 'xs', 'error'};
+    %             for jj = 1:length(params)
+    %                 sample.values.(params{jj})(mm) = VIPAparams.(params{jj});
+    %             end
+            peakPos = sort(peakPos, 'ascend');
+            peaksFitted(mm,:) = peakPos;
+
+            wavelength = BE_SharedFunctions.getWavelength(pixelSize * pixels, VIPAparams, constants, 1);
+
+            wavelengths(mm,:) = wavelength;
+
+            offset(mm,:) = interp1(peaksFitted(mm,:), peaksMeasured(mm,:) - peaksFitted(mm,:), pixels, 'spline');
         end
-        for jj = 1:length(indBrillouin)
-            spectrumSection = data(indBrillouin(jj,1):indBrillouin(jj,2));
-            [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, 1, [6 20], 0);
-            peakPos(jj+2) = tmp+indBrillouin(jj,1)-1;
+
+        %% store variables which were separated for parfor loop in structure again
+        sample.peaksMeasured = peaksMeasured;
+        sample.peaksFitted = peaksFitted;
+        sample.values.d = d;
+        sample.values.n = n;
+        sample.values.theta = theta;
+        sample.values.x0Initial = x0Initial;
+        sample.values.x0 = x0;
+        sample.values.xs = xs;
+        sample.values.error = error;
+        sample.wavelengths = wavelengths;
+        sample.offset = offset;
+
+        %% check if cavity width needs to be adjusted
+        % if the cavity width is to low, the calculated Brillouin shifts are to
+        % high. --> R1:--, B1:++, B2:--, R2:++
+        % If the cavity width is to high, the calculated shifts are to low.
+        % -->  R1:++, B1:--, B2:++, R2:--
+        if size(sample.peaksMeasured,2) == 4
+            signs = [-1 1 -1 1];    % signs how sum up the differences between measured and fitted peaks
+            signs = repmat(signs, size(sample.peaksMeasured,1), 1);
+            deviations = signs .* (sample.peaksMeasured - sample.peaksFitted);
+            fac = mean(deviations(:));      % if fac > 0, d has to be increased, otherwise decreased
+            disp(fac);
+            sample.fac = fac;
+            facs(ii) = fac;
         end
-        peakPos = sort(peakPos, 'ascend');
-        peaksMeasured(mm,:) = peakPos;
-
-        %% find the fitted peaks, do the VIPA fit            
-        [VIPAparams, peakPos] = fitVIPA(peakPos, start, constants);
-        VIPAparams.x0Initial = VIPAparams.x0;
-
-        d(mm) = VIPAparams.d;
-        n(mm) = VIPAparams.n;
-        theta(mm) = VIPAparams.theta;
-        x0Initial(mm) = VIPAparams.x0Initial;
-        x0(mm) = VIPAparams.x0;
-        xs(mm) = VIPAparams.xs;
-        error(mm) = VIPAparams.error;
-%             params = {'d', 'n', 'theta', 'x0Initial', 'x0', 'xs', 'error'};
-%             for jj = 1:length(params)
-%                 sample.values.(params{jj})(mm) = VIPAparams.(params{jj});
-%             end
-        peakPos = sort(peakPos, 'ascend');
-        peaksFitted(mm,:) = peakPos;
-
-        wavelength = BE_SharedFunctions.getWavelength(pixelSize * pixels, VIPAparams, constants, 1);
-
-        wavelengths(mm,:) = wavelength;
-
-        offset(mm,:) = interp1(peaksFitted(mm,:), peaksMeasured(mm,:) - peaksFitted(mm,:), pixels, 'spline');
+        if (ii==1)
+            cavityWidths(2) = sample.start.d - facs(ii)/constants.cavitySlope;
+            sample.start.d = cavityWidths(2);
+        elseif (ii == 2)
+            m = (facs(1) - facs(2)) / (cavityWidths(1) - cavityWidths(2));
+            n = facs(2) - m * cavityWidths(2);
+            cavityWidths(3) = - n/m;
+            sample.start.d = cavityWidths(3);
+        end
+        val = ii*100/3;
+        view.calibration.progressBar.setValue(val);
+        view.calibration.progressBar.setString(sprintf('%01.0f%%', val));
     end
     
-    %% store variables which were separated for parfor loop in structure again
-    sample.peaksMeasured = peaksMeasured;
-    sample.peaksFitted = peaksFitted;
-    sample.values.d = d;
-    sample.values.n = n;
-    sample.values.theta = theta;
-    sample.values.x0Initial = x0Initial;
-    sample.values.x0 = x0;
-    sample.values.xs = xs;
-    sample.values.error = error;
-    sample.wavelengths = wavelengths;
-    sample.offset = offset;
-
     %% check if field for weighted calibration is available, set default value if not
     if ~isfield(calibration, 'weighted')
         calibration.weighted = true;

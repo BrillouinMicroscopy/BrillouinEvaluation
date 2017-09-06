@@ -51,7 +51,11 @@ classdef Model < handle
                     'c', 299792458, ...         % [m/s] speed of light
                     'pixelSize', 6.5e-6, ...    % [m]   pixel size of the camera
                     'lambda0', 780.24e-9, ...   % [m]   laser wavelength
-                    'F', 0.2 ...                % [m]   focal length of the lens behind the VIPA
+                    'F', 0.2, ...               % [m]   focal length of the lens behind the VIPA
+                    'cavitySlope', -3840 ...    % [pix/m] empirical determinded factor between the
+                    ...                         %         difference of measured and fitted peak positions
+                    ...                         %         (calculated in +BE_Controller\Calibration.m lines 275 ff.)
+                    ...                         %         and the VIPA cavity width
                 ), ...
                 'extraction', struct( ...
                     'imageNr', 1, ...

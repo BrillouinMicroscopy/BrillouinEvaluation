@@ -244,6 +244,9 @@ function loadData(model, filePath)
                         'adding', 1 ...             % [logical] add or delete mask
                     );
                 end
+                if ~isfield(parameters.constants, 'cavitySlope')
+                    parameters.constants.cavitySlope = -3840;
+                end
                 if ~isfield(displaySettings, 'masking')
                     displaySettings.masking = struct( ...                    
                         'autoscale', true, ...
