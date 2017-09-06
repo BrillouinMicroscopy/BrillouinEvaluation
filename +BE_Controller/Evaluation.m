@@ -304,7 +304,9 @@ function evaluate(view, model)
     results.peaksRayleigh_int         = peaksRayleigh_int;        % [a.u.] the intensity of the Rayleigh peak(s)
     results.peaksRayleigh_fwhm        = peaksRayleigh_fwhm;       % [pix]  the FWHM of the Rayleigh peak(s)
     results.intensity                 = intensity;                % [a.u.] the overall intensity of the image
-    results.validity                  = validity;                 % [logical] the validity of the results
+    results.validity_Rayleigh         = validity_Rayleigh;        % [logical] the validity of the Rayleigh peaks
+    results.validity_Brillouin        = validity_Brillouin;       % [logical] the validity of the Brillouin peaks
+    results.validity                  = validity;                 % [logical] the validity of the general results
     results.times                     = times;                    % [s]    time of the measurement
     model.results = results;
 end
