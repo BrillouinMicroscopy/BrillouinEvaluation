@@ -291,7 +291,6 @@ function calibrate(~, ~, model, view)
             signs = repmat(signs, size(sample.peaksMeasured,1), 1);
             deviations = signs .* (sample.peaksMeasured - sample.peaksFitted);
             fac = mean(deviations(:));      % if fac > 0, d has to be increased, otherwise decreased
-            disp(fac);
             sample.fac = fac;
             facs(ii) = fac;
         end
@@ -307,6 +306,9 @@ function calibrate(~, ~, model, view)
         val = ii*100/3;
         view.calibration.progressBar.setValue(val);
         view.calibration.progressBar.setString(sprintf('%01.0f%%', val));
+    end
+    if abs(sample.fac) > 0.005
+        model.log.log(['[Calibration] Warning: Calibration of sample "' selectedMeasurement '" is inaccurate. Please check.']);
     end
     
     %% check if field for weighted calibration is available, set default value if not
