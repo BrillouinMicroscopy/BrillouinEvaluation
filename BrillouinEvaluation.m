@@ -14,6 +14,13 @@ function varargout = BrillouinEvaluation
     
     controllers = controller(model, view);
     
+    % add logging class
+    model.log = BE_Utils.Logging.Logging([model.pp filesep 'log.txt']);
+    model.log.write('');
+    model.log.write('#####################################################');
+    model.log.log('Opened BrillouinEvaluation');
+    model.log.write('=====================================================');
+    
     set(view.figure, 'CloseRequestFcn', {@closeGUI, model, view, controllers});
     
     if nargout
@@ -30,7 +37,9 @@ function closeGUI(~, ~, model, view, controllers)
         close(view.help.parent);
         delete(view.help.parent);
     end
-    controllers.data.close('', '', model);
+    controllers.data.closeFile();
+    model.log.write('=====================================================');
+    model.log.log('Closed BrillouinEvaluation');
     delete(gcf);
 end
 

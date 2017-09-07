@@ -6,6 +6,7 @@ classdef Model < handle
         file;       % handle to the H5BM file
         filename;   % name of the H5BM file
         filepath;   % path to the H5BM file
+        log;        % logging object
         pp;         % path to the program
         parameters; % parameters of the measurement
         results;            % results of the evaluation

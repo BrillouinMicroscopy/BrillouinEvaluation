@@ -3,12 +3,12 @@ function configuration = Data(model, view)
 
     %% general panel
     set(view.menubar.fileOpen, 'Callback', {@selectLoadData, model});
-    set(view.menubar.fileClose, 'Callback', {@clear, model});
+    set(view.menubar.fileClose, 'Callback', {@closeFile, model});
     set(view.menubar.fileSave, 'Callback', {@selectSaveData, model});
 
     configuration = struct( ...
         'setActive', @()setActive(view), ...
-        'close', @close, ...
+        'closeFile', @()closeFile('', '', model), ...
         'load', @(filePath)loadData(model, filePath), ...
         'save', @(filePath)saveData(model, filePath)...
     );
@@ -27,6 +27,7 @@ end
 
 function loadData(model, filePath)
 % Load the h5bm data file
+    model.log.log(['[File] Opened file ' filePath]);
     if ~filePath
         return
     end
@@ -407,7 +408,11 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
     );
 end
 
-function clear(~, ~, model)
+function closeFile(~, ~, model)
+    if ~isempty(model.filename)
+        model.log.log(['[File] Closed file ' model.filepath model.filename]);
+        model.log.write('');
+    end
     model.file = [];
     model.filename = [];
 end
@@ -444,4 +449,5 @@ function saveData(model, filePath)
 
         save(filePath, 'results');
     end
+    model.log.log(['[File] Saved file ' filePath]);
 end

@@ -23,7 +23,7 @@ controllers.calibration.setDefaultParameters();
 conf = {'R', 'B1', 'B2', 'B2', 'B1', 'R', 'NaN'};
 % use this configuration for old calibrations with only water or methanol
 % conf = {'R', 'B1', 'B1', 'R', 'NaN'};
-% controllers.calibration.findPeaks(conf);            % find the peaks of the current calibration measurement
+controllers.calibration.findPeaks(conf);            % find the peaks of the current calibration measurement
 controllers.calibration.calibrateAll(conf);             % calibrate the frequency axis using all reference measurements
 
 controllers.peakSelection.setActive();
@@ -40,4 +40,4 @@ controllers.evaluation.startEvaluation();
 controllers.data.save(saveFile);
 
 % close the GUI
-controllers.data.close();
+controllers.data.closeFile();

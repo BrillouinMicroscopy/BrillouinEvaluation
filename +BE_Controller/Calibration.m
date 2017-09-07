@@ -88,9 +88,12 @@ function calibrateAll(model, view, types)
             drawnow;
             calibrate(0, 0, model, view);
             drawnow;
+            model.log.log(['[Calibration] Calibration of sample "' cals{jj} '" finished.']);
         catch
+            model.log.log(['[Calibration] Error: Calibration of sample "' cals{jj} '" failed.']);
         end
     end
+    model.log.log('[Calibration] Finished.');
 end
 
 function findPeaks(model, types)
