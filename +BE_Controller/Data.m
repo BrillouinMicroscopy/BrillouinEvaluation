@@ -237,7 +237,7 @@ function loadData(model, filePath)
                     results.masks = struct();
                 end
                 if ~isfield(parameters.evaluation, 'interpRayleigh')
-                    parameters.evaluation.interpRayleigh = false;
+                    parameters.evaluation.interpRayleigh = true;
                 end
                 if ~isfield(parameters, 'masking')
                     parameters.masking = struct( ...
