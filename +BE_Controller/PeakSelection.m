@@ -64,16 +64,16 @@ function selectFrequencyRange(model, type, range, units)
                 [~, ind2] = min(abs(x - range(2)));
                 range = [ind1 ind2];
             else
-                errorStr = '[PeakSelection] Error: No calibration available, please set this parameter in [pix].';
+                errorStr = 'E/PeakSelection: Error: No calibration available, please set this parameter in [pix].';
                 disp(errorStr);
                 model.log.log(errorStr);
                 return;
             end
         end
         model.parameters.peakSelection.(type) = range;
-        model.log.log(['[PeakSelection] Selection of the ' type ' peaks successful.']);
+        model.log.log(['I/PeakSelection: Selection of the ' type ' peaks successful.']);
     else
-        errorStr = '[PeakSelection] Error: Cannot set this parameter, no data was loaded.';
+        errorStr = 'E/PeakSelection: Error: Cannot set this parameter, no data was loaded.';
         disp(errorStr);
         return;
     end

@@ -15,10 +15,10 @@ function varargout = BrillouinEvaluation
     controllers = controller(model, view);
     
     % add logging class
-    model.log = BE_Utils.Logging.Logging([model.pp filesep 'log.txt']);
+    model.log = BE_Utils.Logging.Logging([model.pp filesep 'log.log']);
     model.log.write('');
     model.log.write('#####################################################');
-    model.log.log('Opened BrillouinEvaluation');
+    model.log.log('V/BrillouinEvaluation: Opened program.');
     model.log.write('=====================================================');
     
     set(view.figure, 'CloseRequestFcn', {@closeGUI, model, view, controllers});
@@ -39,7 +39,7 @@ function closeGUI(~, ~, model, view, controllers)
     end
     controllers.data.closeFile();
     model.log.write('=====================================================');
-    model.log.log('Closed BrillouinEvaluation');
+    model.log.log('V/BrillouinEvaluation: Closed program.');
     delete(gcf);
 end
 

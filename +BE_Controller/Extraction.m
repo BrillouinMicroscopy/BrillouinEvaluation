@@ -124,7 +124,7 @@ function findPeaks(~, ~, model)
         model.parameters.extraction.peaks = peaks;
         % optimize the peak position
         optimizePeaks(0, 0, model);
-        model.log.log('[Extraction] Extraction successful.');
+        model.log.log('I/Extraction: Extraction successful.');
     end
 end
 

@@ -307,7 +307,7 @@ function evaluate(view, model)
     results.validity                  = validity;                 % [logical] the validity of the results
     results.times                     = times;                    % [s]    time of the measurement
     model.results = results;
-    model.log.log('[Evaluation] Finished.');
+    model.log.log('I/Evaluation: Finished.');
 end
 
 function zoom(src, ~, str, view)

@@ -88,12 +88,12 @@ function calibrateAll(model, view, types)
             drawnow;
             calibrate(0, 0, model, view);
             drawnow;
-            model.log.log(['[Calibration] Calibration of sample "' cals{jj} '" finished.']);
+            model.log.log(['I/Calibration: Calibration of sample "' cals{jj} '" finished.']);
         catch
-            model.log.log(['[Calibration] Error: Calibration of sample "' cals{jj} '" failed.']);
+            model.log.log(['E/Calibration: Error: Calibration of sample "' cals{jj} '" failed.']);
         end
     end
-    model.log.log('[Calibration] Finished.');
+    model.log.log('I/Calibration: Finished.');
 end
 
 function findPeaks(model, types)
@@ -142,9 +142,11 @@ function findPeaks(model, types)
         Rayleigh_dif = abs(1 - (Rayleigh_int(1) / Rayleigh_int(2)));
         Brillouin_dif = abs(1 - (Brillouin_int(1) / Brillouin_int(2)));
         if Rayleigh_dif > 0.4 || Brillouin_dif > 0.4
-            model.log.log(['[Calibration] Warning: Peak detection of sample "' selectedMeasurement '" probably failed. Please check.']);
+            model.log.log(['E/Calibration: Error: Peak detection of sample "' selectedMeasurement '" likely failed. Please check.']);
         end
     catch
+        model.log.log(['E/Calibration: Error: There were less than two Rayleigh and Brillouin peaks found for sample "' ...
+            selectedMeasurement '". Please check.']);
     end
     
     calibration.samples.(selectedMeasurement) = sample; % selected sample
@@ -202,8 +204,10 @@ function calibrate(~, ~, model, view)
     indRayleigh = sample.indRayleigh;
     indBrillouin = sample.indBrillouin;
     if size(indRayleigh,1) ~= 2 || size(indBrillouin,1) ~= 2
-        ex = MException('MATLAB:toLessValues', ...
-                'Please select two Rayleigh and two Brillouin peaks.');
+        errorStr = ['Please select two Rayleigh and two Brillouin peaks for sample "' selectedMeasurement '".'];
+        ex = MException('MATLAB:toLessValues', errorStr);
+        
+        model.log.log(['E/Calibration: Error: ' errorStr]);
         disp(ex.message);
         return;
     end
@@ -323,7 +327,7 @@ function calibrate(~, ~, model, view)
         view.calibration.progressBar.setString(sprintf('%01.0f%%', val));
     end
     if abs(sample.fac) > 0.005
-        model.log.log(['[Calibration] Warning: Calibration of sample "' selectedMeasurement '" is inaccurate. Please check.']);
+        model.log.log(['I/Calibration: Warning: Calibration of sample "' selectedMeasurement '" is inaccurate. Please check.']);
     end
     
     %% check if field for weighted calibration is available, set default value if not

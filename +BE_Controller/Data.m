@@ -27,7 +27,7 @@ end
 
 function loadData(model, filePath)
 % Load the h5bm data file
-    model.log.log(['[File] Opened file ' filePath]);
+    model.log.log(['I/File: Opened file "' filePath '"']);
     if ~filePath
         return
     end
@@ -410,7 +410,7 @@ end
 
 function closeFile(~, ~, model)
     if ~isempty(model.filename)
-        model.log.log(['[File] Closed file ' model.filepath model.filename]);
+        model.log.log(['I/File: Closed file "' model.filepath model.filename '"']);
         model.log.write('');
     end
     model.file = [];
@@ -449,5 +449,5 @@ function saveData(model, filePath)
 
         save(filePath, 'results');
     end
-    model.log.log(['[File] Saved file ' filePath]);
+    model.log.log(['I/File: Saved file "' filePath '"']);
 end
