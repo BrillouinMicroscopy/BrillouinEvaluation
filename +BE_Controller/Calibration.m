@@ -327,7 +327,7 @@ function calibrate(~, ~, model, view)
         view.calibration.progressBar.setString(sprintf('%01.0f%%', val));
     end
     if abs(sample.fac) > 0.005
-        model.log.log(['I/Calibration: Warning: Calibration of sample "' selectedMeasurement '" is inaccurate. Please check.']);
+        model.log.log(['W/Calibration: Warning: Calibration of sample "' selectedMeasurement '" is inaccurate. Please check.']);
     end
     
     %% check if field for weighted calibration is available, set default value if not
