@@ -13,13 +13,22 @@ classdef Logging < handle
         
         %% Destructor
         function delete (obj)
-            fclose(obj.logHandle);
+            try
+                fclose(obj.logHandle);
+            catch
+            end
         end
         
         %% Add new line to log
         function write (obj, data)
-            fprintf(obj.logHandle, '%s', data);
-            fprintf(obj.logHandle, '\r\n');
+            try
+                fprintf(obj.logHandle, '%s', data);
+                fprintf(obj.logHandle, '\r\n');
+            catch
+                obj.logHandle = fopen(obj.logPath, 'a');
+                fprintf(obj.logHandle, '%s', data);
+                fprintf(obj.logHandle, '\r\n');
+            end
         end
         
         %% Add new line to log
