@@ -119,19 +119,34 @@ function findPeaks(model, types)
     
     sample.indRayleigh = [];
     sample.indBrillouin = [];
+    Rayleigh_int = [];
+    Brillouin_int = [];
     for jj = 1:length(types)
         try
             % find Rayleigh peaks
             if strcmp(peaks.types{jj}, 'R')
                 sample.indRayleigh = [sample.indRayleigh; round(peaks.locations(jj) + peaks.widths(jj) * [-3 3])];
+                Rayleigh_int = [Rayleigh_int; peaks.height(jj)];
             end
             % find Brillouin peaks
             if strcmp(peaks.types{jj}, 'B1')
                 sample.indBrillouin = [sample.indBrillouin; round(peaks.locations(jj) + peaks.widths(jj) * [-2 2])];
+                Brillouin_int = [Brillouin_int; peaks.height(jj)];
             end
         catch
         end
     end
+    %% The Brillouin and Rayleigh peaks should have approx. the same height, respectively
+    %  if not, there is likely something wrong
+    try
+        Rayleigh_dif = abs(1 - (Rayleigh_int(1) / Rayleigh_int(2)));
+        Brillouin_dif = abs(1 - (Brillouin_int(1) / Brillouin_int(2)));
+        if Rayleigh_dif > 0.4 || Brillouin_dif > 0.4
+            model.log.log(['[Calibration] Warning: Peak detection of sample "' selectedMeasurement '" probably failed. Please check.']);
+        end
+    catch
+    end
+    
     calibration.samples.(selectedMeasurement) = sample; % selected sample
     model.parameters.calibration = calibration;         % general calibration
 end
