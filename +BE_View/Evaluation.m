@@ -1,23 +1,24 @@
-function handles = Evaluation(parent, model)
+function Evaluation(view, model)
 %% EVALUATION View
 
     % build the GUI
-    handles = initGUI(model, parent);
-    initView(handles, model);    % populate with initial values
-    handles.functions.plotData = @plotData;
+    initGUI(model, view);
+    initView(view, model);    % populate with initial values
+    view.evaluation.functions.plotData = @plotData;
 
     % observe on model changes and update view accordingly
     % (tie listener to model object lifecycle)
     addlistener(model, 'results', 'PostSet', ...
-        @(o,e) onResults(handles, e.AffectedObject));
+        @(o,e) onResults(view, e.AffectedObject));
     addlistener(model, 'displaySettings', 'PostSet', ...
-        @(o,e) onDisplaySettings(handles, e.AffectedObject));
+        @(o,e) onDisplaySettings(view, e.AffectedObject));
     addlistener(model, 'status', 'PostSet', ...
-        @(o,e) onStatus(handles, e.AffectedObject));
+        @(o,e) onStatus(view, e.AffectedObject));
    
 end
 
-function handles = initGUI(model, parent)
+function initGUI(model, view)
+    parent = view.evaluation.parent;
 
     evaluate = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...
         'String','Evaluate','Position',[0.02,0.92,0.1,0.055],...
@@ -145,7 +146,7 @@ function handles = initGUI(model, parent)
     progressBar.setString('0%');
 
     %% Return handles
-    handles = struct(...
+    view.evaluation = struct(...
         'parent', parent, ...
         'evaluate', evaluate, ...
         'newFig', newFig, ...
@@ -178,16 +179,17 @@ function handles = initGUI(model, parent)
 	);
 end
 
-function initView(handles, model)
+function initView(view, model)
 %% Initialize the view
-    onDisplaySettings(handles, model)
+    onDisplaySettings(view, model)
 end
 
-function onResults(handles, model)
-    plotData(handles, model, 'int', 0);
+function onResults(view, model)
+    plotData(view.evaluation, model, 'int', 0);
 end
 
-function onStatus(handles, model)
+function onStatus(view, model)
+    handles = view.evaluation;
     if model.status.evaluation.evaluate
         label = 'Stop';
     else
@@ -203,7 +205,8 @@ function onStatus(handles, model)
     set(handles.showSpectrum, 'String', label);
 end
 
-function onDisplaySettings(handles, model)
+function onDisplaySettings(view, model)
+    handles = view.evaluation;
     set(handles.interpRayleigh, 'Value', model.parameters.evaluation.interpRayleigh);
     set(handles.autoscale, 'Value', model.displaySettings.evaluation.autoscale);
     set(handles.cap, 'String', model.displaySettings.evaluation.cap);

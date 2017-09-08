@@ -6,6 +6,7 @@ classdef Model < handle
         file;       % handle to the H5BM file
         filename;   % name of the H5BM file
         filepath;   % path to the H5BM file
+        log;        % logging object
         pp;         % path to the program
         parameters; % parameters of the measurement
         results;            % results of the evaluation
@@ -51,7 +52,11 @@ classdef Model < handle
                     'c', 299792458, ...         % [m/s] speed of light
                     'pixelSize', 6.5e-6, ...    % [m]   pixel size of the camera
                     'lambda0', 780.24e-9, ...   % [m]   laser wavelength
-                    'F', 0.2 ...                % [m]   focal length of the lens behind the VIPA
+                    'F', 0.2, ...               % [m]   focal length of the lens behind the VIPA
+                    'cavitySlope', -3840 ...    % [pix/m] empirically determinded factor between the
+                    ...                         %         difference of measured and fitted peak positions
+                    ...                         %         (calculated in +BE_Controller\Calibration.m lines 275 ff.)
+                    ...                         %         and the VIPA cavity width [see +BE_Controller\Calibration.m:testCavitySlope()]
                 ), ...
                 'extraction', struct( ...
                     'imageNr', 1, ...
@@ -92,6 +97,8 @@ classdef Model < handle
                     'weighted', true, ...
                     'extrapolate', false, ...
                     'correctOffset', false, ...
+                    'peakTypes', [], ...            % expected types of peaks
+                    'peakProminence', 20, ...       % the minimal prominence of the peaks (used for finding peaks)
                     'start', struct( ...            % start values for the VIPA fit
                         'd',    0.006774, ...       % [m]   width of the cavity
                         'n',    1.453683, ...       % [1]   refractive index of the VIPA
@@ -109,7 +116,7 @@ classdef Model < handle
                 'evaluation', struct( ...
                     'fwhm', 5, ...              % [pix] initial value for the FWHM of the Brillouin peak
                     'gap', 10, ...              % [pix] minimum x and y distance of maxima to the edges of the image
-                    'interpRayleigh', false, ...% [bool] whether or not invalid Rayleigh peak positions (e.g. due to saturation) should be interpolated 
+                    'interpRayleigh', true, ... % [bool] whether or not invalid Rayleigh peak positions (e.g. due to saturation) should be interpolated 
                     'rotationAngle', NaN, ...   % [degree]          angle of rotation
                     'centerx', 800, ...         % [pix]             x-center of the image
                     'centery', 860, ...         % [pix]             y-center of the image

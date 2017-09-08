@@ -1,21 +1,22 @@
-function handles = PeakSelection(parent, model)
+function PeakSelection(view, model)
 %% PEAKSELECTION View
 
     % build the GUI
-    handles = initGUI(model, parent);
-    initView(handles, model);    % populate with initial values
+    initGUI(model, view);
+    initView(view, model);    % populate with initial values
 
     % observe on model changes and update view accordingly
     % (tie listener to model object lifecycle)
     addlistener(model, 'parameters', 'PostSet', ...
-        @(o,e) onSettings(handles, e.AffectedObject));
+        @(o,e) onSettings(view, e.AffectedObject));
     addlistener(model, 'displaySettings', 'PostSet', ...
-        @(o,e) onDisplaySettings(handles, e.AffectedObject));
+        @(o,e) onDisplaySettings(view, e.AffectedObject));
     addlistener(model, 'status', 'PostSet', ...
-        @(o,e) onStatus(handles, e.AffectedObject));
+        @(o,e) onStatus(view, e.AffectedObject));
 end
 
-function handles = initGUI(model, parent)
+function initGUI(model, view)
+    parent = view.peakSelection.parent;
 
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Brillouin peaks:', 'Units', 'normalized',...
         'Position', [0.02,0.94,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -110,7 +111,7 @@ function handles = initGUI(model, parent)
     set(cursorHandle, 'Enable', 'off');
     
     %% Return handles
-    handles = struct(...
+    view.peakSelection = struct(...
         'parent', parent, ...
         'selectBrillouin', selectBrillouin, ...
         'clearBrillouin', clearBrillouin, ...
@@ -137,14 +138,15 @@ function handles = initGUI(model, parent)
 	);
 end
 
-function initView(handles, model)
-%% Initialize the view
+function initView(view, model)
+    handles = view.peakSelection;
+    %% Initialize the view
     set(handles.autoscale, 'Value', model.displaySettings.peakSelection.autoscale);
     set(handles.cap, 'String', model.displaySettings.peakSelection.cap);
     set(handles.floor, 'String', model.displaySettings.peakSelection.floor);
 end
 
-function onStatus(handles, model)
+function onStatus(view, model)
     buttons = {'Brillouin', 'Rayleigh'};
     for jj = 1:length(buttons)
         if model.status.peakSelection.(['select' buttons{jj}])
@@ -152,17 +154,19 @@ function onStatus(handles, model)
         else
             label = 'Select';
         end
-        set(handles.(['select' buttons{jj}]), 'String', label);
+        set(view.peakSelection.(['select' buttons{jj}]), 'String', label);
     end
 end
 
-function onSettings(handles, model)
+function onSettings(view, model)
+    handles = view.peakSelection;
     handles.peakTableBrillouin.Data = model.parameters.peakSelection.Brillouin;
     handles.peakTableRayleigh.Data = model.parameters.peakSelection.Rayleigh;
     plotData(handles, model);
 end
 
-function onDisplaySettings(handles, model)
+function onDisplaySettings(view, model)
+    handles = view.peakSelection;
     set(handles.autoscale, 'Value', model.displaySettings.peakSelection.autoscale);
     set(handles.cap, 'String', model.displaySettings.peakSelection.cap);
     set(handles.floor, 'String', model.displaySettings.peakSelection.floor);

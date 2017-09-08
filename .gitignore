@@ -1,6 +1,8 @@
 # Temporary MATLAB files #
 ##########################
 *.asv
+log.txt
+log.log
 Tests/log.txt
 Tests/ExitCode.txt
 

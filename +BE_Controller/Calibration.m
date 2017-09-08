@@ -35,7 +35,7 @@ function calibration = Calibration(model, view)
     set(view.calibration.increaseCap, 'Callback', {@changeClim, model, 1});
     set(view.calibration.decreaseCap, 'Callback', {@changeClim, model, -1});
     
-    set(view.calibration.openBrillouinShift, 'Callback', {@openBrillouinShift, model});
+    set(view.calibration.openBrillouinShift, 'Callback', {@openBrillouinShift, model, view});
     
     set(view.calibration.valuesTable, 'CellEditCallback', {@toggleActiveState, model});
     
@@ -44,8 +44,126 @@ function calibration = Calibration(model, view)
     set(view.calibration.correctOffset, 'Callback', {@toggleOffsetCorrection, model});
     
     calibration = struct( ...
-        'setActive', @()setActive(view) ...
+        'testCavitySlope', @()testCavitySlope(model, view), ...
+        'setActive', @()setActive(view), ...
+        'findPeaks', @()findPeaks(model), ...
+        'setDefaultParameters', @()setDefaultParameters(model), ...
+        'calibrateAll', @()calibrateAll(model, view) ...
     );
+end
+
+function testCavitySlope(model, view)
+    d = linspace(0.006791, 0.006797, 20);
+    calibration = model.parameters.calibration;         % general calibration
+    selectedMeasurement = calibration.selected;
+    sample = calibration.samples.(selectedMeasurement); % selected sample
+    fac = NaN(1,4);
+    
+    for jj = 1:length(d)
+        sample.start.d = d(jj);
+        calibration.samples.(selectedMeasurement) = sample; % selected sample
+        model.parameters.calibration = calibration;         % general calibration
+        calibrate(0, 0, model, view);
+        fac(jj) = model.parameters.calibration.samples.(selectedMeasurement).fac;
+        disp(jj);
+    end
+    
+    figure;
+    plot(d, fac);
+end
+
+function calibrateAll(model, view)
+    calibration = model.parameters.calibration;
+    cals = fields(calibration.samples);
+    for jj = 1:length(cals)
+        try
+            name = calibration.samples.(cals{jj}).sampleType;
+            if strcmp(name, 'measurement')
+                break;
+            else
+                model.parameters.calibration.selected = cals{jj};
+                model.parameters.calibration.selectedValue = jj;
+            end
+            findPeaks(model);
+            drawnow;
+            calibrate(0, 0, model, view);
+            drawnow;
+            model.log.log(['I/Calibration: Calibration of sample "' cals{jj} '" finished.']);
+        catch
+            model.log.log(['E/Calibration: Error: Calibration of sample "' cals{jj} '" failed.']);
+        end
+    end
+    model.log.log('I/Calibration: Finished.');
+end
+
+function findPeaks(model)
+    %% store often used values in separate variables for convenience
+    calibration = model.parameters.calibration;         % general calibration
+    selectedMeasurement = calibration.selected;
+    sample = calibration.samples.(selectedMeasurement); % selected sample
+    
+    mm = 1;     % selected image
+    %% Plot
+    if strcmp(selectedMeasurement, 'measurement')
+        imgs = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'data');
+    else
+        imgs = model.file.readCalibrationData(sample.position, 'data');
+    end
+    imgs = medfilt1(imgs,3);
+    img = imgs(:,:,mm);
+    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
+    
+    [peaks.height,peaks.locations,peaks.widths,peaks.proms] = findpeaks(data,'Annotate','extents','MinPeakProminence',calibration.peakProminence);
+    
+    sample.indRayleigh = [];
+    sample.indBrillouin = [];
+    Rayleigh_int = [];
+    Brillouin_int = [];
+    for jj = 1:length(calibration.peakTypes)
+        try
+            % find Rayleigh peaks
+            if strcmp(calibration.peakTypes{jj}, 'R')
+                sample.indRayleigh = [sample.indRayleigh; round(peaks.locations(jj) + peaks.widths(jj) * [-3 3])];
+                Rayleigh_int = [Rayleigh_int; peaks.height(jj)]; %#ok<AGROW>
+            end
+            % find Brillouin peaks
+            if strcmp(calibration.peakTypes{jj}, 'B1')
+                sample.indBrillouin = [sample.indBrillouin; round(peaks.locations(jj) + peaks.widths(jj) * [-2 2])];
+                Brillouin_int = [Brillouin_int; peaks.height(jj)]; %#ok<AGROW>
+            end
+        catch
+        end
+    end
+    %% The Brillouin and Rayleigh peaks should have approx. the same height, respectively
+    %  if not, there is likely something wrong
+    try
+        Rayleigh_dif = abs(1 - (Rayleigh_int(1) / Rayleigh_int(2)));
+        Brillouin_dif = abs(1 - (Brillouin_int(1) / Brillouin_int(2)));
+        if Rayleigh_dif > 0.4 || Brillouin_dif > 0.4
+            model.log.log(['E/Calibration: Error: Peak detection of sample "' selectedMeasurement '" likely failed. Please check.']);
+        end
+    catch
+        model.log.log(['E/Calibration: Error: There were less than two Rayleigh and Brillouin peaks found for sample "' ...
+            selectedMeasurement '". Please check.']);
+    end
+    
+    calibration.samples.(selectedMeasurement) = sample; % selected sample
+    model.parameters.calibration = calibration;         % general calibration
+end
+
+function setDefaultParameters(model)
+    
+    calibration = model.parameters.calibration;
+    calibration.correctOffset = 0;
+    calibration.extrapolate = 1;
+    calibration.weighted = 0;
+    model.parameters.calibration = calibration;
+
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    updateCalibrationBrillouinShift(model);
+    
+    %% calculate the Brillouin shift for the measurements
+    updateMeasurementBrillouinShift(model);
 end
 
 function setActive(view)
@@ -84,8 +202,10 @@ function calibrate(~, ~, model, view)
     indRayleigh = sample.indRayleigh;
     indBrillouin = sample.indBrillouin;
     if size(indRayleigh,1) ~= 2 || size(indBrillouin,1) ~= 2
-        ex = MException('MATLAB:toLessValues', ...
-                'Please select two Rayleigh and two Brillouin peaks.');
+        errorStr = ['Please select two Rayleigh and two Brillouin peaks for sample "' selectedMeasurement '".'];
+        ex = MException('MATLAB:toLessValues', errorStr);
+        
+        model.log.log(['E/Calibration: Error: ' errorStr]);
         disp(ex.message);
         return;
     end
@@ -99,7 +219,6 @@ function calibrate(~, ~, model, view)
     pixels = calibration.pixels;
     constants = model.parameters.constants;
     constants.bShiftCal = sample.shift*1e9;
-    start = sample.start;
     pixelSize = model.parameters.constants.pixelSize;
     
     interpolationPositions = model.parameters.extraction.interpolationPositions;
@@ -113,65 +232,102 @@ function calibrate(~, ~, model, view)
     clc;
     view.calibration.progressBar.setValue(0);
     view.calibration.progressBar.setString(sprintf('%01.0f%%', 0));
-    parfor mm = 1:totalRuns
-        data = BE_SharedFunctions.getIntensity1D(imgs(:,:,mm), interpolationPositions);
-        
-%         nrPositions = size(data,2)/0.1;
-%         calibration.pixels = linspace(1,size(data,2),nrPositions);
-        
-        %% find the measured peaks
-        peakPos = NaN(1,4);
-        for jj = 1:length(indRayleigh)
-            spectrumSection = data(indRayleigh(jj,1):indRayleigh(jj,2));
-            [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, 1, [6 20], 0);
-            peakPos(jj) = tmp+indRayleigh(jj,1)-1;
+    
+    % in order to optimize the cavity width, three runs are necessary
+    cavityWidths = NaN(1,3);
+    facs = NaN(1,3);
+    for ii = 1:3
+        cavityWidths(ii) = sample.start.d;
+        start = sample.start;
+        parfor mm = 1:totalRuns
+            data = BE_SharedFunctions.getIntensity1D(imgs(:,:,mm), interpolationPositions);
+
+    %         nrPositions = size(data,2)/0.1;
+    %         calibration.pixels = linspace(1,size(data,2),nrPositions);
+
+            %% find the measured peaks
+            peakPos = NaN(1,4);
+            for jj = 1:length(indRayleigh)
+                spectrumSection = data(indRayleigh(jj,1):indRayleigh(jj,2));
+                [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, 1, [6 20], 0);
+                peakPos(jj) = tmp+indRayleigh(jj,1)-1;
+            end
+            for jj = 1:length(indBrillouin)
+                spectrumSection = data(indBrillouin(jj,1):indBrillouin(jj,2));
+                [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, 1, [6 20], 0);
+                peakPos(jj+2) = tmp+indBrillouin(jj,1)-1;
+            end
+            peakPos = sort(peakPos, 'ascend');
+            peaksMeasured(mm,:) = peakPos;
+
+            %% find the fitted peaks, do the VIPA fit            
+            [VIPAparams, peakPos] = fitVIPA(peakPos, start, constants);
+            VIPAparams.x0Initial = VIPAparams.x0;
+
+            d(mm) = VIPAparams.d;
+            n(mm) = VIPAparams.n;
+            theta(mm) = VIPAparams.theta;
+            x0Initial(mm) = VIPAparams.x0Initial;
+            x0(mm) = VIPAparams.x0;
+            xs(mm) = VIPAparams.xs;
+            error(mm) = VIPAparams.error;
+    %             params = {'d', 'n', 'theta', 'x0Initial', 'x0', 'xs', 'error'};
+    %             for jj = 1:length(params)
+    %                 sample.values.(params{jj})(mm) = VIPAparams.(params{jj});
+    %             end
+            peakPos = sort(peakPos, 'ascend');
+            peaksFitted(mm,:) = peakPos;
+
+            wavelength = BE_SharedFunctions.getWavelength(pixelSize * pixels, VIPAparams, constants, 1);
+
+            wavelengths(mm,:) = wavelength;
+
+            offset(mm,:) = interp1(peaksFitted(mm,:), peaksMeasured(mm,:) - peaksFitted(mm,:), pixels, 'spline');
         end
-        for jj = 1:length(indBrillouin)
-            spectrumSection = data(indBrillouin(jj,1):indBrillouin(jj,2));
-            [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, 1, [6 20], 0);
-            peakPos(jj+2) = tmp+indBrillouin(jj,1)-1;
+
+        %% store variables which were separated for parfor loop in structure again
+        sample.peaksMeasured = peaksMeasured;
+        sample.peaksFitted = peaksFitted;
+        sample.values.d = d;
+        sample.values.n = n;
+        sample.values.theta = theta;
+        sample.values.x0Initial = x0Initial;
+        sample.values.x0 = x0;
+        sample.values.xs = xs;
+        sample.values.error = error;
+        sample.wavelengths = wavelengths;
+        sample.offset = offset;
+
+        %% check if cavity width needs to be adjusted
+        % if the cavity width is to low, the calculated Brillouin shifts are to
+        % high. --> R1:--, B1:++, B2:--, R2:++
+        % If the cavity width is to high, the calculated shifts are to low.
+        % -->  R1:++, B1:--, B2:++, R2:--
+        if size(sample.peaksMeasured,2) == 4
+            signs = [-1 1 -1 1];    % signs how sum up the differences between measured and fitted peaks
+            signs = repmat(signs, size(sample.peaksMeasured,1), 1);
+            deviations = signs .* (sample.peaksMeasured - sample.peaksFitted);
+            fac = mean(deviations(:));      % if fac > 0, d has to be increased, otherwise decreased
+            sample.fac = fac;
+            facs(ii) = fac;
         end
-        peakPos = sort(peakPos, 'ascend');
-        peaksMeasured(mm,:) = peakPos;
-
-        %% find the fitted peaks, do the VIPA fit            
-        [VIPAparams, peakPos] = fitVIPA(peakPos, start, constants);
-        VIPAparams.x0Initial = VIPAparams.x0;
-
-        d(mm) = VIPAparams.d;
-        n(mm) = VIPAparams.n;
-        theta(mm) = VIPAparams.theta;
-        x0Initial(mm) = VIPAparams.x0Initial;
-        x0(mm) = VIPAparams.x0;
-        xs(mm) = VIPAparams.xs;
-        error(mm) = VIPAparams.error;
-%             params = {'d', 'n', 'theta', 'x0Initial', 'x0', 'xs', 'error'};
-%             for jj = 1:length(params)
-%                 sample.values.(params{jj})(mm) = VIPAparams.(params{jj});
-%             end
-        peakPos = sort(peakPos, 'ascend');
-        peaksFitted(mm,:) = peakPos;
-
-        wavelength = BE_SharedFunctions.getWavelength(pixelSize * pixels, VIPAparams, constants, 1);
-
-        wavelengths(mm,:) = wavelength;
-
-        offset(mm,:) = interp1(peaksFitted(mm,:), peaksMeasured(mm,:) - peaksFitted(mm,:), pixels, 'spline');
+        if (ii==1)
+            cavityWidths(2) = sample.start.d - facs(ii)/constants.cavitySlope;
+            sample.start.d = cavityWidths(2);
+        elseif (ii == 2)
+            m = (facs(1) - facs(2)) / (cavityWidths(1) - cavityWidths(2));
+            n = facs(2) - m * cavityWidths(2);
+            cavityWidths(3) = - n/m;
+            sample.start.d = cavityWidths(3);
+        end
+        val = ii*100/3;
+        view.calibration.progressBar.setValue(val);
+        view.calibration.progressBar.setString(sprintf('%01.0f%%', val));
+    end
+    if abs(sample.fac) > 0.005
+        model.log.log(['W/Calibration: Warning: Calibration of sample "' selectedMeasurement '" is inaccurate. Please check.']);
     end
     
-    %% store variables which were separated for parfor loop in structure again
-    sample.peaksMeasured = peaksMeasured;
-    sample.peaksFitted = peaksFitted;
-    sample.values.d = d;
-    sample.values.n = n;
-    sample.values.theta = theta;
-    sample.values.x0Initial = x0Initial;
-    sample.values.x0 = x0;
-    sample.values.xs = xs;
-    sample.values.error = error;
-    sample.wavelengths = wavelengths;
-    sample.offset = offset;
-
     %% check if field for weighted calibration is available, set default value if not
     if ~isfield(calibration, 'weighted')
         calibration.weighted = true;
@@ -704,7 +860,7 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peakPos, VIPAstart, constants)
 
 end
 
-function openBrillouinShift(~, ~, model)
+function openBrillouinShift(~, ~, model, view)
     calibration = model.parameters.calibration;
     
     BrillouinShifts = NaN(1,2);
@@ -728,8 +884,20 @@ function openBrillouinShift(~, ~, model)
         end
         totalImages = totalImages + nrImages;
     end
-
-    figure;
+    
+    if isfield(view.calibration, 'BrillouinShiftView') && ishandle(view.calibration.BrillouinShiftView)
+        return;
+    else
+        width = 500;
+        height = 400;
+        figPos = view.figure.Position;
+        x = figPos(1) + (figPos(3) - width)/2;
+        y = figPos(2) + (figPos(4) - height)/2;
+        BrillouinShiftView = figure('Position',[x,y,width,height]);
+        % hide the menubar and prevent resizing
+        view.calibration.BrillouinShiftView = BrillouinShiftView;
+    end
+    
     plot(BrillouinShifts);
     hold on;
     ax = gca;
@@ -738,7 +906,7 @@ function openBrillouinShift(~, ~, model)
     plot(calibrationFrequency);
     xlabel('Calibration image #');
     ylabel('$f$ [GHz]', 'interpreter', 'latex');
-    if ~sum(isnan(BrillouinShifts(:)))
+    if sum(~isnan(BrillouinShifts(:)))
         legend('Stokes Peak', 'AntiStokes Peak', 'Stokes Peak Mean', 'AntiStokes Peak Mean', 'Calibration Frequency');
     end
 end

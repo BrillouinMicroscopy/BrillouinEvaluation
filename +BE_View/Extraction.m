@@ -1,23 +1,24 @@
-function handles = Extraction(parent, model)
+function Extraction(view, model)
 %% CALIBRATION View
 
     % build the GUI
-    handles = initGUI(model, parent);
-    initView(handles, model);    % populate with initial values
+    initGUI(model, view);
+    initView(view, model);    % populate with initial values
 
     % observe on model changes and update view accordingly
     % (tie listener to model object lifecycle)
     addlistener(model, 'file', 'PostSet', ...
-        @(o,e) onFileLoad(handles, e.AffectedObject));
+        @(o,e) onFileLoad(view, e.AffectedObject));
     addlistener(model, 'parameters', 'PostSet', ...
-        @(o,e) onSettingsChange(handles, e.AffectedObject));
+        @(o,e) onSettingsChange(view, e.AffectedObject));
     addlistener(model, 'displaySettings', 'PostSet', ...
-        @(o,e) onDisplaySettings(handles, e.AffectedObject));
+        @(o,e) onDisplaySettings(view, e.AffectedObject));
     addlistener(model, 'status', 'PostSet', ...
-        @(o,e) onStatus(handles, e.AffectedObject));
+        @(o,e) onStatus(view, e.AffectedObject));
 end
 
-function handles = initGUI(model, parent)
+function initGUI(model, view)
+    parent = view.extraction.parent;
 
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Peaks:', 'Units', 'normalized',...
         'Position', [0.02,0.94,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -175,7 +176,7 @@ function handles = initGUI(model, parent)
     colorbar(axesImage);
     
     %% Return handles
-    handles = struct( ...
+    view.extraction = struct( ...
         'parent', parent, ...
         'axesImage', axesImage, ...
         'imageCamera', imageCamera, ...
@@ -212,13 +213,14 @@ function handles = initGUI(model, parent)
 	);
 end
 
-function initView(handles, model)
+function initView(view, model)
 %% Initialize the view
-    onFileLoad(handles, model);
-    onSettingsChange(handles, model);
+    onFileLoad(view, model);
+    onSettingsChange(view, model);
 end
 
-function onDisplaySettings(handles, model)
+function onDisplaySettings(view, model)
+    handles = view.extraction;
     set(handles.autoscale, 'Value', model.displaySettings.extraction.autoscale);
     set(handles.cap, 'String', model.displaySettings.extraction.cap);
     set(handles.floor, 'String', model.displaySettings.extraction.floor);
@@ -246,7 +248,8 @@ function onDisplaySettings(handles, model)
     end
 end
 
-function onFileLoad(handles, model)
+function onFileLoad(view, model)
+    handles = view.extraction;
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         img = model.file.readPayloadData(1, 1, 1, 'data');
         img = img(:,:,model.parameters.extraction.imageNr);
@@ -266,16 +269,17 @@ function onFileLoad(handles, model)
     set(handles.showPositions, 'Value', model.displaySettings.extraction.showPositions);
 end
 
-function onStatus(handles, model)
+function onStatus(view, model)
     if model.status.extraction.selectPeaks
         label = 'Done';
     else
         label = 'Select';
     end
-    set(handles.selectPeaks, 'String', label);
+    set(view.extraction.selectPeaks, 'String', label);
 end
 
-function onSettingsChange(handles, model)
+function onSettingsChange(view, model)
+    handles = view.extraction;
     if model.displaySettings.extraction.autoscale
         caxis(handles.axesImage,'auto');
     else

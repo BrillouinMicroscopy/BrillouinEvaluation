@@ -3,20 +3,36 @@ function configuration = Data(model, view)
 
     %% general panel
     set(view.menubar.fileOpen, 'Callback', {@selectLoadData, model});
-    set(view.menubar.fileClose, 'Callback', {@clear, model});
+    set(view.menubar.fileClose, 'Callback', {@closeFile, model});
     set(view.menubar.fileSave, 'Callback', {@selectSaveData, model});
 
     configuration = struct( ...
         'setActive', @()setActive(view), ...
-        'close', @close, ...
+        'closeFile', @()closeFile('', '', model), ...
         'load', @(filePath)loadData(model, filePath), ...
-        'save', @(filePath)saveData(model, filePath)...
+        'save', @(filePath)saveData(model, filePath), ...
+        'setParameters', @(parameters)setParameters(model, parameters) ...
     );
 end
 
 function setActive(view)
     tabgroup = get(view.data.parent, 'parent');
     tabgroup.SelectedTab = view.data.parent;
+end
+
+function setParameters(model, parameters)
+    model.parameters = copyFields(model.parameters, parameters);
+    
+    %% recursively copy parameters into model
+    function target = copyFields(target, source)
+        for fn = fieldnames(source).'
+            if isstruct(source.(fn{1}))
+                target.(fn{1}) = copyFields(target.(fn{1}), source.(fn{1}));
+            else
+                target.(fn{1}) = source.(fn{1});
+            end
+        end
+    end
 end
 
 function selectLoadData(~, ~, model)
@@ -27,6 +43,7 @@ end
 
 function loadData(model, filePath)
 % Load the h5bm data file
+    model.log.log(['I/File: Opened file "' filePath '"']);
     if ~filePath
         return
     end
@@ -236,13 +253,16 @@ function loadData(model, filePath)
                     results.masks = struct();
                 end
                 if ~isfield(parameters.evaluation, 'interpRayleigh')
-                    parameters.evaluation.interpRayleigh = false;
+                    parameters.evaluation.interpRayleigh = true;
                 end
                 if ~isfield(parameters, 'masking')
                     parameters.masking = struct( ...
                         'brushSize', 40, ...        % [micro m] size of the brush
                         'adding', 1 ...             % [logical] add or delete mask
                     );
+                end
+                if ~isfield(parameters.constants, 'cavitySlope')
+                    parameters.constants.cavitySlope = -3840;
                 end
                 if ~isfield(displaySettings, 'masking')
                     displaySettings.masking = struct( ...                    
@@ -404,7 +424,11 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
     );
 end
 
-function clear(~, ~, model)
+function closeFile(~, ~, model)
+    if ~isempty(model.filename)
+        model.log.log(['I/File: Closed file "' model.filepath model.filename '"']);
+        model.log.write('');
+    end
     model.file = [];
     model.filename = [];
 end
@@ -441,4 +465,5 @@ function saveData(model, filePath)
 
         save(filePath, 'results');
     end
+    model.log.log(['I/File: Saved file "' filePath '"']);
 end

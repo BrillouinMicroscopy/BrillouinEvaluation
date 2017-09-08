@@ -21,17 +21,17 @@ function initGUI(model, view)
     
     % create the tabgroup for loading, calibrating and evaluating
     tabgroup = uitabgroup('Parent', f);
-    data = uitab('Parent', tabgroup, 'Title', 'Data');
-    extraction = uitab('Parent', tabgroup, 'Title', 'Extraction');
-    calibration = uitab('Parent', tabgroup, 'Title', 'Calibration');
-    peakSelection = uitab('Parent', tabgroup, 'Title', 'Peak Selection');
-    evaluation = uitab('Parent', tabgroup, 'Title', 'Evaluation');
+    view.data.parent = uitab('Parent', tabgroup, 'Title', 'Data');
+    view.extraction.parent = uitab('Parent', tabgroup, 'Title', 'Extraction');
+    view.calibration.parent = uitab('Parent', tabgroup, 'Title', 'Calibration');
+    view.peakSelection.parent = uitab('Parent', tabgroup, 'Title', 'Peak Selection');
+    view.evaluation.parent = uitab('Parent', tabgroup, 'Title', 'Evaluation');
     
-    data = BE_View.Data(data, model);
-    calibration = BE_View.Calibration(calibration, model);
-    extraction = BE_View.Extraction(extraction, model);
-    peakSelection = BE_View.PeakSelection(peakSelection, model);
-    evaluation = BE_View.Evaluation(evaluation, model);
+    BE_View.Data(view, model);
+    BE_View.Calibration(view, model);
+    BE_View.Extraction(view, model);
+    BE_View.PeakSelection(view, model);
+    BE_View.Evaluation(view, model);
                  
     % Assign the name to appear in the window title.
     version = sprintf('%d.%d.%d', model.programVersion.major, model.programVersion.minor, model.programVersion.patch);
@@ -49,9 +49,4 @@ function initGUI(model, view)
     % return a structure of GUI handles
     view.figure = f;
     view.menubar = menubar;
-    view.data = data;
-    view.extraction = extraction;
-    view.peakSelection = peakSelection;
-    view.calibration = calibration;
-    view.evaluation = evaluation;
 end
