@@ -10,13 +10,29 @@ function configuration = Data(model, view)
         'setActive', @()setActive(view), ...
         'closeFile', @()closeFile('', '', model), ...
         'load', @(filePath)loadData(model, filePath), ...
-        'save', @(filePath)saveData(model, filePath)...
+        'save', @(filePath)saveData(model, filePath), ...
+        'setParameters', @(parameters)setParameters(model, parameters) ...
     );
 end
 
 function setActive(view)
     tabgroup = get(view.data.parent, 'parent');
     tabgroup.SelectedTab = view.data.parent;
+end
+
+function setParameters(model, parameters)
+    model.parameters = copyFields(model.parameters, parameters);
+    
+    %% recursively copy parameters into model
+    function target = copyFields(target, source)
+        for fn = fieldnames(source).'
+            if isstruct(source.(fn{1}))
+                target.(fn{1}) = copyFields(target.(fn{1}), source.(fn{1}));
+            else
+                target.(fn{1}) = source.(fn{1});
+            end
+        end
+    end
 end
 
 function selectLoadData(~, ~, model)

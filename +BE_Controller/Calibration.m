@@ -46,9 +46,9 @@ function calibration = Calibration(model, view)
     calibration = struct( ...
         'testCavitySlope', @()testCavitySlope(model, view), ...
         'setActive', @()setActive(view), ...
-        'findPeaks', @(types)findPeaks(model, types), ...
+        'findPeaks', @()findPeaks(model), ...
         'setDefaultParameters', @()setDefaultParameters(model), ...
-        'calibrateAll', @(types)calibrateAll(model, view, types) ...
+        'calibrateAll', @()calibrateAll(model, view) ...
     );
 end
 
@@ -72,7 +72,7 @@ function testCavitySlope(model, view)
     plot(d, fac);
 end
 
-function calibrateAll(model, view, types)
+function calibrateAll(model, view)
     calibration = model.parameters.calibration;
     cals = fields(calibration.samples);
     for jj = 1:length(cals)
@@ -84,7 +84,7 @@ function calibrateAll(model, view, types)
                 model.parameters.calibration.selected = cals{jj};
                 model.parameters.calibration.selectedValue = jj;
             end
-            findPeaks(model, types);
+            findPeaks(model);
             drawnow;
             calibrate(0, 0, model, view);
             drawnow;
@@ -96,7 +96,7 @@ function calibrateAll(model, view, types)
     model.log.log('I/Calibration: Finished.');
 end
 
-function findPeaks(model, types)
+function findPeaks(model)
     %% store often used values in separate variables for convenience
     calibration = model.parameters.calibration;         % general calibration
     selectedMeasurement = calibration.selected;
@@ -113,25 +113,23 @@ function findPeaks(model, types)
     img = imgs(:,:,mm);
     data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
     
-    [peaks.height,peaks.locations,peaks.widths,peaks.proms] = findpeaks(data,'Annotate','extents','MinPeakProminence',15);
-    
-    peaks.types = types;
+    [peaks.height,peaks.locations,peaks.widths,peaks.proms] = findpeaks(data,'Annotate','extents','MinPeakProminence',calibration.peakProminence);
     
     sample.indRayleigh = [];
     sample.indBrillouin = [];
     Rayleigh_int = [];
     Brillouin_int = [];
-    for jj = 1:length(types)
+    for jj = 1:length(calibration.peakTypes)
         try
             % find Rayleigh peaks
-            if strcmp(peaks.types{jj}, 'R')
+            if strcmp(calibration.peakTypes{jj}, 'R')
                 sample.indRayleigh = [sample.indRayleigh; round(peaks.locations(jj) + peaks.widths(jj) * [-3 3])];
-                Rayleigh_int = [Rayleigh_int; peaks.height(jj)];
+                Rayleigh_int = [Rayleigh_int; peaks.height(jj)]; %#ok<AGROW>
             end
             % find Brillouin peaks
-            if strcmp(peaks.types{jj}, 'B1')
+            if strcmp(calibration.peakTypes{jj}, 'B1')
                 sample.indBrillouin = [sample.indBrillouin; round(peaks.locations(jj) + peaks.widths(jj) * [-2 2])];
-                Brillouin_int = [Brillouin_int; peaks.height(jj)];
+                Brillouin_int = [Brillouin_int; peaks.height(jj)]; %#ok<AGROW>
             end
         catch
         end
