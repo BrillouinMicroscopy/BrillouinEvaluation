@@ -96,6 +96,8 @@ function evaluate(view, model)
     
 %     spectra = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), size(model.parameters.extraction.interpolationPositions.x,2));
     
+    warningRayleigh = false;
+    warningBrillouin = false;
     for jj = 1:1:model.parameters.resolution.X
         if ~model.status.evaluation.evaluate
             break
@@ -145,6 +147,8 @@ function evaluate(view, model)
                         %% check if peak position is valid
                         if peakPos <= 0 || peakPos >= length(ind_Rayleigh) || isnan(peakPos)
                             validity_Rayleigh(kk, jj, ll, mm) = false;
+                            [peakPos, fwhm] = deal(NaN);
+                            warningRayleigh = true;
                         else
                             lastValidRayleighPeakPos = peakPos;
                         end
@@ -166,6 +170,8 @@ function evaluate(view, model)
                         %% check if peak position is valid
                         if peakPos <= 0 || peakPos >= length(secInd) || isnan(peakPos)
                             validity_Brillouin(kk, jj, ll, mm) = false;
+                            [peakPos, fwhm, deviation] = deal(NaN);
+                            warningBrillouin = true;
                         end
                         
                         peaksBrillouin_fwhm(kk, jj, ll, mm, :) = fwhm;
@@ -252,6 +258,14 @@ function evaluate(view, model)
     end
     
 %     save('Brillouin_spectra.mat', 'spectra');
+
+    %% issue warnings when Rayleigh or Brillouin peaks could not be fitted
+    if warningRayleigh
+        model.log.log('W/Evaluation: Some Rayleigh peaks could not be fitted.');
+    end
+    if warningBrillouin
+        model.log.log('W/Evaluation: Some Brillouin peaks could not be fitted.');
+    end
                         
     %% interpolate Rayleigh peak position for invalid/saturated peaks
     t_vec = times(:);
