@@ -121,13 +121,18 @@ function evaluate(view, model)
                             break
                         end
                         img = imgs(:,:,mm);
+                        %% calculate intensity before setting invalid values to NaN.
+                        %  The intensity will be underestimated, but
+                        %  otherwise no value will be available at all at
+                        %  saturated measurement points
+                        intensity(kk, jj, ll, mm) = nansum(img(:));
+                        
+                        %% set invalid values to NaN
                         img(img >= (2^16 - 1)) = NaN;
                         
                         spectrum = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
                         
 %                         spectra(kk, jj, ll, mm, :) = spectrum;
-                        %%
-                        intensity(kk, jj, ll, mm) = sum(img(:));
 
                         spectrumSection = spectrum(ind_Rayleigh);
                         if ~sum(isnan(spectrumSection))
