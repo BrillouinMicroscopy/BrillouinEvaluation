@@ -1,10 +1,10 @@
-function help = Help(model, view)
+function callbacks = Help(model, view)
 %% DATA Controller
 
     %% general panel
     set(view.menubar.helpAbout, 'Callback', {@openAbout, model, view});
 
-    help = struct( ...
+    callbacks = struct( ...
     );
 end
 

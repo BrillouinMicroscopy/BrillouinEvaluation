@@ -1,4 +1,4 @@
-function extraction = Extraction(model, view)
+function callbacks = Extraction(model, view)
 %% CALIBRATION Controller
 
     %% callbacks Calibration
@@ -30,7 +30,7 @@ function extraction = Extraction(model, view)
     set(view.extraction.increaseCap, 'Callback', {@changeClim, model, 1});
     set(view.extraction.decreaseCap, 'Callback', {@changeClim, model, -1});
     
-    extraction = struct( ...
+    callbacks = struct( ...
         'setActive', @()setActive(view), ...
         'findPeaks', @()findPeaks(0, 0, model) ...
     );
