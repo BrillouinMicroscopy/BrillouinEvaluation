@@ -429,8 +429,7 @@ function closeFile(~, ~, model)
         model.log.log(['I/File: Closed file "' model.filepath model.filename '"']);
         model.log.write('');
     end
-    model.file = [];
-    model.filename = [];
+    model.reset();
 end
 
 function selectSaveData(~, ~, model)
