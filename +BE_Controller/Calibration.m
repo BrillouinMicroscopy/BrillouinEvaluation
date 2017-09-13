@@ -135,11 +135,11 @@ function findPeaks(model)
     %% The Brillouin and Rayleigh peaks should have approx. the same height, respectively
     %  if not, there is likely something wrong
     try
-        Rayleigh_dif = abs(1 - (Rayleigh_int(1) / Rayleigh_int(2)));
+        Rayleigh_dif = abs(Rayleigh_int(1) - Rayleigh_int(2)) / max(Rayleigh_int(:));
         if ~mod(size(Brillouin_int,1),2)
             Brillouin_int = reshape(Brillouin_int,[],2);
             Brillouin_int(2,:) = fliplr(Brillouin_int(2,:));
-            difference = abs(1 - (Brillouin_int(1,:) / Brillouin_int(2,:)));
+            difference = abs(Brillouin_int(1,:) - Brillouin_int(2,:)) ./ max(Brillouin_int,[],1);
             Brillouin_dif = max(difference(:));
         else
             Brillouin_dif = 0;
