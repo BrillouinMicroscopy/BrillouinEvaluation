@@ -68,10 +68,11 @@ classdef Model < handle
                 'pixelSize', 6.5e-6, ...    % [m]   pixel size of the camera
                 'lambda0', 780.24e-9, ...   % [m]   laser wavelength
                 'F', 0.2, ...               % [m]   focal length of the lens behind the VIPA
-                'cavitySlope', -3840 ...    % [pix/m] empirically determinded factor between the
+                'cavitySlope', -3840, ...   % [pix/m] empirically determinded factor between the
                 ...                         %         difference of measured and fitted peak positions
                 ...                         %         (calculated in +BE_Controller\Calibration.m lines 275 ff.)
                 ...                         %         and the VIPA cavity width [see +BE_Controller\Calibration.m:testCavitySlope()]
+                'cavitySlope2', -5830 ...   % same as cavitySlope, but for two pairs of Brillouin peaks
             ), ...
             'extraction', struct( ...
                 'imageNr', 1, ...
