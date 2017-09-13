@@ -116,8 +116,8 @@ classdef Model < handle
                 'peakTypes', [], ...            % expected types of peaks
                 'peakProminence', 20, ...       % the minimal prominence of the peaks (used for finding peaks)
                 'start', struct( ...            % start values for the VIPA fit
-                    'd',    0.006774, ...       % [m]   width of the cavity
-                    'n',    1.453683, ...       % [1]   refractive index of the VIPA
+                    'd',    0.006743, ...       % [m]   width of the cavity
+                    'n',    1.4607, ...         % [1]   refractive index of the VIPA
                     'theta',0.8*2*pi/360, ...   % [rad] angle of the VIPA
                     'x0',   0.0021, ...         % [m]   offset for fitting
                     'xs',   1.0000, ...         % [1]   scale factor for fitting

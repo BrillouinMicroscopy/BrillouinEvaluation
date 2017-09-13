@@ -6,8 +6,6 @@ function callbacks = Calibration(model, view)
     
     set(view.calibration.samples, 'Callback', {@selectSample, model});
     
-    set(view.calibration.BrillouinShift, 'Callback', {@setBrillouinShift, model});
-    
     set(view.calibration.selectBrillouin, 'Callback', {@selectPeaks, view, model, 'Brillouin'});
     set(view.calibration.selectRayleigh, 'Callback', {@selectPeaks, view, model, 'Rayleigh'});
     

@@ -34,12 +34,6 @@ function initGUI(model, view)
     imageNr = uicontrol('Parent', parent, 'Style', 'edit', 'Units', 'normalized',...
         'Position', [0.17,0.855,0.07,0.04], 'FontSize', 11, 'HorizontalAlignment', 'center');
 
-    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Brillouin shift [GHz]:', 'Units', 'normalized',...
-        'Position', [0.02,0.815,0.15,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
-
-    BrillouinShift = uicontrol('Parent', parent, 'Style', 'edit', 'Units', 'normalized',...
-        'Position', [0.17,0.812,0.07,0.04], 'FontSize', 11, 'HorizontalAlignment', 'center');
-
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Brillouin peaks:', 'Units', 'normalized',...
         'Position', [0.02,0.765,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
     
@@ -52,7 +46,7 @@ function initGUI(model, view)
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     peakTableBrillouin = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.65 0.22 0.106], ...
-        'ColumnWidth', {86, 87}, 'ColumnName', {'start','end'}, 'FontSize', 12, 'ColumnEditable', true);
+        'ColumnWidth', {40, 40, 75}, 'ColumnName', {'start','end','shift [GHz]'}, 'FontSize', 12, 'ColumnEditable', true);
 
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Rayleigh peaks:', 'Units', 'normalized',...
         'Position', [0.02,0.595,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -66,7 +60,7 @@ function initGUI(model, view)
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     peakTableRayleigh = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.479 0.22 0.106], ...
-        'ColumnWidth', {86, 87}, 'ColumnName', {'start','end'}, 'FontSize', 12, 'ColumnEditable', true);
+        'ColumnWidth', {80, 75}, 'ColumnName', {'start','end'}, 'FontSize', 12, 'ColumnEditable', true);
     
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Start values:', 'Units', 'normalized',...
         'Position', [0.02,0.44,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -184,7 +178,6 @@ function initGUI(model, view)
         'samples', samples, ...
         'imageNrLabel', imageNrLabel, ...
         'imageNr', imageNr, ...
-        'BrillouinShift', BrillouinShift, ...
         'selectBrillouin', selectBrillouin, ...
         'clearBrillouin', clearBrillouin, ...
         'peakTableBrillouin', peakTableBrillouin, ...
@@ -246,11 +239,12 @@ function onSettings(view, model)
         set(handles.imageNrLabel, 'Visible', 'off');
         set(handles.imageNr, 'Visible', 'off');
     end
-    set(handles.BrillouinShift, 'String', sample.shift);
     set(handles.extrapolate, 'Value', model.parameters.calibration.extrapolate);
     set(handles.weighted, 'Value', model.parameters.calibration.weighted);
     set(handles.correctOffset, 'Value', model.parameters.calibration.correctOffset);
-    handles.peakTableBrillouin.Data = sample.indBrillouin;
+    data = sample.indBrillouin;
+    data(:,3) = sample.shift(1);
+    handles.peakTableBrillouin.Data = data;
     handles.peakTableRayleigh.Data = sample.indRayleigh;
     
     if isfield(model.parameters.calibration.samples.(model.parameters.calibration.selected), 'start')
