@@ -261,10 +261,10 @@ function evaluate(view, model)
 
     %% issue warnings when Rayleigh or Brillouin peaks could not be fitted
     if warningRayleigh
-        model.log.log('W/Evaluation: Some Rayleigh peaks could not be fitted.');
+        model.log.log('W', 'Some Rayleigh peaks could not be fitted.');
     end
     if warningBrillouin
-        model.log.log('W/Evaluation: Some Brillouin peaks could not be fitted.');
+        model.log.log('W', 'Some Brillouin peaks could not be fitted.');
     end
                         
     %% interpolate Rayleigh peak position for invalid/saturated peaks

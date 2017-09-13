@@ -15,7 +15,7 @@ function varargout = BrillouinEvaluation
     controllers = controller(model, view);
     
     % add logging class
-    model.log = BE_Utils.Logging.Logging([model.pp filesep 'log.log']);
+    model.log = BE_Utils.Logging.Logging(model.pp, 'log.log');
     model.log.write('');
     model.log.write('#####################################################');
     model.log.log('V/BrillouinEvaluation: Opened program.');
