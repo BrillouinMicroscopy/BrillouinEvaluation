@@ -46,7 +46,8 @@ function callbacks = Calibration(model, view)
         'setActive', @()setActive(view), ...
         'findPeaks', @()findPeaks(model), ...
         'setDefaultParameters', @()setDefaultParameters(model), ...
-        'calibrateAll', @()calibrateAll(model, view) ...
+        'calibrateAll', @()calibrateAll(model, view), ...
+        'updateCalibration', @()updateCalibration(model) ...
     );
 end
 
@@ -491,6 +492,14 @@ end
 function toggleOffsetCorrection(src, ~, model)
     model.parameters.calibration.correctOffset = get(src, 'Value');
     
+    %% calculate the Brillouin shift corresponding to each calibration measurement
+    updateCalibrationBrillouinShift(model);
+    
+    %% calculate the Brillouin shift for the measurements
+    updateMeasurementBrillouinShift(model);
+end
+
+function updateCalibration(model)
     %% calculate the Brillouin shift corresponding to each calibration measurement
     updateCalibrationBrillouinShift(model);
     

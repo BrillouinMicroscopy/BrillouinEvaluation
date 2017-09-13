@@ -39,7 +39,8 @@ controllers.extraction.setActive();
 controllers.extraction.findPeaks();                 % find the Rayleigh and Brillouin peaks
 
 controllers.calibration.setActive();
-controllers.calibration.calibrateAll();       % calibrate the frequency axis using all reference measurements
+% controllers.calibration.updateCalibration();    % allow to update the calibration after setting 'extrapolate' or 'correctOffset'
+controllers.calibration.calibrateAll();         % calibrate the frequency axis using all reference measurements
 
 controllers.peakSelection.setActive();
 % controllers.peakSelection.selectFrequencyRangeRayleigh([275 324], 'pix');       % select the frequency range which should be evaluated
