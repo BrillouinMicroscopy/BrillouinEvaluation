@@ -6,9 +6,9 @@ saveFile = 'EvalData\Brillouin.mat';
 
 %% parameter structure
 % use this configuration for new calibrations with water + methanol
-% peakTypes = {'R', 'B1', 'B2', 'B2', 'B1', 'R', 'NaN'};
+% peakTypes = {'R', 'B', 'B', 'B', 'B', 'R', 'NaN'};
 % use this configuration for old calibrations with only water or methanol
-peakTypes = {'R', 'B1', 'B1', 'R', 'NaN'};
+peakTypes = {'R', 'B', 'B', 'R', 'NaN'};
 
 parameters = struct( ...
     'calibration', struct( ...          % parameters for the calibration

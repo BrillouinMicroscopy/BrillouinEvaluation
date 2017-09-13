@@ -122,12 +122,12 @@ function findPeaks(model)
             % find Rayleigh peaks
             if strcmp(calibration.peakTypes{jj}, 'R')
                 sample.indRayleigh = [sample.indRayleigh; round(peaks.locations(jj) + peaks.widths(jj) * [-3 3])];
-                Rayleigh_int = [Rayleigh_int; peaks.height(jj)]; %#ok<AGROW>
+                Rayleigh_int = [Rayleigh_int; peaks.proms(jj)]; %#ok<AGROW>
             end
             % find Brillouin peaks
-            if strcmp(calibration.peakTypes{jj}, 'B1')
-                sample.indBrillouin = [sample.indBrillouin; round(peaks.locations(jj) + peaks.widths(jj) * [-2 2])];
-                Brillouin_int = [Brillouin_int; peaks.height(jj)]; %#ok<AGROW>
+            if strcmp(calibration.peakTypes{jj}, 'B')
+                sample.indBrillouin = [sample.indBrillouin; round(peaks.locations(jj) + peaks.widths(jj) * [-1.5 1.5])];
+                Brillouin_int = [Brillouin_int; peaks.proms(jj)]; %#ok<AGROW>
             end
         catch
         end
@@ -136,7 +136,14 @@ function findPeaks(model)
     %  if not, there is likely something wrong
     try
         Rayleigh_dif = abs(1 - (Rayleigh_int(1) / Rayleigh_int(2)));
-        Brillouin_dif = abs(1 - (Brillouin_int(1) / Brillouin_int(2)));
+        if ~mod(size(Brillouin_int,1),2)
+            Brillouin_int = reshape(Brillouin_int,[],2);
+            Brillouin_int(2,:) = fliplr(Brillouin_int(2,:));
+            difference = abs(1 - (Brillouin_int(1,:) / Brillouin_int(2,:)));
+            Brillouin_dif = max(difference(:));
+        else
+            Brillouin_dif = 0;
+        end
         if Rayleigh_dif > 0.4 || Brillouin_dif > 0.4
             model.log.log(['E/Calibration: Error: Peak detection of sample "' selectedMeasurement '" likely failed. Please check.']);
         end
