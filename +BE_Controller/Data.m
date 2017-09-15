@@ -289,7 +289,7 @@ function loadData(model, filePath)
                     parameters.calibration.peakProminence = 20;
                 end
                 if ~isfield(parameters.calibration, 'peakTypes')
-                    parameters.calibration.peakTypes = {{'R', 'B', 'B', 'B' ,'B', 'R'}};
+                    parameters.calibration.peakTypes = {'R', 'B', 'B', 'B' ,'B', 'R'};
                 end
                 % set version to 1.1.0 to allow further migration steps
                 % possibly necessary for future versions
