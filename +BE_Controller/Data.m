@@ -282,6 +282,24 @@ function loadData(model, filePath)
                     'preRelease', '' ...
                 );
             end
+            %% migration steps for files coming from versions older than 1.2.0
+            if parameters.programVersion.major <= 1 && (parameters.programVersion.minor < 2 ...
+                    || (parameters.programVersion.minor <= 2 && ~isempty(parameters.programVersion.preRelease)))
+                if ~isfield(parameters.calibration, 'peakProminence')
+                    parameters.calibration.peakProminence = 20;
+                end
+                if ~isfield(parameters.calibration, 'peakTypes')
+                    parameters.calibration.peakTypes = {{'R', 'B', 'B', 'B' ,'B', 'R'}};
+                end
+                % set version to 1.1.0 to allow further migration steps
+                % possibly necessary for future versions
+                parameters.programVersion = struct( ...
+                    'major', 1, ...
+                    'minor', 2, ...
+                    'patch', 0, ...
+                    'preRelease', '' ...
+                );
+            end
             % after all calibration steps, set version to program version
             parameters.programVersion = model.programVersion;
             
