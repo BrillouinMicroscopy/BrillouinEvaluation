@@ -114,6 +114,47 @@ function findPeaks(model)
     
     [peaks.height,peaks.locations,peaks.widths,peaks.proms] = findpeaks(data,'Annotate','extents','MinPeakProminence',calibration.peakProminence);
     
+    %% we want to find the peaks closest to the center of mass
+    %  They are likely the Stokes peaks of the first order and the
+    %  Anti-Stokes peaks of the second order. Since the frequency axis is
+    %  non-linear, we choose the n/2 peaks on the left and n/2 on the right
+    %  of the CoM. Otherwise we might find a peak closer to the CoM which
+    %  does not belong to the wanted ones.
+    
+    % find the center of mass for the spectrum
+    spectrum = data - min(data(:));
+    spectrum(isnan(spectrum)) = 0;
+    CoM = sum(spectrum .* (1:length(spectrum))) / sum(spectrum(:));
+    
+    nrPeaks = length(calibration.peakTypes);
+    nrPeaksLeft = ceil(nrPeaks/2);
+    nrPeaksRight = floor(nrPeaks/2);
+    
+    inds = 1:length(peaks.locations);
+    locs = (peaks.locations - CoM);
+    
+    % peaks left of CoM
+    indsl = inds(locs < 0);
+    nrPeaksLeft = min([nrPeaksLeft length(indsl)]);
+    indsl = sort(indsl, 'descend');
+    indsl = indsl(1:nrPeaksLeft);
+    
+    % peaks right of CoM
+    indsr = inds(locs > 0);
+    nrPeaksRight = min([nrPeaksRight length(indsr)]);
+    indsr = sort(indsr, 'ascend');
+    indsr = indsr(1:nrPeaksRight);
+    
+    % create index array
+    inds = sort([indsl indsr]);
+    
+    % chose selected peaks
+    peaks.locations = peaks.locations(inds);
+    peaks.height = peaks.height(inds);
+    peaks.widths = peaks.widths(inds);
+    peaks.proms = peaks.proms(inds);
+    
+    %% sort the peaks by Rayleigh and Brillouin
     sample.indRayleigh = [];
     sample.indBrillouin = [];
     Rayleigh_int = [];
