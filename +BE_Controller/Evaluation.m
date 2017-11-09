@@ -659,6 +659,10 @@ function startMasking(~, ~, view, model)
         set(parent, 'menubar', 'none', 'Resize','off', 'units', 'pixels');
     end
     
+    if ~isfield(model.results, 'masks')
+        model.results.masks = struct();
+    end
+    
     model.tmp.masks = model.results.masks;
     
     model.displaySettings.masking.autoscale = model.displaySettings.evaluation.autoscale;

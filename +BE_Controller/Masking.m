@@ -239,6 +239,9 @@ end
 function addMask(~, ~, model)
     masks = model.tmp.masks;
     maskFields = fields(masks);
+    if isempty(maskFields)
+        maskFields{1} = 'm00';
+    end
     lastField = maskFields{end};
     jj = 1;
     lastNumber = str2double(lastField(2:end));
