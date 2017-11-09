@@ -74,12 +74,57 @@ function evaluate(view, model)
     % no significant influence.
     exposureTime = 0.5;     % [s]   exposure time of the camera
     
+    
+    %% find the position of the Rayleigh peaks during calibration
+    % this enables evaluating measurements with no valid Rayleigh peaks
+    
+    calibration = model.parameters.calibration;
+    samples = fields(calibration.samples);
+
+    peaksRayleigh_pos_cal = [];
+    caltimes = [];
+    initRayleighPos = NaN;
+    lastValidRayleighPeakPos = NaN;
+    for jj = 1:length(samples)
+        sample = calibration.samples.(samples{jj});
+        if strcmp(sample.sampleType, 'measurement')
+            break;
+        end
+        imgs = model.file.readCalibrationData(sample.position, 'data');
+        imgs(imgs >= (2^16 - 1)) = NaN;
+        date = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+        caltimes = [caltimes, etime(datevec(date),datevec(refTime))]; %#ok<AGROW>
+
+        RayleighPosSample = NaN(size(imgs, 3), 1);
+        for kk = 1:size(imgs,3)
+            spectrum = BE_SharedFunctions.getIntensity1D(imgs(:,:,kk), model.parameters.extraction.interpolationPositions);
+            spectrumSection = spectrum(ind_Rayleigh);
+
+            if ~sum(isnan(spectrumSection))
+                [tmp, ~, ~] = ...
+                    BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
+                 RayleighPosSample(kk) = tmp + min(ind_Rayleigh(:)) - 1;
+            end
+        end
+        peaksRayleigh_pos_cal = [peaksRayleigh_pos_cal, nanmean(RayleighPosSample)]; %#ok<AGROW>
+        initRayleighPos = peaksRayleigh_pos_cal(1);
+        lastValidRayleighPeakPos = peaksRayleigh_pos_cal(1);
+    end
+    
     imgs = model.file.readPayloadData(1, 1, 1, 'data');
-    imgs = medfilt1(imgs,3);
+%     imgs = medfilt1(imgs,3);
     img = imgs(:,:,1);
+    img(img >= (2^16 - 1)) = NaN;
+    
     spectrum = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
     spectrumSection = spectrum(ind_Rayleigh);
-    [initRayleighPos, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
+    
+    if ~sum(isnan(spectrumSection))
+        [initRayleighPos, ~, ~] = ...
+            BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
+        lastValidRayleighPeakPos = initRayleighPos;
+    end
+        
     intensity = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
     peaksBrillouin_pos = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrPeaks);
     peaksBrillouin_dev = peaksBrillouin_pos;
@@ -96,6 +141,7 @@ function evaluate(view, model)
     
 %     spectra = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), size(model.parameters.extraction.interpolationPositions.x,2));
     
+    %% start evaluation
     warningRayleigh = false;
     warningBrillouin = false;
     for jj = 1:1:model.parameters.resolution.X
@@ -188,11 +234,21 @@ function evaluate(view, model)
 
                         [t_vec_sort, sortOrder] = sort(t_vec);
                         peaksRayleigh_pos_vec_sort = peaksRayleigh_pos_vec(sortOrder);
+                        
+                        % concat Rayleigh peak positions from calibration and sort again
+                        t_vec_sort_cal = [t_vec_sort; caltimes(:)];
+                        peaksRayleigh_pos_vec_sort_cal = [peaksRayleigh_pos_vec_sort; peaksRayleigh_pos_cal(:)];
+                        
+                        [t_vec_sort_cal, sortOrderCal] = sort(t_vec_sort_cal);
+                        peaksRayleigh_pos_vec_sort_cal = peaksRayleigh_pos_vec_sort_cal(sortOrderCal);
 
-                        notnan = ~isnan(peaksRayleigh_pos_vec_sort);
+                        % only use not NaN values
+                        notnan = ~isnan(peaksRayleigh_pos_vec_sort_cal);
 
-                        peaksRayleigh_pos_vec_sort_int = interp1(t_vec_sort(notnan), peaksRayleigh_pos_vec_sort(notnan), t_vec_sort);
+                        % actually interpolate
+                        peaksRayleigh_pos_vec_sort_int = interp1(t_vec_sort_cal(notnan), peaksRayleigh_pos_vec_sort_cal(notnan), t_vec_sort);
 
+                        % reverse sorting
                         [~, invSortOrder] = sort(sortOrder);
 
                         peaksRayleigh_pos_vec_sort_int_inv = peaksRayleigh_pos_vec_sort_int(invSortOrder);
@@ -274,10 +330,20 @@ function evaluate(view, model)
     [t_vec_sort, sortOrder] = sort(t_vec);
     peaksRayleigh_pos_vec_sort = peaksRayleigh_pos_vec(sortOrder);
 
-    notnan = ~isnan(peaksRayleigh_pos_vec_sort);
+    % concat Rayleigh peak positions from calibration and sort again
+    t_vec_sort_cal = [t_vec_sort; caltimes(:)];
+    peaksRayleigh_pos_vec_sort_cal = [peaksRayleigh_pos_vec_sort; peaksRayleigh_pos_cal(:)];
 
-    peaksRayleigh_pos_vec_sort_int = interp1(t_vec_sort(notnan), peaksRayleigh_pos_vec_sort(notnan), t_vec_sort);
+    [t_vec_sort_cal, sortOrderCal] = sort(t_vec_sort_cal);
+    peaksRayleigh_pos_vec_sort_cal = peaksRayleigh_pos_vec_sort_cal(sortOrderCal);
 
+    % only use not NaN values
+    notnan = ~isnan(peaksRayleigh_pos_vec_sort_cal);
+    
+    % actually interpolate
+    peaksRayleigh_pos_vec_sort_int = interp1(t_vec_sort_cal(notnan), peaksRayleigh_pos_vec_sort_cal(notnan), t_vec_sort);
+
+    % reverse sorting
     [~, invSortOrder] = sort(sortOrder);
 
     peaksRayleigh_pos_vec_sort_int_inv = peaksRayleigh_pos_vec_sort_int(invSortOrder);

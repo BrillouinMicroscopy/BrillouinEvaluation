@@ -274,7 +274,12 @@ function calibrate(~, ~, model, view)
     end
     
     %% prepare variables for parfoor loop
-    imgs = medfilt1(imgs,3);
+    
+%     imgs = medfilt1(imgs,3);             
+    
+    % set invalid values to NaN
+    imgs(imgs >= (2^16 - 1)) = NaN;
+    
     data = BE_SharedFunctions.getIntensity1D(imgs(:,:,1), model.parameters.extraction.interpolationPositions);
     nrPositions = size(data,2)/0.1;
     calibration.pixels = linspace(1,size(data,2),nrPositions);
