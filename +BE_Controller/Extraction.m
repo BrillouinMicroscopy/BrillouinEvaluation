@@ -49,8 +49,13 @@ function findPeaks(~, ~, model)
         peaks.x = [];
         peaks.y = [];
         % get the image
-        img = model.file.readPayloadData(1, 1, 1, 'data');
-        img = img(:,:,model.parameters.extraction.imageNr);
+        try
+            img = model.file.readCalibrationData(1, 'data');
+            img = img(:,:,model.parameters.extraction.imageNr);
+        catch
+            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = img(:,:,model.parameters.extraction.imageNr);
+        end
         r=70;
         siz=size(img);
         % do a median filtering to prevent finding maxixums which are none,
@@ -220,8 +225,14 @@ end
 
 function optimizePeaks(~, ~, model)
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
-        img = model.file.readPayloadData(1, 1, 1, 'data');
-        img = img(:,:,model.parameters.extraction.imageNr);
+        try
+            img = model.file.readCalibrationData(1, 'data');
+            img = img(:,:,model.parameters.extraction.imageNr);
+        catch
+            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = img(:,:,model.parameters.extraction.imageNr);
+        end
+        
         r=10;
         % do a median filtering to prevent finding maxixums which are none,
         % reduce radius if medfilt2 is not possible (license checkout
@@ -312,8 +323,13 @@ function getInterpolationPositions(model)
 
 %% calculate positions of the interpolation positions
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
-        img = model.file.readPayloadData(1, 1, 1, 'data');
-        img = img(:,:,model.parameters.extraction.imageNr);
+        try
+            img = model.file.readCalibrationData(1, 'data');
+            img = img(:,:,model.parameters.extraction.imageNr);
+        catch
+            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = img(:,:,model.parameters.extraction.imageNr);
+        end
     else
         return;
     end

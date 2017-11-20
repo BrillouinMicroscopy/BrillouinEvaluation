@@ -251,8 +251,13 @@ end
 function onFileLoad(view, model)
     handles = view.extraction;
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
-        img = model.file.readPayloadData(1, 1, 1, 'data');
-        img = img(:,:,model.parameters.extraction.imageNr);
+        try
+            img = model.file.readCalibrationData(1, 'data');
+            img = img(:,:,model.parameters.extraction.imageNr);
+        catch
+            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = img(:,:,model.parameters.extraction.imageNr);
+        end
         handles.imageCamera.CData = img;
         colorbar(handles.axesImage);
         axis(handles.axesImage, [0.5 size(img,2)+0.5 0.5 size(img,1)+0.5]);
@@ -311,7 +316,11 @@ end
 function showInterpolationPositions(handles, model)
 %% clean data for plotting to not show values outside the image
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
-        img = model.file.readPayloadData(1, 1, 1, 'data');
+        try
+            img = model.file.readCalibrationData(1, 'data');
+        catch
+            img = model.file.readPayloadData(1, 1, 1, 'data');
+        end
     else
         return;
     end
