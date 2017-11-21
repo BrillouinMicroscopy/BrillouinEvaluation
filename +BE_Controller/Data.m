@@ -470,6 +470,12 @@ function saveData(model, filePath)
     
     [PathName, FileName, ~] = fileparts(filePath);
     if ~isequal(FileName,0) && ~isequal(PathName,0)
+        
+        %% create directory if non-existent
+        if ~exist(PathName, 'dir')
+            mkdir(PathName);
+        end
+        
         %% set version to program version
         parameters = model.parameters;
         parameters.programVersion = model.programVersion;
