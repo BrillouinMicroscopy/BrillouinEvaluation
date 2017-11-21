@@ -184,16 +184,16 @@ function evaluate(view, model)
 
                         spectrumSection = spectrum(ind_Rayleigh);
                         if ~sum(isnan(spectrumSection))
-                            [peakPos, fwhm, int] = ...
+                            [peakPos, fwhm, int, ~, thres, ~] = ...
                                 BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
                         else
                             [peakPos, fwhm, int] = deal(NaN);
                         end
                         
                         %% check if peak position is valid
-                        if peakPos <= 0 || peakPos >= length(ind_Rayleigh) || isnan(peakPos)
+                        if peakPos <= 0 || peakPos >= length(ind_Rayleigh) || isnan(peakPos) || (int - thres) < model.parameters.evaluation.minRayleighPeakHeight
                             validity_Rayleigh(kk, jj, ll, mm) = false;
-                            [peakPos, fwhm] = deal(NaN);
+                            [peakPos, fwhm, int] = deal(NaN);
                             warningRayleigh = true;
                         else
                             lastValidRayleighPeakPos = peakPos;
