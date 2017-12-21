@@ -23,8 +23,13 @@ function varargout = BrillouinEvaluation
     
     set(view.figure, 'CloseRequestFcn', {@closeGUI, model, view, controllers});
     
-    if nargout
+    controllers.closeGUI = @() closeGUI(0, 0, model, view, controllers);
+    
+    if nargout > 0
         varargout{1} = controllers;
+    end
+    if nargout > 1
+        varargout{2} = model;
     end
 end
 
