@@ -474,10 +474,20 @@ end
 
 function updateMeasurementBrillouinShift(model)
     try
-        wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksRayleigh_pos, model.results.times, model.parameters.calibration);
-        wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromMap(model.results.peaksBrillouin_pos, model.results.times, model.parameters.calibration);
+        wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromMap(...
+            model.results.peaksRayleigh_pos, model.results.times, model.parameters.calibration);
+        wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromMap(...
+            model.results.peaksBrillouin_pos, model.results.times, model.parameters.calibration);
 
         model.results.BrillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
+
+        
+        wavelengthLeftSlope = BE_SharedFunctions.getWavelengthFromMap(...
+            model.results.peaksBrillouin_pos - model.results.peaksBrillouin_fwhm/2, model.results.times, model.parameters.calibration);
+        wavelengthRightSlope = BE_SharedFunctions.getWavelengthFromMap(...
+            model.results.peaksBrillouin_pos + model.results.peaksBrillouin_fwhm/2, model.results.times, model.parameters.calibration);
+
+        model.results.peaksBrillouin_fwhm_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthLeftSlope, wavelengthRightSlope));
     catch
         disp('Please run the evaluation again.');
     end
