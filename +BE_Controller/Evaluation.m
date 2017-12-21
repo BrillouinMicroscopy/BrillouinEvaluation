@@ -255,7 +255,7 @@ function evaluate(view, model)
 
                         peaksRayleigh_pos_interp = reshape(peaksRayleigh_pos_vec_sort_int_inv, size(peaksRayleigh_pos));
 
-                        if model.parameters.evaluation.interpRayleigh;
+                        if model.parameters.evaluation.interpRayleigh
                             peaksRayleigh_pos = peaksRayleigh_pos_interp;
                             validity = validity_Brillouin & ~isnan(peaksRayleigh_pos_interp);
                         else
@@ -350,7 +350,7 @@ function evaluate(view, model)
 
     peaksRayleigh_pos_interp = reshape(peaksRayleigh_pos_vec_sort_int_inv, size(peaksRayleigh_pos));
 
-    if model.parameters.evaluation.interpRayleigh;
+    if model.parameters.evaluation.interpRayleigh
         peaksRayleigh_pos = peaksRayleigh_pos_interp;
         validity = validity_Brillouin & ~isnan(peaksRayleigh_pos_interp);
     else
@@ -498,7 +498,7 @@ function toggleInterpRayleigh(~, ~, view, model)
     
     results = model.results;
     
-    if model.parameters.evaluation.interpRayleigh;
+    if model.parameters.evaluation.interpRayleigh
         peaksRayleigh_pos = results.peaksRayleigh_pos_interp;
         validity = results.validity_Brillouin & ~isnan(results.peaksRayleigh_pos_interp);
     else
