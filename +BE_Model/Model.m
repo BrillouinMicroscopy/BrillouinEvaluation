@@ -68,10 +68,11 @@ classdef Model < handle
                 'pixelSize', 6.5e-6, ...    % [m]   pixel size of the camera
                 'lambda0', 780.24e-9, ...   % [m]   laser wavelength
                 'F', 0.2, ...               % [m]   focal length of the lens behind the VIPA
-                'cavitySlope', -3840 ...    % [pix/m] empirically determinded factor between the
+                'cavitySlope', -3840, ...   % [pix/m] empirically determinded factor between the
                 ...                         %         difference of measured and fitted peak positions
                 ...                         %         (calculated in +BE_Controller\Calibration.m lines 275 ff.)
                 ...                         %         and the VIPA cavity width [see +BE_Controller\Calibration.m:testCavitySlope()]
+                'cavitySlope2', -5830 ...   % same as cavitySlope, but for two pairs of Brillouin peaks
             ), ...
             'extraction', struct( ...
                 'imageNr', 1, ...
@@ -112,11 +113,11 @@ classdef Model < handle
                 'weighted', true, ...
                 'extrapolate', false, ...
                 'correctOffset', false, ...
-                'peakTypes', [], ...            % expected types of peaks
+                'peakTypes', {{'R', 'B', 'B', 'B' ,'B', 'R'}}, ... % expected types of peaks
                 'peakProminence', 20, ...       % the minimal prominence of the peaks (used for finding peaks)
                 'start', struct( ...            % start values for the VIPA fit
-                    'd',    0.006774, ...       % [m]   width of the cavity
-                    'n',    1.453683, ...       % [1]   refractive index of the VIPA
+                    'd',    0.006743, ...       % [m]   width of the cavity
+                    'n',    1.4607, ...         % [1]   refractive index of the VIPA
                     'theta',0.8*2*pi/360, ...   % [rad] angle of the VIPA
                     'x0',   0.0021, ...         % [m]   offset for fitting
                     'xs',   1.0000, ...         % [1]   scale factor for fitting
@@ -131,7 +132,8 @@ classdef Model < handle
             'evaluation', struct( ...
                 'fwhm', 5, ...              % [pix] initial value for the FWHM of the Brillouin peak
                 'gap', 10, ...              % [pix] minimum x and y distance of maxima to the edges of the image
-                'interpRayleigh', true, ... % [bool] whether or not invalid Rayleigh peak positions (e.g. due to saturation) should be interpolated 
+                'interpRayleigh', true, ... % [bool] whether or not invalid Rayleigh peak positions (e.g. due to saturation) should be interpolated
+                'minRayleighPeakHeight', 50, ... % [1] minimum Rayleigh peak height
                 'rotationAngle', NaN, ...   % [degree]          angle of rotation
                 'centerx', 800, ...         % [pix]             x-center of the image
                 'centery', 860, ...         % [pix]             y-center of the image

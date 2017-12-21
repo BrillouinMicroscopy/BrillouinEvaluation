@@ -6,9 +6,9 @@ saveFile = 'EvalData\Brillouin.mat';
 
 %% parameter structure
 % use this configuration for new calibrations with water + methanol
-% peakTypes = {'R', 'B1', 'B2', 'B2', 'B1', 'R', 'NaN'};
+% peakTypes = {'R', 'B', 'B', 'B', 'B', 'R', 'NaN'};
 % use this configuration for old calibrations with only water or methanol
-peakTypes = {'R', 'B1', 'B1', 'R', 'NaN'};
+peakTypes = {'R', 'B', 'B', 'R', 'NaN'};
 
 parameters = struct( ...
     'calibration', struct( ...          % parameters for the calibration
@@ -39,7 +39,8 @@ controllers.extraction.setActive();
 controllers.extraction.findPeaks();                 % find the Rayleigh and Brillouin peaks
 
 controllers.calibration.setActive();
-controllers.calibration.calibrateAll();       % calibrate the frequency axis using all reference measurements
+% controllers.calibration.updateCalibration();    % allow to update the calibration after setting 'extrapolate' or 'correctOffset'
+controllers.calibration.calibrateAll();         % calibrate the frequency axis using all reference measurements
 
 controllers.peakSelection.setActive();
 % controllers.peakSelection.selectFrequencyRangeRayleigh([275 324], 'pix');       % select the frequency range which should be evaluated

@@ -34,12 +34,6 @@ function initGUI(model, view)
     imageNr = uicontrol('Parent', parent, 'Style', 'edit', 'Units', 'normalized',...
         'Position', [0.17,0.855,0.07,0.04], 'FontSize', 11, 'HorizontalAlignment', 'center');
 
-    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Brillouin shift [GHz]:', 'Units', 'normalized',...
-        'Position', [0.02,0.815,0.15,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
-
-    BrillouinShift = uicontrol('Parent', parent, 'Style', 'edit', 'Units', 'normalized',...
-        'Position', [0.17,0.812,0.07,0.04], 'FontSize', 11, 'HorizontalAlignment', 'center');
-
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Brillouin peaks:', 'Units', 'normalized',...
         'Position', [0.02,0.765,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
     
@@ -52,7 +46,7 @@ function initGUI(model, view)
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     peakTableBrillouin = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.65 0.22 0.106], ...
-        'ColumnWidth', {86, 87}, 'ColumnName', {'start','end'}, 'FontSize', 12, 'ColumnEditable', true);
+        'ColumnWidth', {40, 40, 75}, 'ColumnName', {'start','end','shift [GHz]'}, 'FontSize', 12, 'ColumnEditable', true);
 
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Rayleigh peaks:', 'Units', 'normalized',...
         'Position', [0.02,0.595,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -66,7 +60,7 @@ function initGUI(model, view)
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     peakTableRayleigh = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.479 0.22 0.106], ...
-        'ColumnWidth', {86, 87}, 'ColumnName', {'start','end'}, 'FontSize', 12, 'ColumnEditable', true);
+        'ColumnWidth', {80, 75}, 'ColumnName', {'start','end'}, 'FontSize', 12, 'ColumnEditable', true);
     
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Start values:', 'Units', 'normalized',...
         'Position', [0.02,0.44,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -184,7 +178,6 @@ function initGUI(model, view)
         'samples', samples, ...
         'imageNrLabel', imageNrLabel, ...
         'imageNr', imageNr, ...
-        'BrillouinShift', BrillouinShift, ...
         'selectBrillouin', selectBrillouin, ...
         'clearBrillouin', clearBrillouin, ...
         'peakTableBrillouin', peakTableBrillouin, ...
@@ -246,11 +239,12 @@ function onSettings(view, model)
         set(handles.imageNrLabel, 'Visible', 'off');
         set(handles.imageNr, 'Visible', 'off');
     end
-    set(handles.BrillouinShift, 'String', sample.shift);
     set(handles.extrapolate, 'Value', model.parameters.calibration.extrapolate);
     set(handles.weighted, 'Value', model.parameters.calibration.weighted);
     set(handles.correctOffset, 'Value', model.parameters.calibration.correctOffset);
-    handles.peakTableBrillouin.Data = sample.indBrillouin;
+    data = sample.indBrillouin;
+    data(:,3) = sample.shift(1);
+    handles.peakTableBrillouin.Data = data;
     handles.peakTableRayleigh.Data = sample.indRayleigh;
     
     if isfield(model.parameters.calibration.samples.(model.parameters.calibration.selected), 'start')
@@ -287,8 +281,10 @@ function updateBrillouinShifts(view, model)
     if isfield(view.calibration, 'BrillouinShiftView') && ishandle(view.calibration.BrillouinShiftView)
         calibration = model.parameters.calibration;
 
-        BrillouinShifts = NaN(1,2);
-        BrillouinShifts_mean = BrillouinShifts;
+        BrillouinShiftsS = NaN(1,2);
+        BrillouinShiftsAS = BrillouinShiftsS;
+        BrillouinShiftsS_mean = BrillouinShiftsS;
+        BrillouinShiftsAS_mean = BrillouinShiftsAS;
         calibrationFrequency = NaN(1,1);
 
         sampleNames = fields(calibration.samples);
@@ -298,29 +294,51 @@ function updateBrillouinShifts(view, model)
             if isfield(sample, 'BrillouinShift')
                 shift = sample.BrillouinShift;
                 nrImages = size(shift,1);
-                BrillouinShifts((totalImages + (1:nrImages)), :) = shift;
-                BrillouinShifts_mean((totalImages + (1:nrImages)), :) = repmat(nanmean(shift,1), nrImages, 1);
-                calibrationFrequency((totalImages + (1:nrImages)), 1) = ones(nrImages,1) * sample.shift;
+                for kk = 1:length(sample.shift)
+                    BrillouinShiftsS((totalImages + (1:nrImages)), kk) = shift(:,kk);
+                    BrillouinShiftsAS((totalImages + (1:nrImages)), kk) = shift(:,end-kk+1);
+                    BrillouinShiftsS_mean((totalImages + (1:nrImages)), kk) = repmat(nanmean(shift(:,kk),1), nrImages, 1);
+                    BrillouinShiftsAS_mean((totalImages + (1:nrImages)), kk) = repmat(nanmean(shift(:,end-kk+1),1), nrImages, 1);
+                end
+                calibrationFrequency((totalImages + (1:nrImages)), 1:length(sample.shift)) = ones(nrImages,1) * sample.shift;
             else
                 nrImages = 1;
-                BrillouinShifts((totalImages + (1:nrImages)), :) = NaN(nrImages,2);
-                BrillouinShifts_mean((totalImages + (1:nrImages)), :) = NaN(nrImages,2);
+                BrillouinShiftsS((totalImages + (1:nrImages)), :) = NaN;
+                BrillouinShiftsAS((totalImages + (1:nrImages)), :) = NaN;
+                BrillouinShiftsS_mean((totalImages + (1:nrImages)), :) = NaN;
+                BrillouinShiftsAS_mean((totalImages + (1:nrImages)), :) = NaN;
             end
             totalImages = totalImages + nrImages;
         end
+
+        BrillouinShiftsS(BrillouinShiftsS == 0) = NaN;
+        BrillouinShiftsAS(BrillouinShiftsAS == 0) = NaN;
+        BrillouinShiftsS_mean(BrillouinShiftsS_mean == 0) = NaN;
+        BrillouinShiftsAS_mean(BrillouinShiftsAS_mean == 0) = NaN;
+        calibrationFrequency(calibrationFrequency == 0) = NaN;
         
         ax = view.calibration.BrillouinShiftView.CurrentAxes;
-        hold(ax,'off');
-        plot(ax, BrillouinShifts);
+        hold(ax, 'off');
+        Stokes = plot(ax, BrillouinShiftsS, 'color', [0 0.4470 0.7410]);
         hold(ax, 'on');
-        ax.ColorOrderIndex = 1;
-        plot(ax,BrillouinShifts_mean, 'LineStyle', '--', 'LineWidth', 0.8);
-        plot(ax,calibrationFrequency);
-        xlabel(ax,'Calibration image #');
-        ylabel(ax,'$f$ [GHz]', 'interpreter', 'latex');
-        if sum(~isnan(BrillouinShifts(:)))
-            legend(ax,'Stokes Peak', 'AntiStokes Peak', 'Stokes Peak Mean', 'AntiStokes Peak Mean', 'Calibration Frequency');
+        Stokes_m = plot(ax, BrillouinShiftsS_mean, 'LineStyle', '--', 'LineWidth', 0.8, 'color', [0 0.4470 0.7410]);
+        AntiStokes = plot(ax, BrillouinShiftsAS, 'color', [0.9290 0.6940 0.1250]);
+        AntiStokes_m = plot(ax, BrillouinShiftsAS_mean, 'LineStyle', '--', 'LineWidth', 0.8, 'color', [0.9290 0.6940 0.1250]);
+        ax.ColorOrderIndex = 3;
+        calibration = plot(ax, calibrationFrequency, 'color', [0.8500 0.3250 0.0980]);
+        xlabel(ax, 'Calibration image #');
+        ylabel(ax, '$f$ [GHz]', 'interpreter', 'latex');
+        if sum(~isnan(BrillouinShiftsS(:)))
+    %         leg = legend('Stokes Peak', 'AntiStokes Peak', 'Stokes Peak Mean', 'AntiStokes Peak Mean', 'Calibration Frequency');
+            leg = legend(ax, [Stokes(1); Stokes_m(1); AntiStokes(1); AntiStokes_m(1); calibration(1)], ...
+                'Stokes Peak', 'Stokes Peak Mean', 'AntiStokes Peak', 'AntiStokes Peak Mean', 'Calibration Frequency');
+            if size(BrillouinShiftsS_mean,2) > 1
+                set(leg, 'Location', 'East');
+            else
+                set(leg, 'Location', 'NorthEast');
+            end
         end
+        
     end
 end
 
