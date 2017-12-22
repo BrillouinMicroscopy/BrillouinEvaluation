@@ -45,7 +45,7 @@ function closeGUI(~, ~, model, view, controllers)
     controllers.data.closeFile();
     model.log.write('=====================================================');
     model.log.log('V/BrillouinEvaluation: Closed program.');
-    delete(gcf);
+    delete(view.figure);
 end
 
 function controllers = controller(model, view)
