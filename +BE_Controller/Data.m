@@ -294,6 +294,9 @@ function loadData(model, filePath)
                 if ~isfield(parameters.evaluation, 'peakTypes')
                     parameters.evaluation.minRayleighPeakHeight = 50;
                 end
+                if ~isfield(parameters.extraction, 'currentCalibrationNr')
+                    parameters.extraction.currentCalibrationNr = 1;
+                end
                 % set version to 1.1.0 to allow further migration steps
                 % possibly necessary for future versions
                 parameters.programVersion = struct( ...

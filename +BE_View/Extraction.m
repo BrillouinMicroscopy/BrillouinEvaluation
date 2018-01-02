@@ -39,8 +39,17 @@ function initGUI(model, view)
         'String','Clear','Position',[0.14,0.815,0.1,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
-    peakTable = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.465 0.22 0.3], ...
+    peakTable = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.62 0.22 0.18], ...
         'ColumnWidth', {86, 87}, 'ColumnName', {'x','y'}, 'FontSize', 12);
+    
+    uicontrol('Parent', parent, 'Style', 'text', 'Units', 'normalized', 'String', 'Calibration number:', ...
+        'Position', [0.02,0.57,0.2,0.03], 'FontSize', 11, 'HorizontalAlignment', 'left');
+    
+    calibrationSlider = javax.swing.JSlider;
+    calibrationSlider.setEnabled(true);
+    javacomponent(calibrationSlider,[18,300,198,50],parent);
+    set(calibrationSlider, 'MajorTickSpacing', 1, 'PaintLabels', true, 'PaintTicks', true, 'Minimum', 1, 'Maximum', 10);
+    calibrationSlider.setValue(model.parameters.extraction.currentCalibrationNr);
     
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Width of the fit [pix]:', 'Units', 'normalized',...
         'Position', [0.02,0.385,0.17,0.03], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -189,6 +198,7 @@ function initGUI(model, view)
         'clearPeaks', clearPeaks, ...
         'autoPeaks', autoPeaks, ...
         'peakTable', peakTable, ...
+        'calibrationSlider', calibrationSlider, ...
         'autoscale', autoscale, ...
         'cap', cap, ...
         'floor', floor, ...
@@ -252,7 +262,7 @@ function onFileLoad(view, model)
     handles = view.extraction;
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(1, 'data');
+            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
@@ -285,6 +295,10 @@ end
 
 function onSettingsChange(view, model)
     handles = view.extraction;
+    % set number of calibrations
+    f = fields(model.parameters.calibration.samples);
+    nrs = max([length(f)-1, 1]);
+    set(handles.calibrationSlider, 'Maximum', nrs);
     if model.displaySettings.extraction.autoscale
         caxis(handles.axesImage,'auto');
     else
@@ -295,6 +309,17 @@ function onSettingsChange(view, model)
     set(handles.floor, 'String', model.displaySettings.extraction.floor);
     
     set(handles.width, 'String', model.parameters.extraction.width);
+    
+    if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
+        try
+            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
+            img = img(:,:,model.parameters.extraction.imageNr);
+        catch
+            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = img(:,:,model.parameters.extraction.imageNr);
+        end
+        handles.imageCamera.CData = img;
+    end
     
     set(handles.extractionAxisGroup,'SelectedObject',findall(handles.extractionAxis, 'String', model.parameters.extraction.extractionAxis));
     set(handles.interpolationDirectionGroup,'SelectedObject',findall(handles.interpolationDirection, 'String', model.parameters.extraction.interpolationDirection));
@@ -317,7 +342,7 @@ function showInterpolationPositions(handles, model)
 %% clean data for plotting to not show values outside the image
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(1, 'data');
+            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
         end

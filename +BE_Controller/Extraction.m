@@ -7,6 +7,8 @@ function callbacks = Extraction(model, view)
     set(view.extraction.clearPeaks, 'Callback', {@clearPeaks, model});
     set(view.extraction.autoPeaks, 'Callback', {@findPeaks, model});
     
+    set(view.extraction.calibrationSlider, 'StateChangedCallback', {@selectCalibration, model});
+    
     set(view.extraction.extractionAxis, 'Callback', {@changeSettings, view, model});
     set(view.extraction.interpolationDirection, 'Callback', {@changeSettings, view, model});
     
@@ -41,6 +43,10 @@ function setActive(view)
     tabgroup.SelectedTab = view.extraction.parent;
 end
 
+function selectCalibration(src, ~, model)
+    model.parameters.extraction.currentCalibrationNr = get(src, 'Value');
+end
+
 function findPeaks(~, ~, model)
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
 
@@ -50,7 +56,7 @@ function findPeaks(~, ~, model)
         peaks.y = [];
         % get the image
         try
-            img = model.file.readCalibrationData(1, 'data');
+            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
@@ -226,7 +232,7 @@ end
 function optimizePeaks(~, ~, model)
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(1, 'data');
+            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
@@ -324,7 +330,7 @@ function getInterpolationPositions(model)
 %% calculate positions of the interpolation positions
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(1, 'data');
+            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
