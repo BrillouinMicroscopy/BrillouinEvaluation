@@ -298,7 +298,15 @@ function loadData(model, filePath)
                     parameters.extraction.currentCalibrationNr = 1;
                 end
                 if ~isfield(parameters.extraction, 'times')
-                    parameters.extraction.times = NaN;
+                    % for previous version this is the time of the first
+                    % calibration measurement
+                    try
+                        parameters.extraction.times = parameters.calibration.times(1);
+                    catch
+                    % if that doesn't work, fall back to default value (no
+                    % huge difference)
+                        parameters.extraction.times = 0;
+                    end
                 end
                 if ~isfield(parameters, 'exposureTime')
                     parameters.exposureTime = 0.5;
