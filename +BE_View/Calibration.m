@@ -361,18 +361,25 @@ function plotData(handles, model)
     selectedMeasurement = calibration.selected;
     sample = calibration.samples.(selectedMeasurement); % selected sample
     
+    refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    
     mm = 1;     % selected image
     %% Plot
     ax = handles.axesImage;
     if strcmp(selectedMeasurement, 'measurement')
         imgs = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'data');
+        datestring = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'date');
     else
         imgs = model.file.readCalibrationData(sample.position, 'data');
+        datestring = model.file.readCalibrationData(sample.position, 'date');
     end
+    date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    time = etime(datevec(date),datevec(refTime));
+    
     imgs = medfilt1(imgs,3);
     img = imgs(:,:,mm);
-    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
-    if ~isempty(data);
+    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
+    if ~isempty(data)
         hold(ax, 'off');
         xLabelString = '$f$ [pix]';
         

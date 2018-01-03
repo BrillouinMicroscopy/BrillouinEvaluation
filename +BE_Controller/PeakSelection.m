@@ -48,7 +48,7 @@ function selectFrequencyRange(model, type, range, units)
     date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
     time = etime(datevec(date),datevec(refTime));
 
-    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
+    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
     if ~isempty(data)
         % if units is GHz then calculate the indices from the calibrated
         % frequency axis

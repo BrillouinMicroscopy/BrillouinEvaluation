@@ -63,17 +63,10 @@ function evaluate(view, model)
     ind_Rayleigh = model.parameters.peakSelection.Rayleigh(1,1):model.parameters.peakSelection.Rayleigh(1,2);
     ind_Brillouin = model.parameters.peakSelection.Brillouin(1,1):model.parameters.peakSelection.Brillouin(1,2);
     
-    startTime = model.file.date;
-    refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
     
     nrPeaks = 1;
     parameters.peaks = [6 20];
-    % The hardcoded value for the exposure time needs to be read from the
-    % raw data file once available. For now 0.5 s will do, since it is only
-    % used for interpolating the Rayleigh peak position and +- 0.5 s have
-    % no significant influence.
-    exposureTime = 0.5;     % [s]   exposure time of the camera
-    
     
     %% find the position of the Rayleigh peaks during calibration
     % this enables evaluating measurements with no valid Rayleigh peaks
@@ -93,11 +86,12 @@ function evaluate(view, model)
         imgs = model.file.readCalibrationData(sample.position, 'data');
         imgs(imgs >= (2^16 - 1)) = NaN;
         date = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
-        caltimes = [caltimes, etime(datevec(date),datevec(refTime))]; %#ok<AGROW>
+        time = etime(datevec(date),datevec(refTime));
+        caltimes = [caltimes, time]; %#ok<AGROW>
 
         RayleighPosSample = NaN(size(imgs, 3), 1);
         for kk = 1:size(imgs,3)
-            spectrum = BE_SharedFunctions.getIntensity1D(imgs(:,:,kk), model.parameters.extraction.interpolationPositions);
+            spectrum = BE_SharedFunctions.getIntensity1D(imgs(:,:,kk), model.parameters.extraction, time);
             spectrumSection = spectrum(ind_Rayleigh);
 
             if ~sum(isnan(spectrumSection))
@@ -112,11 +106,13 @@ function evaluate(view, model)
     end
     
     imgs = model.file.readPayloadData(1, 1, 1, 'data');
+    datestring = model.file.readPayloadData(1, 1, 1, 'date');
+    date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    time = etime(datevec(date),datevec(refTime));
 %     imgs = medfilt1(imgs,3);
     img = imgs(:,:,1);
     img(img >= (2^16 - 1)) = NaN;
-    
-    spectrum = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
+    spectrum = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
     spectrumSection = spectrum(ind_Rayleigh);
     
     if ~sum(isnan(spectrumSection))
@@ -164,7 +160,8 @@ function evaluate(view, model)
                     date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
 
                     for mm = 1:size(imgs,3)
-                        times(kk, jj, ll, mm) = etime(datevec(date),datevec(refTime)) + (mm-1) * exposureTime;
+                        time = etime(datevec(date),datevec(refTime)) + (mm-1) * model.parameters.exposureTime;
+                        times(kk, jj, ll, mm) = time;
                         if ~model.status.evaluation.evaluate
                             break
                         end
@@ -178,7 +175,7 @@ function evaluate(view, model)
                         %% set invalid values to NaN
                         img(img >= (2^16 - 1)) = NaN;
                         
-                        spectrum = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
+                        spectrum = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
                         
 %                         spectra(kk, jj, ll, mm, :) = spectrum;
 
@@ -611,9 +608,14 @@ function ImageClickCallback(~, event, model)
     
     [~, ll] = min(abs(z_lin-position.Z));
     
-    imgs = model.file.readPayloadData(jj, kk, ll, 'data');
+    refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
     
-    spectrum = BE_SharedFunctions.getIntensity1D(imgs(:,:,1), model.parameters.extraction.interpolationPositions);
+    imgs = model.file.readPayloadData(jj, kk, ll, 'data');
+    datestring = model.file.readPayloadData(jj, kk, ll, 'date');
+    date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    time = etime(datevec(date),datevec(refTime));
+    
+    spectrum = BE_SharedFunctions.getIntensity1D(imgs(:,:,1), model.parameters.extraction, time);
     
     figure(123);
     imagesc(imgs(:,:,1));

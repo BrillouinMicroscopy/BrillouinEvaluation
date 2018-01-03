@@ -361,18 +361,22 @@ function showInterpolationPositions(handles, model)
     end
 
 %% plot
-    handles.plotCenters.XData = centers.x;
-    handles.plotCenters.YData = centers.y;
-    if ~isempty(borders.x) && ~isempty(borders.y)
-        set(handles.plotBorders, {'XData'}, num2cell(borders.x,2));
-        set(handles.plotBorders, {'YData'}, num2cell(borders.y,2));
-    else
-        set(handles.plotBorders, {'XData'}, {[];[]});
-        set(handles.plotBorders, {'YData'}, {[];[]});
-    end
     try
-        delete(model.handles.plotPositions);
+        calNr = model.parameters.extraction.currentCalibrationNr;
+        handles.plotCenters.XData = centers.x(:,:,calNr);
+        handles.plotCenters.YData = centers.y(:,:,calNr);
+        if ~isempty(borders.x) && ~isempty(borders.y)
+            set(handles.plotBorders, {'XData'}, num2cell(borders.x(:,:,calNr),2));
+            set(handles.plotBorders, {'YData'}, num2cell(borders.y(:,:,calNr),2));
+        else
+            set(handles.plotBorders, {'XData'}, {[];[]});
+            set(handles.plotBorders, {'YData'}, {[];[]});
+        end
+        try
+            delete(model.handles.plotPositions);
+        catch
+        end
+        model.handles.plotPositions = plot(handles.axesImage, positions.x(:,:,calNr), positions.y(:,:,calNr), 'color', 'yellow');
     catch
     end
-    model.handles.plotPositions = plot(handles.axesImage, positions.x, positions.y, 'color', 'yellow');
 end

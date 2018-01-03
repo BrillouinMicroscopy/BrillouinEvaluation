@@ -51,7 +51,7 @@ function findPeaks(~, ~, model)
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
 
         % first clear all existing peaks
-        clearPeaks(0, 0, model);
+%         clearPeaks(0, 0, model);
         peaks.x = [];
         peaks.y = [];
         % get the image
@@ -329,13 +329,17 @@ function getInterpolationPositions(model)
 
 %% calculate positions of the interpolation positions
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
+        refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
         try
             img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
+            datestring = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'date');
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
+            datestring = model.file.readPayloadData(1, 1, 1, 'date');
         end
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
     else
         return;
     end
@@ -407,9 +411,14 @@ function getInterpolationPositions(model)
     positions.y = repmat(borders.y(1,:),width,1) + repmat(diff(borders.y,1,1),width,1)./(width-1) .* steps;
     
     extraction = model.parameters.extraction;
-    extraction.interpolationCenters = centers;
-    extraction.interpolationBorders = borders;
-    extraction.interpolationPositions = positions;
+    cal = extraction.currentCalibrationNr;
+    extraction.interpolationCenters.x(:,:,cal) = centers.x;
+    extraction.interpolationCenters.y(:,:,cal) = centers.y;
+    extraction.interpolationBorders.x(:,:,cal) = borders.x;
+    extraction.interpolationBorders.y(:,:,cal) = borders.y;
+    extraction.interpolationPositions.x(:,:,cal) = positions.x;
+    extraction.interpolationPositions.y(:,:,cal) = positions.y;
+    extraction.times(cal) = etime(datevec(date),datevec(refTime));
     model.parameters.extraction = extraction;
 end
 

@@ -297,6 +297,12 @@ function loadData(model, filePath)
                 if ~isfield(parameters.extraction, 'currentCalibrationNr')
                     parameters.extraction.currentCalibrationNr = 1;
                 end
+                if ~isfield(parameters.extraction, 'times')
+                    parameters.extraction.times = NaN;
+                end
+                if ~isfield(parameters, 'exposureTime')
+                    parameters.exposureTime = 0.5;
+                end
                 % set version to 1.1.0 to allow further migration steps
                 % possibly necessary for future versions
                 parameters.programVersion = struct( ...

@@ -195,8 +195,8 @@ function plotData(handles, model)
     date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
     time = etime(datevec(date),datevec(refTime));
     
-    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
-    if ~isempty(data);
+    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
+    if ~isempty(data)
         hold(ax, 'off');
         xLabelString = '$f$ [pix]';
         
