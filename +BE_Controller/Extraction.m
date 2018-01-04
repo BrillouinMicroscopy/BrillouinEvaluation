@@ -132,7 +132,7 @@ function findPeaks(~, ~, model)
         peaks.y = peaks.y(order);
         
         % store new peak positions
-        model.parameters.extraction.peaks = peaks;
+        model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks = peaks;
         % optimize the peak position
         optimizePeaks(0, 0, model);
         model.log.log('I/Extraction: Extraction successful.');
@@ -197,11 +197,11 @@ end
 function getpoints(~, ~, view, model)
     % manually select the peaks of the spectrum
     cp = get(view.extraction.axesImage,'CurrentPoint');
-    x = model.parameters.extraction.peaks.x;
+    x = model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks.x;
     x = [x cp(1,1)];
-    y = model.parameters.extraction.peaks.y;
+    y = model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks.y;
     y = [y cp(1,2)];
-    model.parameters.extraction.peaks = struct( ...
+    model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks = struct( ...
         'x', x, ...
         'y', y ...
     );
@@ -210,7 +210,7 @@ end
 
 function clearPeaks(~, ~, model)
     extraction = model.parameters.extraction;
-    extraction.peaks = struct( ...
+    extraction.calibrations(extraction.currentCalibrationNr).peaks = struct( ...
         'x', [], ...
         'y', [] ...
     );
@@ -248,7 +248,7 @@ function optimizePeaks(~, ~, model)
         catch
             r = 4;
         end
-        peaks = model.parameters.extraction.peaks;
+        peaks = model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks;
         siz=size(img);
         for jj = 1:length(peaks.x)
             cx=peaks.x(jj);
@@ -260,7 +260,7 @@ function optimizePeaks(~, ~, model)
             [~, ind] = max(tmp(:));
             [peaks.y(jj),peaks.x(jj)] = ind2sub(siz,ind);
         end
-        model.parameters.extraction.peaks = peaks;
+        model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks = peaks;
     end
     fitSpectrum(model);
 end
@@ -285,8 +285,8 @@ end
 
 function fitSpectrum(model)
 
-    newxb = model.parameters.extraction.peaks.x;
-    newdata2b = model.parameters.extraction.peaks.y;
+    newxb = model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks.x;
+    newdata2b = model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks.y;
     circleStart = model.parameters.extraction.circleStart;
     
     if ~sum(isnan(newxb)) && ~sum(isnan(newdata2b)) && ~sum(isnan(circleStart))
@@ -294,7 +294,7 @@ function fitSpectrum(model)
         model2b = @(params) circleError(params, newxb, newdata2b, -1);
         [estimates2b, ~, ~, ~] = fitCircle(model2b, newxb, circleStart);
 
-        model.parameters.extraction.circleFit = estimates2b;
+        model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).circleFit = estimates2b;
     end
     
     getInterpolationPositions(model);
@@ -343,7 +343,7 @@ function getInterpolationPositions(model)
     else
         return;
     end
-    params = model.parameters.extraction.circleFit;
+    params = model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).circleFit;
     width = model.parameters.extraction.width;
     
     centers.x = 1:size(img,2);

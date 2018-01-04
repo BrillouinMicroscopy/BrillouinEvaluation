@@ -308,8 +308,28 @@ function loadData(model, filePath)
                         parameters.extraction.times = 0;
                     end
                 end
+                if ~isfield(parameters.extraction, 'calibrations')
+                    parameters.extraction.calibrations(1) = struct( ...
+                        'peaks', struct( ...                        % position of the peaks for localising the spectrum
+                            'x', parameters.extraction.peaks.x, ... % [pix] x-position
+                            'y', parameters.extraction.peaks.y ...  % [pix] y-position
+                        ), ...
+                        'circleFit', parameters.extraction.circleFit ...
+                    );
+                    parameters.extraction = rmfield(parameters.extraction, 'peaks');
+                    parameters.extraction = rmfield(parameters.extraction, 'circleFit');
+                end
                 if ~isfield(parameters, 'exposureTime')
                     parameters.exposureTime = 0.5;
+                end
+                if isfield(parameters.extraction, 'r0')
+                    parameters.extraction = rmfield(parameters.extraction, 'r0');
+                end
+                if isfield(parameters.extraction, 'x0')
+                    parameters.extraction = rmfield(parameters.extraction, 'x0');
+                end
+                if isfield(parameters.extraction, 'y0')
+                    parameters.extraction = rmfield(parameters.extraction, 'y0');
                 end
                 % set version to 1.1.0 to allow further migration steps
                 % possibly necessary for future versions

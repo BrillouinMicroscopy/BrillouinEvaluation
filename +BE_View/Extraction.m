@@ -308,32 +308,41 @@ function onSettingsChange(view, model)
     set(handles.cap, 'String', model.displaySettings.extraction.cap);
     set(handles.floor, 'String', model.displaySettings.extraction.floor);
     
-    set(handles.width, 'String', model.parameters.extraction.width);
+    extraction = model.parameters.extraction;
+    set(handles.width, 'String', extraction.width);
     
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
-            img = img(:,:,model.parameters.extraction.imageNr);
+            img = model.file.readCalibrationData(extraction.currentCalibrationNr, 'data');
+            img = img(:,:,extraction.imageNr);
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
-            img = img(:,:,model.parameters.extraction.imageNr);
+            img = img(:,:,extraction.imageNr);
         end
         handles.imageCamera.CData = img;
     end
     
-    set(handles.extractionAxisGroup,'SelectedObject',findall(handles.extractionAxis, 'String', model.parameters.extraction.extractionAxis));
-    set(handles.interpolationDirectionGroup,'SelectedObject',findall(handles.interpolationDirection, 'String', model.parameters.extraction.interpolationDirection));
+    set(handles.extractionAxisGroup,'SelectedObject',findall(handles.extractionAxis, 'String', extraction.extractionAxis));
+    set(handles.interpolationDirectionGroup,'SelectedObject',findall(handles.interpolationDirection, 'String', extraction.interpolationDirection));
     
-    if ~sum(isnan(model.parameters.extraction.peaks.x)) && ~sum(isnan(model.parameters.extraction.peaks.y))
-        handles.peakTable.Data = transpose([model.parameters.extraction.peaks.x; model.parameters.extraction.peaks.y]);
-        handles.plotPeaks.XData = model.parameters.extraction.peaks.x;
-        handles.plotPeaks.YData = model.parameters.extraction.peaks.y;
-%         fitSpectrum(model);
-%         if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
-%             getInterpolationPositions(handles, model);
-%         end
-    else
+    try
+        if ~sum(isnan(extraction.calibrations(extraction.currentCalibrationNr).peaks.x)) && ...
+           ~sum(isnan(extraction.calibrations(extraction.currentCalibrationNr).peaks.y))
+            handles.peakTable.Data = transpose([extraction.calibrations(extraction.currentCalibrationNr).peaks.x; ...
+                extraction.calibrations(extraction.currentCalibrationNr).peaks.y]);
+            handles.plotPeaks.XData = extraction.calibrations(extraction.currentCalibrationNr).peaks.x;
+            handles.plotPeaks.YData = extraction.calibrations(extraction.currentCalibrationNr).peaks.y;
+    %         fitSpectrum(model);
+    %         if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
+    %             getInterpolationPositions(handles, model);
+    %         end
+        else
+            error('No peaks available');
+        end
+    catch
         handles.peakTable.Data = [];
+        handles.plotPeaks.XData = [];
+        handles.plotPeaks.YData = [];
     end
     showInterpolationPositions(handles, model);
 end
