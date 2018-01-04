@@ -299,6 +299,7 @@ function onSettingsChange(view, model)
     f = fields(model.parameters.calibration.samples);
     nrs = max([length(f)-1, 1]);
     set(handles.calibrationSlider, 'Maximum', nrs);
+    set(handles.calibrationSlider, 'Value', model.parameters.extraction.currentCalibrationNr);
     if model.displaySettings.extraction.autoscale
         caxis(handles.axesImage,'auto');
     else
