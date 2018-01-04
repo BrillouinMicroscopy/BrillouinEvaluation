@@ -214,18 +214,12 @@ function clearPeaks(~, ~, model)
         'x', [], ...
         'y', [] ...
     );
-    extraction.interpolationCenters = struct( ...
-        'x', [], ...        % [pix] x-position
-        'y', [] ...         % [pix] y-position
-    );
-    extraction.interpolationBorders = struct( ...
-        'x', [], ...        % [pix] x-position
-        'y', [] ...         % [pix] y-position
-    );
-    extraction.interpolationPositions = struct( ...
-        'x', [], ...        % [pix] x-position
-        'y', [] ...         % [pix] y-position
-    );
+    extraction.interpolationCenters.x(:,:,extraction.currentCalibrationNr) = NaN;
+    extraction.interpolationCenters.y(:,:,extraction.currentCalibrationNr) = NaN;
+    extraction.interpolationBorders.x(:,:,extraction.currentCalibrationNr) = NaN;
+    extraction.interpolationBorders.y(:,:,extraction.currentCalibrationNr) = NaN;
+    extraction.interpolationPositions.x(:,:,extraction.currentCalibrationNr) = NaN;
+    extraction.interpolationPositions.y(:,:,extraction.currentCalibrationNr) = NaN;
     model.parameters.extraction = extraction;
 end
 
