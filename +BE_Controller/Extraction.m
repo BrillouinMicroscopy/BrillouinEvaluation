@@ -279,8 +279,24 @@ function changeSettings(~, ~, view, model)
     
     extraction.width = str2double(get(view.extraction.width, 'String'));
     
+    %% clear interpolation variables and recalculate them
+    extraction.interpolationCenters = struct( ...
+        'x', [], ...        % [pix] x-position
+        'y', [] ...         % [pix] y-position
+    );
+    extraction.interpolationBorders = struct( ...
+        'x', [], ...        % [pix] x-position
+        'y', [] ...         % [pix] y-position
+    );
+    extraction.interpolationPositions = struct( ...
+        'x', [], ...        % [pix] x-position
+        'y', [] ...         % [pix] y-position
+    );
     model.parameters.extraction = extraction;
-    getInterpolationPositions(model);
+    
+    for currentCalibrationNr = 1:10
+        getInterpolationPositions(model, currentCalibrationNr);
+    end
 end
 
 function fitSpectrum(model)
@@ -325,15 +341,21 @@ function [y] = circle(params, x, sign)
     y(imag(y) ~=0) = NaN;
 end
 
-function getInterpolationPositions(model)
+function getInterpolationPositions(varargin)
+    model = varargin{1};
+    if nargin < 2
+        currentCalibrationNr = model.parameters.extraction.currentCalibrationNr;
+    else
+        currentCalibrationNr = varargin{2};
+    end
 
 %% calculate positions of the interpolation positions
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
         try
-            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
+            img = model.file.readCalibrationData(currentCalibrationNr, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
-            datestring = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'date');
+            datestring = model.file.readCalibrationData(currentCalibrationNr, 'date');
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
@@ -343,7 +365,7 @@ function getInterpolationPositions(model)
     else
         return;
     end
-    params = model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).circleFit;
+    params = model.parameters.extraction.calibrations(currentCalibrationNr).circleFit;
     width = model.parameters.extraction.width;
     
     centers.x = 1:size(img,2);
@@ -411,14 +433,13 @@ function getInterpolationPositions(model)
     positions.y = repmat(borders.y(1,:),width,1) + repmat(diff(borders.y,1,1),width,1)./(width-1) .* steps;
     
     extraction = model.parameters.extraction;
-    cal = extraction.currentCalibrationNr;
-    extraction.interpolationCenters.x(:,:,cal) = centers.x;
-    extraction.interpolationCenters.y(:,:,cal) = centers.y;
-    extraction.interpolationBorders.x(:,:,cal) = borders.x;
-    extraction.interpolationBorders.y(:,:,cal) = borders.y;
-    extraction.interpolationPositions.x(:,:,cal) = positions.x;
-    extraction.interpolationPositions.y(:,:,cal) = positions.y;
-    extraction.times(cal) = etime(datevec(date),datevec(refTime));
+    extraction.interpolationCenters.x(:,:,currentCalibrationNr) = centers.x;
+    extraction.interpolationCenters.y(:,:,currentCalibrationNr) = centers.y;
+    extraction.interpolationBorders.x(:,:,currentCalibrationNr) = borders.x;
+    extraction.interpolationBorders.y(:,:,currentCalibrationNr) = borders.y;
+    extraction.interpolationPositions.x(:,:,currentCalibrationNr) = positions.x;
+    extraction.interpolationPositions.y(:,:,currentCalibrationNr) = positions.y;
+    extraction.times(currentCalibrationNr) = etime(datevec(date),datevec(refTime));
     model.parameters.extraction = extraction;
 end
 

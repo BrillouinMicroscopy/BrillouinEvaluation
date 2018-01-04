@@ -6,7 +6,7 @@ function [intensity] = getIntensity1D(img, extraction, time)
         x = 1:size(positions.x,1);
         y = 1:size(positions.x,2);
 
-        [X, Y, T] = meshgrid(y, x, extraction.times);
+        [X, Y, T] = meshgrid(y, x, extraction.times(1:size(positions.x,3)));
 
         time = time*ones(size(Y(:,:,1)));
         
