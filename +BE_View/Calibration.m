@@ -442,10 +442,17 @@ function plotData(handles, model)
             ylim(ax, [model.displaySettings.calibration.floor model.displaySettings.calibration.cap]);
         end
         validx = x(~isnan(data));
-        xlim(ax, [min(validx(:)) max(validx(:))]);
+        mi = min(validx(:));
+        ma = max(validx(:));
+        if mi < ma
+            xlim(ax, [mi ma]);
+        end
         zoom(ax, 'reset');
         xlabel(ax, xLabelString, 'interpreter', 'latex');
         ylabel(ax, '$I$ [a.u.]', 'interpreter', 'latex');
+    else
+        hold(ax, 'off');
+        model.handles.calibration.plotSpectrum = plot(ax, NaN, NaN);
     end
 end
 

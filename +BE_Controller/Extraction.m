@@ -3,11 +3,14 @@ function callbacks = Extraction(model, view)
 
     %% callbacks Calibration
     set(view.extraction.selectPeaks, 'Callback', {@selectPeaks, view, model});
-    set(view.extraction.optimizePeaks, 'Callback', {@optimizePeaks, model});
+    set(view.extraction.optimizePeaks, 'Callback', {@optimizePeaksCallback, model});
     set(view.extraction.clearPeaks, 'Callback', {@clearPeaks, model});
-    set(view.extraction.autoPeaks, 'Callback', {@findPeaks, model});
+    set(view.extraction.autoPeaks, 'Callback', {@findPeaksSingle, model});
     
     set(view.extraction.calibrationSlider, 'StateChangedCallback', {@selectCalibration, model});
+    
+    set(view.extraction.clearPeaksAll, 'Callback', {@clearPeaksAll, model});
+    set(view.extraction.autoPeaksAll, 'Callback', {@findPeaksAll, model});
     
     set(view.extraction.extractionAxis, 'Callback', {@changeSettings, view, model});
     set(view.extraction.interpolationDirection, 'Callback', {@changeSettings, view, model});
@@ -34,7 +37,8 @@ function callbacks = Extraction(model, view)
     
     callbacks = struct( ...
         'setActive', @()setActive(view), ...
-        'findPeaks', @()findPeaks(0, 0, model) ...
+        'findPeaks', @()findPeaksSingle(0, 0, model), ...
+        'findPeaksAll', @()findPeaksAll(0, 0, model) ...
     );
 end
 
@@ -47,16 +51,25 @@ function selectCalibration(src, ~, model)
     model.parameters.extraction.currentCalibrationNr = get(src, 'Value');
 end
 
-function findPeaks(~, ~, model)
-    if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
+function findPeaksSingle(~, ~, model)
+    findPeaks(model);
+end
 
-        % first clear all existing peaks
-%         clearPeaks(0, 0, model);
+function findPeaks(varargin)
+    model = varargin{1};
+    if nargin < 2
+        currentCalibrationNr = model.parameters.extraction.currentCalibrationNr;
+    else
+        currentCalibrationNr = varargin{2};
+    end
+    
+    if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
+        % found peaks
         peaks.x = [];
         peaks.y = [];
         % get the image
         try
-            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
+            img = model.file.readCalibrationData(currentCalibrationNr, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
@@ -132,10 +145,19 @@ function findPeaks(~, ~, model)
         peaks.y = peaks.y(order);
         
         % store new peak positions
-        model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks = peaks;
+        model.parameters.extraction.calibrations(currentCalibrationNr).peaks = peaks;
         % optimize the peak position
-        optimizePeaks(0, 0, model);
+        optimizePeaks(model, currentCalibrationNr);
         model.log.log('I/Extraction: Extraction successful.');
+    end
+end
+
+function findPeaksAll(~, ~, model)
+    % number of calibrations
+    f = fields(model.parameters.calibration.samples);
+    nrs = max([length(f)-1, 1]);
+    for currentCalibrationNr = 1:nrs
+        findPeaks(model, currentCalibrationNr);
     end
 end
 
@@ -223,10 +245,46 @@ function clearPeaks(~, ~, model)
     model.parameters.extraction = extraction;
 end
 
-function optimizePeaks(~, ~, model)
+function clearPeaksAll(~, ~, model)
+    extraction = model.parameters.extraction;
+    extraction.calibrations = struct( ...
+        'peaks', struct( ...% position of the peaks for localising the spectrum
+            'x', [], ...    % [pix] x-position
+            'y', [] ...     % [pix] y-position
+        ), ...
+        'circleFit', [] ...
+    );
+    extraction.interpolationCenters = struct( ...
+        'x', [], ...        % [pix] x-position
+        'y', [] ...         % [pix] y-position
+    );
+    extraction.interpolationBorders = struct( ...
+        'x', [], ...        % [pix] x-position
+        'y', [] ...         % [pix] y-position
+    );
+    extraction.interpolationPositions = struct( ...
+        'x', [], ...        % [pix] x-position
+        'y', [] ...         % [pix] y-position
+    );
+    extraction.times = [];
+    model.parameters.extraction = extraction;
+end
+
+function optimizePeaksCallback(~, ~, model)
+    optimizePeaks(model);
+end
+
+function optimizePeaks(varargin)
+    model = varargin{1};
+    if nargin < 2
+        currentCalibrationNr = model.parameters.extraction.currentCalibrationNr;
+    else
+        currentCalibrationNr = varargin{2};
+    end
+    
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
+            img = model.file.readCalibrationData(currentCalibrationNr, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
@@ -242,7 +300,7 @@ function optimizePeaks(~, ~, model)
         catch
             r = 4;
         end
-        peaks = model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks;
+        peaks = model.parameters.extraction.calibrations(currentCalibrationNr).peaks;
         siz=size(img);
         for jj = 1:length(peaks.x)
             cx=peaks.x(jj);
@@ -254,9 +312,9 @@ function optimizePeaks(~, ~, model)
             [~, ind] = max(tmp(:));
             [peaks.y(jj),peaks.x(jj)] = ind2sub(siz,ind);
         end
-        model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks = peaks;
+        model.parameters.extraction.calibrations(currentCalibrationNr).peaks = peaks;
     end
-    fitSpectrum(model);
+    fitSpectrum(model, currentCalibrationNr);
 end
 
 function changeSettings(~, ~, view, model)
@@ -288,15 +346,24 @@ function changeSettings(~, ~, view, model)
     );
     model.parameters.extraction = extraction;
     
-    for currentCalibrationNr = 1:10
+    % number of calibrations
+    f = fields(model.parameters.calibration.samples);
+    nrs = max([length(f)-1, 1]);
+    for currentCalibrationNr = 1:nrs
         getInterpolationPositions(model, currentCalibrationNr);
     end
 end
 
-function fitSpectrum(model)
+function fitSpectrum(varargin)
+    model = varargin{1};
+    if nargin < 2
+        currentCalibrationNr = model.parameters.extraction.currentCalibrationNr;
+    else
+        currentCalibrationNr = varargin{2};
+    end
 
-    newxb = model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks.x;
-    newdata2b = model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks.y;
+    newxb = model.parameters.extraction.calibrations(currentCalibrationNr).peaks.x;
+    newdata2b = model.parameters.extraction.calibrations(currentCalibrationNr).peaks.y;
     circleStart = model.parameters.extraction.circleStart;
     
     if ~sum(isnan(newxb)) && ~sum(isnan(newdata2b)) && ~sum(isnan(circleStart))
@@ -304,10 +371,10 @@ function fitSpectrum(model)
         model2b = @(params) circleError(params, newxb, newdata2b, -1);
         [estimates2b, ~, ~, ~] = fitCircle(model2b, newxb, circleStart);
 
-        model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).circleFit = estimates2b;
+        model.parameters.extraction.calibrations(currentCalibrationNr).circleFit = estimates2b;
     end
     
-    getInterpolationPositions(model);
+    getInterpolationPositions(model, currentCalibrationNr);
 
     function [estimates2b, model2b, newxb, FittedCurve2b] = fitCircle(model2b, newxb, start)
 
