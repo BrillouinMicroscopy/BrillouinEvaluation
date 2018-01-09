@@ -37,7 +37,7 @@ function [ lambda ] = getWavelengthFromMap( peakPos, time, calibration)
             if calibration.extrapolate
                 peakPos_offset = interp2(peaksOffset, times, offset, peakPos, time, 'spline');
             else
-                peakPos_offset = interp2(peaksOffset, times, offset, peakPos, time, 'spline', NaN);
+                peakPos_offset = interp2(peaksOffset, times, offset, peakPos, time, 'linear', NaN);
             end
         elseif size(offset,1) > 1
             [peaksOffset, times] = meshgrid(calibration.pixels, times_valid.');
@@ -70,7 +70,7 @@ function [ lambda ] = getWavelengthFromMap( peakPos, time, calibration)
         if calibration.extrapolate
             lambda = interp2(pixels, times, wavelengths_valid, peakPos, time, 'spline');
         else
-            lambda = interp2(pixels, times, wavelengths_valid, peakPos, time, 'spline', NaN);
+            lambda = interp2(pixels, times, wavelengths_valid, peakPos, time, 'linear', NaN);
         end
     elseif size(wavelengths_valid,1) > 1
         [pixels, times] = meshgrid(calibration.pixels, times_valid);
