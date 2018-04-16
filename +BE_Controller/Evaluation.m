@@ -136,7 +136,6 @@ function evaluate(view, model)
     validity_Brillouin = validity;
     
 %     spectra = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), size(model.parameters.extraction.interpolationPositions.x,2));
-    
     %% start evaluation
     warningRayleigh = false;
     warningBrillouin = false;

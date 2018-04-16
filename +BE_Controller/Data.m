@@ -416,10 +416,10 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
             if ~isempty(sampleType)
                 hasCalibration = true;
             end
-            sampleKey = sampleType;
+            sampleKey = matlab.lang.makeValidName(sampleType);
             kk = 0;
             while isfield(samples, sampleKey)
-                sampleKey = [sampleType sprintf('_%02d', kk)];
+                sampleKey = [matlab.lang.makeValidName(sampleType) sprintf('_%02d', kk)];
                 kk = kk + 1;
             end
             data = model.file.readCalibrationData(jj,'data');
