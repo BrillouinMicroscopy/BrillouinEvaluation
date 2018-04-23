@@ -63,7 +63,11 @@ function evaluate(view, model)
     ind_Rayleigh = model.parameters.peakSelection.Rayleigh(1,1):model.parameters.peakSelection.Rayleigh(1,2);
     ind_Brillouin = model.parameters.peakSelection.Brillouin(1,1):model.parameters.peakSelection.Brillouin(1,2);
     
-    refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    try
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
     
     nrPeaks = 1;
     parameters.peaks = [6 20];
@@ -85,7 +89,11 @@ function evaluate(view, model)
         end
         imgs = model.file.readCalibrationData(sample.position, 'data');
         imgs(imgs >= (2^16 - 1)) = NaN;
-        date = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+        try
+            date = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+        catch
+            date = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+        end
         time = etime(datevec(date),datevec(refTime));
         caltimes = [caltimes, time]; %#ok<AGROW>
 
@@ -107,7 +115,12 @@ function evaluate(view, model)
     
     imgs = model.file.readPayloadData(1, 1, 1, 'data');
     datestring = model.file.readPayloadData(1, 1, 1, 'date');
-    date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    try
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
+    
     time = etime(datevec(date),datevec(refTime));
 %     imgs = medfilt1(imgs,3);
     img = imgs(:,:,1);
@@ -156,7 +169,11 @@ function evaluate(view, model)
                     imgs = model.file.readPayloadData(jj, kk, ll, 'data');
                     
                     datestring = model.file.readPayloadData(jj, kk, ll, 'date');
-                    date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+                    try
+                        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+                    catch
+                        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+                    end
 
                     for mm = 1:size(imgs,3)
                         time = etime(datevec(date),datevec(refTime)) + (mm-1) * model.parameters.exposureTime;
@@ -607,11 +624,19 @@ function ImageClickCallback(~, event, model)
     
     [~, ll] = min(abs(z_lin-position.Z));
     
-    refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    try
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
     
     imgs = model.file.readPayloadData(jj, kk, ll, 'data');
     datestring = model.file.readPayloadData(jj, kk, ll, 'date');
-    date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    try
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
     time = etime(datevec(date),datevec(refTime));
     
     spectrum = BE_SharedFunctions.getIntensity1D(imgs(:,:,1), model.parameters.extraction, time);

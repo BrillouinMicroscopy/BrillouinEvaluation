@@ -425,7 +425,11 @@ function getInterpolationPositions(varargin)
 
 %% calculate positions of the interpolation positions
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
-        refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+        try
+            refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+        catch
+            refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+        end
         try
             img = model.file.readCalibrationData(currentCalibrationNr, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
@@ -435,7 +439,11 @@ function getInterpolationPositions(varargin)
             img = img(:,:,model.parameters.extraction.imageNr);
             datestring = model.file.readPayloadData(1, 1, 1, 'date');
         end
-        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+        try
+            date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+        catch
+            date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+        end
     else
         return;
     end

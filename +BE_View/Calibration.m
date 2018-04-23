@@ -361,7 +361,11 @@ function plotData(handles, model)
     selectedMeasurement = calibration.selected;
     sample = calibration.samples.(selectedMeasurement); % selected sample
     
-    refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    try
+        refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
     
     mm = 1;     % selected image
     %% Plot
@@ -373,7 +377,11 @@ function plotData(handles, model)
         imgs = model.file.readCalibrationData(sample.position, 'data');
         datestring = model.file.readCalibrationData(sample.position, 'date');
     end
-    date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    try
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
     time = etime(datevec(date),datevec(refTime));
     
     imgs = medfilt1(imgs,3);

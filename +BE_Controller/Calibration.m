@@ -101,7 +101,11 @@ function findPeaks(model)
     selectedMeasurement = calibration.selected;
     sample = calibration.samples.(selectedMeasurement); % selected sample
     
-	refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    try
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
     
     mm = 1;     % selected image
     %% Plot
@@ -112,7 +116,11 @@ function findPeaks(model)
         imgs = model.file.readCalibrationData(sample.position, 'data');
         datestring = model.file.readCalibrationData(sample.position, 'date');
     end
-    date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    try
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
     time = etime(datevec(date), datevec(refTime));
     
     imgs = medfilt1(imgs,3);
@@ -234,9 +242,14 @@ function calibrate(~, ~, model, view)
     end
     sample = calibration.samples.(selectedMeasurement); % selected sample
     
-    %% 
-	refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
-	datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    %%
+    try
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+        datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+        datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
 	calibration.times(sample.position) = etime(datevec(datestring), datevec(refTime));
     
     if ~isfield(sample, 'start')
@@ -251,7 +264,11 @@ function calibrate(~, ~, model, view)
         imgs = model.file.readCalibrationData(sample.position, 'data');
         datestring = model.file.readCalibrationData(sample.position, 'date');
     end
-    date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    try
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
     time = etime(datevec(date), datevec(refTime));
     
     indRayleigh = sample.indRayleigh;
@@ -513,12 +530,20 @@ function updateCalibrationBrillouinShift(model)
     
     %%
     startTime = model.file.date;
-    refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    try
+        refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
     
     for jj = 1:length(samples)
         sample = calibration.samples.(samples{jj});
         if ~isempty(sample.peaksMeasured)
-            datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+            try
+                datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+            catch
+                datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+            end
             calibration.times(sample.position) = etime(datevec(datestring),datevec(refTime));
             times = calibration.times(sample.position) * ones(size(sample.peaksMeasured));
             wavelengths = BE_SharedFunctions.getWavelengthFromMap(sample.peaksMeasured, times, calibration);
