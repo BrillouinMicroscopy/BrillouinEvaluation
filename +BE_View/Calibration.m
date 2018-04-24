@@ -361,18 +361,33 @@ function plotData(handles, model)
     selectedMeasurement = calibration.selected;
     sample = calibration.samples.(selectedMeasurement); % selected sample
     
+    try
+        refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
+    
     mm = 1;     % selected image
     %% Plot
     ax = handles.axesImage;
     if strcmp(selectedMeasurement, 'measurement')
         imgs = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'data');
+        datestring = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'date');
     else
         imgs = model.file.readCalibrationData(sample.position, 'data');
+        datestring = model.file.readCalibrationData(sample.position, 'date');
     end
+    try
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
+    time = etime(datevec(date),datevec(refTime));
+    
     imgs = medfilt1(imgs,3);
     img = imgs(:,:,mm);
-    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
-    if ~isempty(data);
+    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
+    if ~isempty(data)
         hold(ax, 'off');
         xLabelString = '$f$ [pix]';
         
@@ -435,10 +450,17 @@ function plotData(handles, model)
             ylim(ax, [model.displaySettings.calibration.floor model.displaySettings.calibration.cap]);
         end
         validx = x(~isnan(data));
-        xlim(ax, [min(validx(:)) max(validx(:))]);
+        mi = min(validx(:));
+        ma = max(validx(:));
+        if mi < ma
+            xlim(ax, [mi ma]);
+        end
         zoom(ax, 'reset');
         xlabel(ax, xLabelString, 'interpreter', 'latex');
         ylabel(ax, '$I$ [a.u.]', 'interpreter', 'latex');
+    else
+        hold(ax, 'off');
+        model.handles.calibration.plotSpectrum = plot(ax, NaN, NaN);
     end
 end
 

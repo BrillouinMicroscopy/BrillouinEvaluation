@@ -43,12 +43,17 @@ function selectFrequencyRange(model, type, range, units)
     img = imgs(:,:,1);
 
     startTime = model.file.date;
-    refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
     datestring = model.file.readPayloadData(1, 1, 1, 'date');
-    date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    try
+        refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
     time = etime(datevec(date),datevec(refTime));
 
-    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
+    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
     if ~isempty(data)
         % if units is GHz then calculate the indices from the calibrated
         % frequency axis

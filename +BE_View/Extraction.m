@@ -18,39 +18,59 @@ function Extraction(view, model)
 end
 
 function initGUI(model, view)
+
     parent = view.extraction.parent;
 
-    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Peaks:', 'Units', 'normalized',...
+    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Individual image number:', 'Units', 'normalized',...
         'Position', [0.02,0.94,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
+    
+    calibrationSlider = javax.swing.JSlider;
+    calibrationSlider.setEnabled(true);
+    javacomponent(calibrationSlider,[18,535,198,50],parent);
+    set(calibrationSlider, 'MajorTickSpacing', 1, 'PaintLabels', true, 'PaintTicks', true, 'Minimum', 1, 'Maximum', 10);
+    calibrationSlider.setValue(model.parameters.extraction.currentCalibrationNr);
 
     manualPeaks = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
-        'String','Select','Position',[0.02,0.885,0.1,0.055],...
-        'FontSize', 11, 'HorizontalAlignment', 'left');
-    
-    autoPeaks = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
-        'String','Autofind','Position',[0.14,0.885,0.1,0.055],...
+        'String','Select','Position',[0.02,0.800,0.1,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     optimizePeaks = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
-        'String','Optimize','Position',[0.02,0.815,0.1,0.055],...
+        'String','Optimize','Position',[0.14,0.800,0.1,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     clearPeaks = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
-        'String','Clear','Position',[0.14,0.815,0.1,0.055],...
+        'String','Clear','Position',[0.02,0.735,0.1,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
-    peakTable = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.465 0.22 0.3], ...
+    autoPeaks = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
+        'String','Autofind','Position',[0.14,0.735,0.1,0.055],...
+        'FontSize', 11, 'HorizontalAlignment', 'left');
+    
+    peakTable = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.540 0.22 0.18], ...
         'ColumnWidth', {86, 87}, 'ColumnName', {'x','y'}, 'FontSize', 12);
     
+    
+
+    uicontrol('Parent', parent, 'Style', 'text', 'String', 'General:', 'Units', 'normalized',...
+        'Position', [0.02,0.47,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
+    
+    clearPeaksAll = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
+        'String','Clear','Position',[0.02,0.410,0.1,0.055],...
+        'FontSize', 11, 'HorizontalAlignment', 'left');
+    
+    autoPeaksAll = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
+        'String','Autofind','Position',[0.14,0.410,0.1,0.055],...
+        'FontSize', 11, 'HorizontalAlignment', 'left');
+    
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Width of the fit [pix]:', 'Units', 'normalized',...
-        'Position', [0.02,0.385,0.17,0.03], 'FontSize', 11, 'HorizontalAlignment', 'left');
+        'Position', [0.02,0.355,0.17,0.03], 'FontSize', 11, 'HorizontalAlignment', 'left');
     width = uicontrol('Parent', parent, 'Style', 'edit', 'Units', 'normalized',...
-        'Position', [0.17,0.375,0.07,0.05], 'FontSize', 11, 'HorizontalAlignment', 'center');
+        'Position', [0.17,0.345,0.07,0.05], 'FontSize', 11, 'HorizontalAlignment', 'center');
     
     % extraction axis selection
     extractionAxisGroup = uibuttongroup(parent, 'Units', 'normalized',...
         'Title','Extraction axis',...
-        'Position', [0.02 0.22 0.105 0.14]);
+        'Position', [0.02 0.20 0.105 0.14]);
     % Create three radio buttons in the button group.
     extractionAxis(1) = uicontrol(extractionAxisGroup,'Style','radiobutton',...
         'String','x',...
@@ -65,7 +85,7 @@ function initGUI(model, view)
     % interpolation direction
     interpolationDirectionGroup = uibuttongroup(parent, 'Units', 'normalized',...
         'Title','Interpol. direction',...
-        'Position', [0.135 0.22 0.105 0.14]);
+        'Position', [0.135 0.20 0.105 0.14]);
     % Create three radio buttons in the button group.
     interpolationDirection(1) = uicontrol(interpolationDirectionGroup,'Style','radiobutton',...
         'String','x',...
@@ -186,9 +206,12 @@ function initGUI(model, view)
         'zoomHandle', zoomHandle, ...
         'selectPeaks', manualPeaks, ...
         'optimizePeaks', optimizePeaks, ...
-        'clearPeaks', clearPeaks, ...
         'autoPeaks', autoPeaks, ...
+        'autoPeaksAll', autoPeaksAll, ...
+        'clearPeaks', clearPeaks, ...
+        'clearPeaksAll', clearPeaksAll, ...
         'peakTable', peakTable, ...
+        'calibrationSlider', calibrationSlider, ...
         'autoscale', autoscale, ...
         'cap', cap, ...
         'floor', floor, ...
@@ -252,7 +275,7 @@ function onFileLoad(view, model)
     handles = view.extraction;
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(1, 'data');
+            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
@@ -285,6 +308,11 @@ end
 
 function onSettingsChange(view, model)
     handles = view.extraction;
+    % set number of calibrations
+    f = fields(model.parameters.calibration.samples);
+    nrs = max([length(f)-1, 1]);
+    set(handles.calibrationSlider, 'Maximum', nrs);
+    set(handles.calibrationSlider, 'Value', model.parameters.extraction.currentCalibrationNr);
     if model.displaySettings.extraction.autoscale
         caxis(handles.axesImage,'auto');
     else
@@ -294,21 +322,41 @@ function onSettingsChange(view, model)
     set(handles.cap, 'String', model.displaySettings.extraction.cap);
     set(handles.floor, 'String', model.displaySettings.extraction.floor);
     
-    set(handles.width, 'String', model.parameters.extraction.width);
+    extraction = model.parameters.extraction;
+    set(handles.width, 'String', extraction.width);
     
-    set(handles.extractionAxisGroup,'SelectedObject',findall(handles.extractionAxis, 'String', model.parameters.extraction.extractionAxis));
-    set(handles.interpolationDirectionGroup,'SelectedObject',findall(handles.interpolationDirection, 'String', model.parameters.extraction.interpolationDirection));
+    if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
+        try
+            img = model.file.readCalibrationData(extraction.currentCalibrationNr, 'data');
+            img = img(:,:,extraction.imageNr);
+        catch
+            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = img(:,:,extraction.imageNr);
+        end
+        handles.imageCamera.CData = img;
+    end
     
-    if ~sum(isnan(model.parameters.extraction.peaks.x)) && ~sum(isnan(model.parameters.extraction.peaks.y))
-        handles.peakTable.Data = transpose([model.parameters.extraction.peaks.x; model.parameters.extraction.peaks.y]);
-        handles.plotPeaks.XData = model.parameters.extraction.peaks.x;
-        handles.plotPeaks.YData = model.parameters.extraction.peaks.y;
-%         fitSpectrum(model);
-%         if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
-%             getInterpolationPositions(handles, model);
-%         end
-    else
+    set(handles.extractionAxisGroup,'SelectedObject',findall(handles.extractionAxis, 'String', extraction.extractionAxis));
+    set(handles.interpolationDirectionGroup,'SelectedObject',findall(handles.interpolationDirection, 'String', extraction.interpolationDirection));
+    
+    try
+        if ~sum(isnan(extraction.calibrations(extraction.currentCalibrationNr).peaks.x)) && ...
+           ~sum(isnan(extraction.calibrations(extraction.currentCalibrationNr).peaks.y))
+            handles.peakTable.Data = transpose([extraction.calibrations(extraction.currentCalibrationNr).peaks.x; ...
+                extraction.calibrations(extraction.currentCalibrationNr).peaks.y]);
+            handles.plotPeaks.XData = extraction.calibrations(extraction.currentCalibrationNr).peaks.x;
+            handles.plotPeaks.YData = extraction.calibrations(extraction.currentCalibrationNr).peaks.y;
+    %         fitSpectrum(model);
+    %         if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
+    %             getInterpolationPositions(handles, model);
+    %         end
+        else
+            error('No peaks available');
+        end
+    catch
         handles.peakTable.Data = [];
+        handles.plotPeaks.XData = [];
+        handles.plotPeaks.YData = [];
     end
     showInterpolationPositions(handles, model);
 end
@@ -317,7 +365,7 @@ function showInterpolationPositions(handles, model)
 %% clean data for plotting to not show values outside the image
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(1, 'data');
+            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
         end
@@ -336,18 +384,22 @@ function showInterpolationPositions(handles, model)
     end
 
 %% plot
-    handles.plotCenters.XData = centers.x;
-    handles.plotCenters.YData = centers.y;
-    if ~isempty(borders.x) && ~isempty(borders.y)
-        set(handles.plotBorders, {'XData'}, num2cell(borders.x,2));
-        set(handles.plotBorders, {'YData'}, num2cell(borders.y,2));
-    else
-        set(handles.plotBorders, {'XData'}, {[];[]});
-        set(handles.plotBorders, {'YData'}, {[];[]});
-    end
     try
-        delete(model.handles.plotPositions);
+        calNr = model.parameters.extraction.currentCalibrationNr;
+        handles.plotCenters.XData = centers.x(:,:,calNr);
+        handles.plotCenters.YData = centers.y(:,:,calNr);
+        if ~isempty(borders.x) && ~isempty(borders.y)
+            set(handles.plotBorders, {'XData'}, num2cell(borders.x(:,:,calNr),2));
+            set(handles.plotBorders, {'YData'}, num2cell(borders.y(:,:,calNr),2));
+        else
+            set(handles.plotBorders, {'XData'}, {[];[]});
+            set(handles.plotBorders, {'YData'}, {[];[]});
+        end
+        try
+            delete(model.handles.plotPositions);
+        catch
+        end
+        model.handles.plotPositions = plot(handles.axesImage, positions.x(:,:,calNr), positions.y(:,:,calNr), 'color', 'yellow');
     catch
     end
-    model.handles.plotPositions = plot(handles.axesImage, positions.x, positions.y, 'color', 'yellow');
 end

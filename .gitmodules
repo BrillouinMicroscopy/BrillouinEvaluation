@@ -1,6 +1,6 @@
 [submodule "+Utils/+HDF5Storage"]
 	path = +BE_Utils/+HDF5Storage
-	url = https://gitlab.rschluessler.com/BrillouinMicroscopy/HDF5Storage.git
+	url = https://github.com/BrillouinMicroscopy/h5bm.git
 [submodule "+Utils/+FittingScripts"]
 	path = +BE_Utils/+FittingScripts
 	url = https://gitlab.rschluessler.com/BrillouinMicroscopy/FittingScripts.git

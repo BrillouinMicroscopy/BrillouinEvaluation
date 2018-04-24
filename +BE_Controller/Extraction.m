@@ -3,9 +3,14 @@ function callbacks = Extraction(model, view)
 
     %% callbacks Calibration
     set(view.extraction.selectPeaks, 'Callback', {@selectPeaks, view, model});
-    set(view.extraction.optimizePeaks, 'Callback', {@optimizePeaks, model});
+    set(view.extraction.optimizePeaks, 'Callback', {@optimizePeaksCallback, model});
     set(view.extraction.clearPeaks, 'Callback', {@clearPeaks, model});
-    set(view.extraction.autoPeaks, 'Callback', {@findPeaks, model});
+    set(view.extraction.autoPeaks, 'Callback', {@findPeaksSingle, model});
+    
+    set(view.extraction.calibrationSlider, 'StateChangedCallback', {@selectCalibration, model});
+    
+    set(view.extraction.clearPeaksAll, 'Callback', {@clearPeaksAll, model});
+    set(view.extraction.autoPeaksAll, 'Callback', {@findPeaksAll, model});
     
     set(view.extraction.extractionAxis, 'Callback', {@changeSettings, view, model});
     set(view.extraction.interpolationDirection, 'Callback', {@changeSettings, view, model});
@@ -32,7 +37,8 @@ function callbacks = Extraction(model, view)
     
     callbacks = struct( ...
         'setActive', @()setActive(view), ...
-        'findPeaks', @()findPeaks(0, 0, model) ...
+        'findPeaks', @()findPeaksSingle(0, 0, model), ...
+        'findPeaksAll', @()findPeaksAll(0, 0, model) ...
     );
 end
 
@@ -41,95 +47,130 @@ function setActive(view)
     tabgroup.SelectedTab = view.extraction.parent;
 end
 
-function findPeaks(~, ~, model)
-    if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
+function selectCalibration(src, ~, model)
+    model.parameters.extraction.currentCalibrationNr = get(src, 'Value');
+end
 
-        % first clear all existing peaks
-        clearPeaks(0, 0, model);
-        peaks.x = [];
-        peaks.y = [];
-        % get the image
-        try
-            img = model.file.readCalibrationData(1, 'data');
-            img = img(:,:,model.parameters.extraction.imageNr);
-        catch
-            img = model.file.readPayloadData(1, 1, 1, 'data');
-            img = img(:,:,model.parameters.extraction.imageNr);
-        end
-        r=70;
-        siz=size(img);
-        % do a median filtering to prevent finding maxixums which are none,
-        % reduce radius if medfilt2 is not possible (license checkout
-        % failure)
-        try
-            img = medfilt2(img);
-        catch
+function findPeaksSingle(~, ~, model)
+    findPeaks(model);
+end
+
+function findPeaks(varargin)
+    model = varargin{1};
+    if nargin < 2
+        currentCalibrationNr = model.parameters.extraction.currentCalibrationNr;
+    else
+        currentCalibrationNr = varargin{2};
+    end
+    
+    if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
+        if currentCalibrationNr == 1
+            try
+                peaks = model.parameters.extraction.calibrations(currentCalibrationNr).peaks;
+            catch
+                peaks.x = [];
+                peaks.y = [];
+            end
         end
         
-        %% find the (hopefully) four Rayleigh peaks
-        % assumes that Rayleigh peaks are stronger than Brillouin peaks
-        % this might become a problem later on :(
-        tmpImg = img;
-        for jj = 1:4
-            % find highest value in the image
-            [~, ind] = max(tmpImg(:));
-            [cy,cx] = ind2sub(siz,ind);
-            % set peak region to zero for finding new peak
-            [x,y]=meshgrid(-(cx-1):(siz(2)-cx),-(cy-1):(siz(1)-cy));
-            mask=((x.^2+y.^2)<=r^2);
-            tmpImg(mask) = 0;
-            % select Rayleigh peaks in upper left and lower right corner
-            if ((cy < siz(2)/2) && (cx < siz(1)/2)) || ((cy > siz(2)/2) && (cx > siz(1)/2))
+        if (currentCalibrationNr == 1) && (isempty(peaks.x) || isempty(peaks.y))
+            % found peaks
+            peaks.x = [];
+            peaks.y = [];
+            % get the image
+            try
+                img = model.file.readCalibrationData(currentCalibrationNr, 'data');
+                img = img(:,:,model.parameters.extraction.imageNr);
+            catch
+                img = model.file.readPayloadData(1, 1, 1, 'data');
+                img = img(:,:,model.parameters.extraction.imageNr);
+            end
+            r=70;
+            siz=size(img);
+            % do a median filtering to prevent finding maxixums which are none,
+            % reduce radius if medfilt2 is not possible (license checkout
+            % failure)
+            try
+                img = medfilt2(img);
+            catch
+            end
+
+            %% find the (hopefully) four Rayleigh peaks
+            % assumes that Rayleigh peaks are stronger than Brillouin peaks
+            % this might become a problem later on :(
+            tmpImg = img;
+            for jj = 1:4
+                % find highest value in the image
+                [~, ind] = max(tmpImg(:));
+                [cy,cx] = ind2sub(siz,ind);
+                % set peak region to zero for finding new peak
+                [x,y]=meshgrid(-(cx-1):(siz(2)-cx),-(cy-1):(siz(1)-cy));
+                mask=((x.^2+y.^2)<=r^2);
+                tmpImg(mask) = 0;
+                % select Rayleigh peaks in upper left and lower right corner
+                if ((cy < siz(2)/2) && (cx < siz(1)/2)) || ((cy > siz(2)/2) && (cx > siz(1)/2))
+                    peaks.x = [peaks.x cx];
+                    peaks.y = [peaks.y cy];
+                end
+            end
+
+            %% Select only the area between the Rayleigh peaks
+            m = (peaks.y(1) - peaks.y(2))/(peaks.x(1) - peaks.x(2));
+            n = peaks.y(1) - m*peaks.x(1);
+
+            [~,order] = sort(peaks.x);
+            peaks.x = peaks.x(order);
+            peaks.y = peaks.y(order);
+
+            mask = zeros(size(img));
+            width = 50;
+            % only select point inbetween the Rayleigh peaks
+            for jj = peaks.y(1):peaks.y(2)
+                for kk = peaks.x(1):peaks.x(2)
+                    if (jj > (m * kk) + n - width) && (jj < (m * kk) + n + width/2)
+                        mask(jj,kk) = 1;
+                    end
+                end
+            end
+
+            tmpImg(mask == 0) = NaN;
+
+            %% find two Brillouin peaks
+            for jj = 1:2
+                % find highest value in the image
+                [~, ind] = max(tmpImg(:));
+                [cy,cx] = ind2sub(siz,ind);
+                % set peak region to zero for finding new peak
+                [x,y]=meshgrid(-(cx-1):(siz(2)-cx),-(cy-1):(siz(1)-cy));
+                mask=((x.^2+y.^2)<=r^2);
+                tmpImg(mask) = 0;
+                % add peaks
                 peaks.x = [peaks.x cx];
                 peaks.y = [peaks.y cy];
             end
-        end
-        
-        %% Select only the area between the Rayleigh peaks
-        m = (peaks.y(1) - peaks.y(2))/(peaks.x(1) - peaks.x(2));
-        n = peaks.y(1) - m*peaks.x(1);
 
-        [~,order] = sort(peaks.x);
-        peaks.x = peaks.x(order);
-        peaks.y = peaks.y(order);
-        
-        mask = zeros(size(img));
-        width = 50;
-        % only select point inbetween the Rayleigh peaks
-        for jj = peaks.y(1):peaks.y(2)
-            for kk = peaks.x(1):peaks.x(2)
-                if (jj > (m * kk) + n - width) && (jj < (m * kk) + n + width/2)
-                    mask(jj,kk) = 1;
-                end
-            end
+            % sort the peaks (just nice to have)
+            [~,order] = sort(peaks.x);
+            peaks.x = peaks.x(order);
+            peaks.y = peaks.y(order);
+        elseif currentCalibrationNr > 1
+            peaks = model.parameters.extraction.calibrations(currentCalibrationNr-1).peaks;
         end
-        
-        tmpImg(mask == 0) = NaN;
-        
-        %% find two Brillouin peaks
-        for jj = 1:2
-            % find highest value in the image
-            [~, ind] = max(tmpImg(:));
-            [cy,cx] = ind2sub(siz,ind);
-            % set peak region to zero for finding new peak
-            [x,y]=meshgrid(-(cx-1):(siz(2)-cx),-(cy-1):(siz(1)-cy));
-            mask=((x.^2+y.^2)<=r^2);
-            tmpImg(mask) = 0;
-            % add peaks
-            peaks.x = [peaks.x cx];
-            peaks.y = [peaks.y cy];
-        end
-        
-        % sort the peaks (just nice to have)
-        [~,order] = sort(peaks.x);
-        peaks.x = peaks.x(order);
-        peaks.y = peaks.y(order);
         
         % store new peak positions
-        model.parameters.extraction.peaks = peaks;
+        model.parameters.extraction.calibrations(currentCalibrationNr).peaks = peaks;
         % optimize the peak position
-        optimizePeaks(0, 0, model);
+        optimizePeaks(model, currentCalibrationNr);
         model.log.log('I/Extraction: Extraction successful.');
+    end
+end
+
+function findPeaksAll(~, ~, model)
+    % number of calibrations
+    f = fields(model.parameters.calibration.samples);
+    nrs = max([length(f)-1, 1]);
+    for currentCalibrationNr = 1:nrs
+        findPeaks(model, currentCalibrationNr);
     end
 end
 
@@ -191,11 +232,11 @@ end
 function getpoints(~, ~, view, model)
     % manually select the peaks of the spectrum
     cp = get(view.extraction.axesImage,'CurrentPoint');
-    x = model.parameters.extraction.peaks.x;
+    x = model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks.x;
     x = [x cp(1,1)];
-    y = model.parameters.extraction.peaks.y;
+    y = model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks.y;
     y = [y cp(1,2)];
-    model.parameters.extraction.peaks = struct( ...
+    model.parameters.extraction.calibrations(model.parameters.extraction.currentCalibrationNr).peaks = struct( ...
         'x', x, ...
         'y', y ...
     );
@@ -204,9 +245,27 @@ end
 
 function clearPeaks(~, ~, model)
     extraction = model.parameters.extraction;
-    extraction.peaks = struct( ...
+    extraction.calibrations(extraction.currentCalibrationNr).peaks = struct( ...
         'x', [], ...
         'y', [] ...
+    );
+    extraction.interpolationCenters.x(:,:,extraction.currentCalibrationNr) = NaN;
+    extraction.interpolationCenters.y(:,:,extraction.currentCalibrationNr) = NaN;
+    extraction.interpolationBorders.x(:,:,extraction.currentCalibrationNr) = NaN;
+    extraction.interpolationBorders.y(:,:,extraction.currentCalibrationNr) = NaN;
+    extraction.interpolationPositions.x(:,:,extraction.currentCalibrationNr) = NaN;
+    extraction.interpolationPositions.y(:,:,extraction.currentCalibrationNr) = NaN;
+    model.parameters.extraction = extraction;
+end
+
+function clearPeaksAll(~, ~, model)
+    extraction = model.parameters.extraction;
+    extraction.calibrations = struct( ...
+        'peaks', struct( ...% position of the peaks for localising the spectrum
+            'x', [], ...    % [pix] x-position
+            'y', [] ...     % [pix] y-position
+        ), ...
+        'circleFit', [] ...
     );
     extraction.interpolationCenters = struct( ...
         'x', [], ...        % [pix] x-position
@@ -220,13 +279,25 @@ function clearPeaks(~, ~, model)
         'x', [], ...        % [pix] x-position
         'y', [] ...         % [pix] y-position
     );
+    extraction.times = [];
     model.parameters.extraction = extraction;
 end
 
-function optimizePeaks(~, ~, model)
+function optimizePeaksCallback(~, ~, model)
+    optimizePeaks(model);
+end
+
+function optimizePeaks(varargin)
+    model = varargin{1};
+    if nargin < 2
+        currentCalibrationNr = model.parameters.extraction.currentCalibrationNr;
+    else
+        currentCalibrationNr = varargin{2};
+    end
+    
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(1, 'data');
+            img = model.file.readCalibrationData(currentCalibrationNr, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
@@ -242,7 +313,7 @@ function optimizePeaks(~, ~, model)
         catch
             r = 4;
         end
-        peaks = model.parameters.extraction.peaks;
+        peaks = model.parameters.extraction.calibrations(currentCalibrationNr).peaks;
         siz=size(img);
         for jj = 1:length(peaks.x)
             cx=peaks.x(jj);
@@ -254,9 +325,9 @@ function optimizePeaks(~, ~, model)
             [~, ind] = max(tmp(:));
             [peaks.y(jj),peaks.x(jj)] = ind2sub(siz,ind);
         end
-        model.parameters.extraction.peaks = peaks;
+        model.parameters.extraction.calibrations(currentCalibrationNr).peaks = peaks;
     end
-    fitSpectrum(model);
+    fitSpectrum(model, currentCalibrationNr);
 end
 
 function changeSettings(~, ~, view, model)
@@ -273,14 +344,39 @@ function changeSettings(~, ~, view, model)
     
     extraction.width = str2double(get(view.extraction.width, 'String'));
     
+    %% clear interpolation variables and recalculate them
+    extraction.interpolationCenters = struct( ...
+        'x', [], ...        % [pix] x-position
+        'y', [] ...         % [pix] y-position
+    );
+    extraction.interpolationBorders = struct( ...
+        'x', [], ...        % [pix] x-position
+        'y', [] ...         % [pix] y-position
+    );
+    extraction.interpolationPositions = struct( ...
+        'x', [], ...        % [pix] x-position
+        'y', [] ...         % [pix] y-position
+    );
     model.parameters.extraction = extraction;
-    getInterpolationPositions(model);
+    
+    % number of calibrations
+    f = fields(model.parameters.calibration.samples);
+    nrs = max([length(f)-1, 1]);
+    for currentCalibrationNr = 1:nrs
+        getInterpolationPositions(model, currentCalibrationNr);
+    end
 end
 
-function fitSpectrum(model)
+function fitSpectrum(varargin)
+    model = varargin{1};
+    if nargin < 2
+        currentCalibrationNr = model.parameters.extraction.currentCalibrationNr;
+    else
+        currentCalibrationNr = varargin{2};
+    end
 
-    newxb = model.parameters.extraction.peaks.x;
-    newdata2b = model.parameters.extraction.peaks.y;
+    newxb = model.parameters.extraction.calibrations(currentCalibrationNr).peaks.x;
+    newdata2b = model.parameters.extraction.calibrations(currentCalibrationNr).peaks.y;
     circleStart = model.parameters.extraction.circleStart;
     
     if ~sum(isnan(newxb)) && ~sum(isnan(newdata2b)) && ~sum(isnan(circleStart))
@@ -288,10 +384,10 @@ function fitSpectrum(model)
         model2b = @(params) circleError(params, newxb, newdata2b, -1);
         [estimates2b, ~, ~, ~] = fitCircle(model2b, newxb, circleStart);
 
-        model.parameters.extraction.circleFit = estimates2b;
+        model.parameters.extraction.calibrations(currentCalibrationNr).circleFit = estimates2b;
     end
     
-    getInterpolationPositions(model);
+    getInterpolationPositions(model, currentCalibrationNr);
 
     function [estimates2b, model2b, newxb, FittedCurve2b] = fitCircle(model2b, newxb, start)
 
@@ -319,21 +415,39 @@ function [y] = circle(params, x, sign)
     y(imag(y) ~=0) = NaN;
 end
 
-function getInterpolationPositions(model)
+function getInterpolationPositions(varargin)
+    model = varargin{1};
+    if nargin < 2
+        currentCalibrationNr = model.parameters.extraction.currentCalibrationNr;
+    else
+        currentCalibrationNr = varargin{2};
+    end
 
 %% calculate positions of the interpolation positions
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(1, 'data');
+            refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+        catch
+            refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+        end
+        try
+            img = model.file.readCalibrationData(currentCalibrationNr, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
+            datestring = model.file.readCalibrationData(currentCalibrationNr, 'date');
         catch
             img = model.file.readPayloadData(1, 1, 1, 'data');
             img = img(:,:,model.parameters.extraction.imageNr);
+            datestring = model.file.readPayloadData(1, 1, 1, 'date');
+        end
+        try
+            date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+        catch
+            date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
         end
     else
         return;
     end
-    params = model.parameters.extraction.circleFit;
+    params = model.parameters.extraction.calibrations(currentCalibrationNr).circleFit;
     width = model.parameters.extraction.width;
     
     centers.x = 1:size(img,2);
@@ -401,9 +515,13 @@ function getInterpolationPositions(model)
     positions.y = repmat(borders.y(1,:),width,1) + repmat(diff(borders.y,1,1),width,1)./(width-1) .* steps;
     
     extraction = model.parameters.extraction;
-    extraction.interpolationCenters = centers;
-    extraction.interpolationBorders = borders;
-    extraction.interpolationPositions = positions;
+    extraction.interpolationCenters.x(:,:,currentCalibrationNr) = centers.x;
+    extraction.interpolationCenters.y(:,:,currentCalibrationNr) = centers.y;
+    extraction.interpolationBorders.x(:,:,currentCalibrationNr) = borders.x;
+    extraction.interpolationBorders.y(:,:,currentCalibrationNr) = borders.y;
+    extraction.interpolationPositions.x(:,:,currentCalibrationNr) = positions.x;
+    extraction.interpolationPositions.y(:,:,currentCalibrationNr) = positions.y;
+    extraction.times(currentCalibrationNr) = etime(datevec(date),datevec(refTime));
     model.parameters.extraction = extraction;
 end
 

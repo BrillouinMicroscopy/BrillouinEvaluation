@@ -101,16 +101,31 @@ function findPeaks(model)
     selectedMeasurement = calibration.selected;
     sample = calibration.samples.(selectedMeasurement); % selected sample
     
+    try
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
+    
     mm = 1;     % selected image
     %% Plot
     if strcmp(selectedMeasurement, 'measurement')
         imgs = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'data');
+        datestring = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'date');
     else
         imgs = model.file.readCalibrationData(sample.position, 'data');
+        datestring = model.file.readCalibrationData(sample.position, 'date');
     end
+    try
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
+    time = etime(datevec(date), datevec(refTime));
+    
     imgs = medfilt1(imgs,3);
     img = imgs(:,:,mm);
-    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction.interpolationPositions);
+    data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
     
     [peaks.height,peaks.locations,peaks.widths,peaks.proms] = findpeaks(data,'Annotate','extents','MinPeakProminence',calibration.peakProminence);
     
@@ -227,25 +242,35 @@ function calibrate(~, ~, model, view)
     end
     sample = calibration.samples.(selectedMeasurement); % selected sample
     
-    %% 
-	startTime = model.file.date;
-	refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
-	datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
-	calibration.times(sample.position) = etime(datevec(datestring),datevec(refTime));
+    %%
+    try
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+        datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+        datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
+	calibration.times(sample.position) = etime(datevec(datestring), datevec(refTime));
     
     if ~isfield(sample, 'start')
         sample.start = calibration.start;
     end
     
-    %% find the positions of the Rayleigh and Brillouin peaks
+    %% find the positions of the Rayleigh and Brillouin peaks    
     if strcmp(selectedMeasurement, 'measurement')
         imgs = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'data');
+        datestring = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'date');
     else
         imgs = model.file.readCalibrationData(sample.position, 'data');
+        datestring = model.file.readCalibrationData(sample.position, 'date');
     end
+    try
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
+    time = etime(datevec(date), datevec(refTime));
     
-    
-
     indRayleigh = sample.indRayleigh;
     indBrillouin = sample.indBrillouin;
     nrPeaks = size(indRayleigh,1) + size(indBrillouin,1);
@@ -274,13 +299,15 @@ function calibrate(~, ~, model, view)
     end
     
     %% prepare variables for parfoor loop
+    extraction = model.parameters.extraction;
+    fwhm = model.parameters.evaluation.fwhm;
     
 %     imgs = medfilt1(imgs,3);             
     
     % set invalid values to NaN
     imgs(imgs >= (2^16 - 1)) = NaN;
     
-    data = BE_SharedFunctions.getIntensity1D(imgs(:,:,1), model.parameters.extraction.interpolationPositions);
+    data = BE_SharedFunctions.getIntensity1D(imgs(:,:,1), extraction, time);
     nrPositions = size(data,2)/0.1;
     calibration.pixels = linspace(1,size(data,2),nrPositions);
     
@@ -289,8 +316,6 @@ function calibrate(~, ~, model, view)
     constants.bShiftCal = sample.shift*1e9;
     pixelSize = model.parameters.constants.pixelSize;
     
-    interpolationPositions = model.parameters.extraction.interpolationPositions;
-    fwhm = model.parameters.evaluation.fwhm;
     
     %% workaround in case two pairs of peaks are used to calibrate
     %  necessary because currently only one Brillouin shift value is stored
@@ -299,6 +324,8 @@ function calibrate(~, ~, model, view)
     if size(indBrillouin,1) > 2 && size(constants.bShiftCal,1) < 2
         sample.shift(1) = 3.769;
         sample.shift(2) = 5.098;
+        sample.shift(1) = 3.84;
+        sample.shift(2) = 5.039;
     end
     constants.bShiftCal = sample.shift*1e9;
     
@@ -318,7 +345,7 @@ function calibrate(~, ~, model, view)
         cavityWidths(ii) = sample.start.d;
         start = sample.start;
         parfor mm = 1:totalRuns
-            data = BE_SharedFunctions.getIntensity1D(imgs(:,:,mm), interpolationPositions);
+            data = BE_SharedFunctions.getIntensity1D(imgs(:,:,mm), extraction, time);
 
     %         nrPositions = size(data,2)/0.1;
     %         calibration.pixels = linspace(1,size(data,2),nrPositions);
@@ -503,12 +530,20 @@ function updateCalibrationBrillouinShift(model)
     
     %%
     startTime = model.file.date;
-    refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    try
+        refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+    catch
+        refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+    end
     
     for jj = 1:length(samples)
         sample = calibration.samples.(samples{jj});
         if ~isempty(sample.peaksMeasured)
-            datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+            try
+                datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
+            catch
+                datestring = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
+            end
             calibration.times(sample.position) = etime(datevec(datestring),datevec(refTime));
             times = calibration.times(sample.position) * ones(size(sample.peaksMeasured));
             wavelengths = BE_SharedFunctions.getWavelengthFromMap(sample.peaksMeasured, times, calibration);

@@ -31,6 +31,9 @@ function varargout = BrillouinEvaluation
     if nargout > 1
         varargout{2} = model;
     end
+    if nargout > 2
+        varargout{3} = view;
+    end
 end
 
 function closeGUI(~, ~, model, view, controllers)

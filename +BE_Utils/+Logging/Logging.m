@@ -37,7 +37,7 @@ classdef Logging < handle
         function log(obj, varargin)
             stack = dbstack('-completenames', 1);
             % add datetime string
-            datum = datetime('now', 'format', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'local');
+            datum = datetime('now', 'format', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'local');
             datum = char(datum);
             if size(varargin,2) > 1
                 file = strrep(strrep(stack(1).file, obj.basePath, ''), '\', '/');

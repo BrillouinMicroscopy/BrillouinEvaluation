@@ -294,6 +294,43 @@ function loadData(model, filePath)
                 if ~isfield(parameters.evaluation, 'peakTypes')
                     parameters.evaluation.minRayleighPeakHeight = 50;
                 end
+                if ~isfield(parameters.extraction, 'currentCalibrationNr')
+                    parameters.extraction.currentCalibrationNr = 1;
+                end
+                if ~isfield(parameters.extraction, 'times')
+                    % for previous version this is the time of the first
+                    % calibration measurement
+                    try
+                        parameters.extraction.times = parameters.calibration.times(1);
+                    catch
+                    % if that doesn't work, fall back to default value (no
+                    % huge difference)
+                        parameters.extraction.times = 0;
+                    end
+                end
+                if ~isfield(parameters.extraction, 'calibrations')
+                    parameters.extraction.calibrations(1) = struct( ...
+                        'peaks', struct( ...                        % position of the peaks for localising the spectrum
+                            'x', parameters.extraction.peaks.x, ... % [pix] x-position
+                            'y', parameters.extraction.peaks.y ...  % [pix] y-position
+                        ), ...
+                        'circleFit', parameters.extraction.circleFit ...
+                    );
+                    parameters.extraction = rmfield(parameters.extraction, 'peaks');
+                    parameters.extraction = rmfield(parameters.extraction, 'circleFit');
+                end
+                if ~isfield(parameters, 'exposureTime')
+                    parameters.exposureTime = 0.5;
+                end
+                if isfield(parameters.extraction, 'r0')
+                    parameters.extraction = rmfield(parameters.extraction, 'r0');
+                end
+                if isfield(parameters.extraction, 'x0')
+                    parameters.extraction = rmfield(parameters.extraction, 'x0');
+                end
+                if isfield(parameters.extraction, 'y0')
+                    parameters.extraction = rmfield(parameters.extraction, 'y0');
+                end
                 % set version to 1.1.0 to allow further migration steps
                 % possibly necessary for future versions
                 parameters.programVersion = struct( ...
@@ -379,10 +416,10 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
             if ~isempty(sampleType)
                 hasCalibration = true;
             end
-            sampleKey = sampleType;
+            sampleKey = matlab.lang.makeValidName(sampleType);
             kk = 0;
             while isfield(samples, sampleKey)
-                sampleKey = [sampleType sprintf('_%02d', kk)];
+                sampleKey = [matlab.lang.makeValidName(sampleType) sprintf('_%02d', kk)];
                 kk = kk + 1;
             end
             data = model.file.readCalibrationData(jj,'data');
