@@ -1,14 +1,14 @@
 %% script for automatically evaluating Brillouin data
 
-%% paths for loading and saving data
-loadFile = 'RawData\Brillouin.h5';
-saveFile = 'EvalData\Brillouin.mat';
+% path to the file
+        
+filelist = dir('**/*.h5');
 
 %% parameter structure
 % use this configuration for new calibrations with water + methanol
-% peakTypes = {'R', 'B', 'B', 'B', 'B', 'R', 'NaN'};
+peakTypes = {'R', 'B', 'B', 'B', 'B', 'R'};
 % use this configuration for old calibrations with only water or methanol
-peakTypes = {'R', 'B', 'B', 'R', 'NaN'};
+% peakTypes = {'R', 'B', 'B', 'R', 'NaN'};
 
 parameters = struct( ...
     'calibration', struct( ...          % parameters for the calibration
@@ -19,41 +19,64 @@ parameters = struct( ...
         'weighted', false ...           % use weighting for calibration calculation?
     ), ...
     'evaluation', struct( ...           % parameters for the evaluation
-        'interpRayleigh', true ...      % interpolate Rayleigh peaks position?
+        'interpRayleigh', true, ...     % interpolate Rayleigh peaks position?
+        'minRayleighPeakHeight', 50 ... % minimum height of Rayleigh peaks
     )...
 );
 
-%% evaluate
+%%
 % start evaluation program
 controllers = BrillouinEvaluation;
 drawnow;
 
-% load the data file
-controllers.data.setActive();
-controllers.data.load(loadFile);
-controllers.data.setParameters(parameters);
+for jj = 1:length(filelist)
+    try
+        %% construct filename
+        loadFile = [filelist(jj).folder filesep filelist(jj).name];
+        if ~exist(loadFile, 'file')
+            continue;
+        end
 
-% here calls for peak detection, extraction, calibration, etc will be
-% necessary in the future (once possible)
-controllers.extraction.setActive();
-controllers.extraction.findPeaks();                 % find the Rayleigh and Brillouin peaks
+        [filepath,name,ext] = fileparts(filelist(jj).name);
+        saveFile = [filelist(jj).folder filesep '..' filesep 'EvalData' filesep name '.mat'];
 
-controllers.calibration.setActive();
-% controllers.calibration.updateCalibration();    % allow to update the calibration after setting 'extrapolate' or 'correctOffset'
-controllers.calibration.calibrateAll();         % calibrate the frequency axis using all reference measurements
+        %% load the data file
+        controllers.data.setActive();
+        controllers.data.load(loadFile);
+        controllers.data.setParameters(parameters);
 
-controllers.peakSelection.setActive();
-% controllers.peakSelection.selectFrequencyRangeRayleigh([275 324], 'pix');       % select the frequency range which should be evaluated
-% controllers.peakSelection.selectFrequencyRangeBrillouin([219 245], 'pix');      % select the frequency range which should be evaluated
-controllers.peakSelection.selectFrequencyRangeRayleigh([13.1 17.6], 'GHz');     % select the frequency range which should be evaluated
-controllers.peakSelection.selectFrequencyRangeBrillouin([8.75 10.75], 'GHz');   % select the frequency range which should be evaluated
+        %% extract spectrum from image
+        controllers.extraction.setActive();
+        controllers.extraction.findPeaks();                 % find the Rayleigh and Brillouin peaks
+        drawnow;
 
-% start the evaluation process
-controllers.evaluation.setActive();
-controllers.evaluation.startEvaluation();
+        %% calibrate measurement
+        controllers.calibration.setActive();
+    %         controllers.calibration.findPeaks();
+    %         controllers.calibration.updateCalibration();
+        controllers.calibration.calibrateAll();             % calibrate the frequency axis using all reference measurements
+        drawnow;
 
-% save the data file
-controllers.data.save(saveFile);
+        %% select frequency range to evaluate
+        controllers.peakSelection.setActive();
+    %         controllers.peakSelection.selectFrequencyRangeRayleigh([250 330], 'pix');       % select the frequency range which should be evaluated
+    %         controllers.peakSelection.selectFrequencyRangeBrillouin([190 250], 'pix');      % select the frequency range which should be evaluated
+        controllers.peakSelection.selectFrequencyRangeRayleigh([12.0 18.0], 'GHz');       % select the frequency range which should be evaluated
+        controllers.peakSelection.selectFrequencyRangeBrillouin([7.5 12.0], 'GHz');      % select the frequency range which should be evaluated
+        drawnow;
 
-% close the GUI
-controllers.data.closeFile();
+        %% evaluate
+        controllers.evaluation.setActive();
+        controllers.evaluation.startEvaluation();
+        drawnow;
+
+        %% save the data file
+        controllers.data.save(saveFile);
+
+        %% close the rawdata file
+        controllers.data.closeFile();
+        
+        controllers.closeGUI();
+    catch
+    end
+end
