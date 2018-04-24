@@ -75,8 +75,9 @@ for jj = 1:length(filelist)
 
         %% close the rawdata file
         controllers.data.closeFile();
-        
-        controllers.closeGUI();
-    catch
+    catch e
+        disp(e);
     end
 end
+        
+controllers.closeGUI();
