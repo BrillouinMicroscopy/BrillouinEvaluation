@@ -1,4 +1,4 @@
-function found = findMeasurements(searchQuery, varargin)
+function found = findBrillouinMeasurements(searchQuery, varargin)
     % function searches for measurements with given metadata values and returns
     % their path, name and metadata
 
@@ -51,11 +51,13 @@ function found = findMeasurements(searchQuery, varargin)
     end
 
     %% remove duplicates
-    filenames = {found.filename};
-    paths = {found.path};
-    c = cellfun(@(x, y) [x y], paths.', filenames.', 'UniformOutput', false);
-    [~, ii] = unique(c, 'stable');
-    found = found(ii);
+    if length(found) > 1
+        filenames = {found.filename};
+        paths = {found.path};
+        c = cellfun(@(x, y) [x y], paths.', filenames.', 'UniformOutput', false);
+        [~, ii] = unique(c, 'stable');
+        found = found(ii);
+    end
 
     %% helper functions
     function  valid = ispathCell(obj)
