@@ -1,31 +1,7 @@
-%% script for automatically evaluating Brillouin data
+function BrillouinEvaluation_Auto(filelist, parameters)
+% function for automatically evaluating Brillouin data
 
-% path to the file
-        
-filelist = dir('**/*.h5');
-
-%% parameter structure
-% use this configuration for new calibrations with water + methanol
-peakTypes = {'R', 'B', 'B', 'B', 'B', 'R'};
-% use this configuration for old calibrations with only water or methanol
-% peakTypes = {'R', 'B', 'B', 'R', 'NaN'};
-
-parameters = struct( ...
-    'calibration', struct( ...          % parameters for the calibration
-        'peakProminence', 15, ...       % the minimal prominence of the peaks
-        'peakTypes', {peakTypes}, ...   % expected types of peaks
-        'correctOffset', false, ...     % correct the calibration offset?
-        'extrapolate', true, ...        % extrapolate the calibration?
-        'weighted', false ...           % use weighting for calibration calculation?
-    ), ...
-    'evaluation', struct( ...           % parameters for the evaluation
-        'interpRayleigh', true, ...     % interpolate Rayleigh peaks position?
-        'minRayleighPeakHeight', 50 ... % minimum height of Rayleigh peaks
-    )...
-);
-
-%%
-% start evaluation program
+%% start evaluation program
 controllers = BrillouinEvaluation;
 drawnow;
 
@@ -37,7 +13,7 @@ for jj = 1:length(filelist)
             continue;
         end
 
-        [filepath,name,ext] = fileparts(filelist(jj).name);
+        [~, name, ~] = fileparts(filelist(jj).name);
         saveFile = [filelist(jj).folder filesep '..' filesep 'EvalData' filesep name '.mat'];
 
         %% load the data file
@@ -46,29 +22,38 @@ for jj = 1:length(filelist)
         controllers.data.setParameters(parameters);
 
         %% extract spectrum from image
-        controllers.extraction.setActive();
-        controllers.extraction.findPeaks();                 % find the Rayleigh and Brillouin peaks
-        drawnow;
+        if parameters.extraction.do
+            controllers.extraction.setActive();
+            controllers.extraction.findPeaks();                 % find the Rayleigh and Brillouin peaks
+            drawnow;
+        end
 
         %% calibrate measurement
-        controllers.calibration.setActive();
-    %         controllers.calibration.findPeaks();
-    %         controllers.calibration.updateCalibration();
-        controllers.calibration.calibrateAll();             % calibrate the frequency axis using all reference measurements
-        drawnow;
+        if parameters.calibration.do
+            controllers.calibration.setActive();
+        %         controllers.calibration.findPeaks();
+        %         controllers.calibration.updateCalibration();
+            controllers.calibration.calibrateAll();             % calibrate the frequency axis using all reference measurements
+            drawnow;
+        end
 
         %% select frequency range to evaluate
-        controllers.peakSelection.setActive();
-    %         controllers.peakSelection.selectFrequencyRangeRayleigh([250 330], 'pix');       % select the frequency range which should be evaluated
-    %         controllers.peakSelection.selectFrequencyRangeBrillouin([190 250], 'pix');      % select the frequency range which should be evaluated
-        controllers.peakSelection.selectFrequencyRangeRayleigh([12.0 18.0], 'GHz');       % select the frequency range which should be evaluated
-        controllers.peakSelection.selectFrequencyRangeBrillouin([7.5 12.0], 'GHz');      % select the frequency range which should be evaluated
-        drawnow;
+        if parameters.peakSelection.do
+            controllers.peakSelection.setActive();
+            if any(strcmp(parameters.peakSelection.unit, {'GHz', 'pix'}))
+                 % select the frequency range which should be evaluated
+                controllers.peakSelection.selectFrequencyRangeRayleigh(parameters.peakSelection.valuesRayleigh, parameters.peakSelection.unit);
+                controllers.peakSelection.selectFrequencyRangeBrillouin(parameters.peakSelection.valuesBrillouin, parameters.peakSelection.unit);
+            end
+            drawnow;
+        end
 
         %% evaluate
-        controllers.evaluation.setActive();
-        controllers.evaluation.startEvaluation();
-        drawnow;
+        if parameters.evaluation.do
+            controllers.evaluation.setActive();
+            controllers.evaluation.startEvaluation();
+            drawnow;
+        end
 
         %% save the data file
         controllers.data.save(saveFile);
