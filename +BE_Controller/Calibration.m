@@ -6,6 +6,8 @@ function callbacks = Calibration(model, view)
     
     set(view.calibration.samples, 'Callback', {@selectSample, model});
     
+    set(view.calibration.findPeaks, 'Callback', {@findPeaks, model});
+    
     set(view.calibration.selectBrillouin, 'Callback', {@selectPeaks, view, model, 'Brillouin'});
     set(view.calibration.selectRayleigh, 'Callback', {@selectPeaks, view, model, 'Rayleigh'});
     
@@ -44,7 +46,7 @@ function callbacks = Calibration(model, view)
     callbacks = struct( ...
         'testCavitySlope', @()testCavitySlope(model, view), ...
         'setActive', @()setActive(view), ...
-        'findPeaks', @()findPeaks(model), ...
+        'findPeaks', @()findPeaks(0, 0, model), ...
         'setDefaultParameters', @()setDefaultParameters(model), ...
         'calibrateAll', @()calibrateAll(model, view), ...
         'updateCalibration', @()updateCalibration(model) ...
@@ -83,7 +85,7 @@ function calibrateAll(model, view)
                 model.parameters.calibration.selected = cals{jj};
                 model.parameters.calibration.selectedValue = jj;
             end
-            findPeaks(model);
+            findPeaks(0, 0, model);
             drawnow;
             calibrate(0, 0, model, view);
             drawnow;
@@ -95,39 +97,47 @@ function calibrateAll(model, view)
     model.log.log('I/Calibration: Finished.');
 end
 
-function findPeaks(model)
+function findPeaks(~, ~, model)
+	%% selected calibration image
+    % we currently search the peak position only for the first image and
+    % apply this to the remaining images
+    imageNr = 1;
     %% store often used values in separate variables for convenience
     calibration = model.parameters.calibration;         % general calibration
-    selectedMeasurement = calibration.selected;
+    selectedMeasurement = calibration.selected;         % name of the selected calibration
     sample = calibration.samples.(selectedMeasurement); % selected sample
     
-    try
-        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
-    catch
-        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
-    end
-    
-    mm = 1;     % selected image
-    %% Plot
+    %% read the calibration images
     if strcmp(selectedMeasurement, 'measurement')
+        % either the first images of the measurement
         imgs = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'data');
         datestring = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'date');
     else
+        % or all images of the selected calibration measurement
         imgs = model.file.readCalibrationData(sample.position, 'data');
         datestring = model.file.readCalibrationData(sample.position, 'date');
     end
+    
+    %% handle timepoints
+    % get the reference timepoint and convert the calibration date to a date object
     try
+        % old timestamp format without milliseconds
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
         date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
     catch
+        % new timestamp format with higher precision
+        refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
         date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
     end
+    % calculate duration since beginning of measurement
     time = etime(datevec(date), datevec(refTime));
     
-    imgs = medfilt1(imgs,3);
-    img = imgs(:,:,mm);
+    %% handle images and roughly find peaks
+    imgs = medfilt1(imgs,3);    % median filter to remove salt and pepper noise
+    img = imgs(:,:,imageNr);    % use 
     data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
     
-    [peaks.height,peaks.locations,peaks.widths,peaks.proms] = findpeaks(data,'Annotate','extents','MinPeakProminence',calibration.peakProminence);
+    [peaks.height, peaks.locations, peaks.widths, peaks.proms] = findpeaks(data, 'Annotate', 'extents', 'MinPeakProminence', calibration.peakProminence);
     
     %% we want to find the peaks closest to the center of mass
     %  They are likely the Stokes peaks of the first order and the
@@ -189,14 +199,29 @@ function findPeaks(model)
         catch
         end
     end
+    
+    %% Check the Brillouin peaks
+    % Since the Brillouin peaks are close together, it can happen, that the
+    % range of the peaks overlap. This has to be avoided.
+    
+    for jj = 1:size(sample.indBrillouin,1)
+        left = sample.indBrillouin(jj,1);
+        right = sample.indBrillouin(jj,2);
+        center = round(nanmean(sample.indBrillouin(jj,:)));
+        [~, dleft] = min(data(left:center));
+        [~, dright] = min(data(center:right));
+        sample.indBrillouin(jj,1) = left + dleft - 1;
+        sample.indBrillouin(jj,2) = center + dright - 1; 
+    end
+    
     %% The Brillouin and Rayleigh peaks should have approx. the same height, respectively
     %  if not, there is likely something wrong
     try
         Rayleigh_dif = abs(Rayleigh_int(1) - Rayleigh_int(2)) / max(Rayleigh_int(:));
-        if ~mod(size(Brillouin_int,1),2)
-            Brillouin_int = reshape(Brillouin_int,[],2);
+        if ~mod(size(Brillouin_int,1), 2)
+            Brillouin_int = reshape(Brillouin_int, [], 2);
             Brillouin_int(2,:) = fliplr(Brillouin_int(2,:));
-            difference = abs(Brillouin_int(1,:) - Brillouin_int(2,:)) ./ max(Brillouin_int,[],1);
+            difference = abs(Brillouin_int(1,:) - Brillouin_int(2,:)) ./ max(Brillouin_int, [], 1);
             Brillouin_dif = max(difference(:));
         else
             Brillouin_dif = 0;
