@@ -115,7 +115,7 @@ classdef Model < handle
                 'extrapolate', false, ...
                 'correctOffset', false, ...
                 'peakTypes', {{'R', 'B', 'B', 'B' ,'B', 'R'}}, ... % expected types of peaks
-                'peakProminence', 20, ...       % the minimal prominence of the peaks (used for finding peaks)
+                'peakProminence', 15, ...       % the minimal prominence of the peaks (used for finding peaks)
                 'start', struct( ...            % start values for the VIPA fit
                     'd',    0.006743, ...       % [m]   width of the cavity
                     'n',    1.4607, ...         % [1]   refractive index of the VIPA

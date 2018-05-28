@@ -202,7 +202,7 @@ function findPeaks(~, ~, model)
     
     %% Check the Brillouin peaks
     % Since the Brillouin peaks are close together, it can happen, that the
-    % range of the peaks overlap. This has to be avoided.
+    % ranges of the peaks overlap. This has to be avoided.
     
     for jj = 1:size(sample.indBrillouin,1)
         left = sample.indBrillouin(jj,1);
