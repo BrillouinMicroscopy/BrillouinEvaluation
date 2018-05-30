@@ -26,8 +26,8 @@ parameters = struct( ...
     'peakSelection', struct( ...        % parameters for the peak selection
         'do', true, ...                 % execute peak selection?
         'unit', 'GHz', ...              % unit to use {'GHz' or 'pix'}
-        'valuesRayleigh', [7.5 12.0], ...   % frequency range for Rayleigh peaks
-        'valuesBrillouin', [12.0 18.0] ...  % frequency range for Brillouin peaks
+        'valuesRayleigh', [12.0 18.0], ...  % frequency range for Rayleigh peaks
+        'valuesBrillouin', [7.5 12.0]  ...  % frequency range for Brillouin peaks
     ), ...
     'evaluation', struct( ...           % parameters for the evaluation
         'do', true, ...                 % execute evaluation?
