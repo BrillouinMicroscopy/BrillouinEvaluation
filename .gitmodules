@@ -1,3 +1,6 @@
 [submodule "+Utils/+HDF5Storage"]
 	path = +BE_Utils/+HDF5Storage
 	url = https://github.com/BrillouinMicroscopy/h5bm.git
+[submodule "python/utils/persistence"]
+	path = python/utils/persistence
+	url = https://git.sthu.org/repos/persistence.git
