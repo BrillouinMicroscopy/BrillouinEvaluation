@@ -275,10 +275,10 @@ function onFileLoad(view, model)
     handles = view.extraction;
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
+            img = model.file.readCalibrationData(model.mode, model.repetition, 'data', model.parameters.extraction.currentCalibrationNr);
             img = img(:,:,model.parameters.extraction.imageNr);
         catch
-            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = model.file.readPayloadData(model.mode, model.repetition, 'data', 1, 1, 1);
             img = img(:,:,model.parameters.extraction.imageNr);
         end
         handles.imageCamera.CData = img;
@@ -327,10 +327,10 @@ function onSettingsChange(view, model)
     
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(extraction.currentCalibrationNr, 'data');
+            img = model.file.readCalibrationData(model.mode, model.repetition, 'data', extraction.currentCalibrationNr);
             img = img(:,:,extraction.imageNr);
         catch
-            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = model.file.readPayloadData(model.mode, model.repetition, 'data', 1, 1, 1);
             img = img(:,:,extraction.imageNr);
         end
         handles.imageCamera.CData = img;
@@ -365,9 +365,9 @@ function showInterpolationPositions(handles, model)
 %% clean data for plotting to not show values outside the image
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
+            img = model.file.readCalibrationData(model.mode, model.repetition, 'data', model.parameters.extraction.currentCalibrationNr);
         catch
-            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = model.file.readPayloadData(model.mode, model.repetition, 'data', 1, 1, 1);
         end
     else
         return;

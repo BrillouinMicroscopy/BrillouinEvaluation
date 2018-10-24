@@ -70,12 +70,12 @@ function onFileLoad(view, model)
     if isa(model.file,'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         set(handles.filename, 'String', model.filename);
         set(handles.date, 'String', model.file.date);
-        set(handles.resolutionX, 'String', model.file.resolutionX);
-        set(handles.resolutionY, 'String', model.file.resolutionY);
-        set(handles.resolutionZ, 'String', model.file.resolutionZ);
+        set(handles.resolutionX, 'String', model.file.getResolutionX(model.mode, model.repetition));
+        set(handles.resolutionY, 'String', model.file.getResolutionY(model.mode, model.repetition));
+        set(handles.resolutionZ, 'String', model.file.getResolutionZ(model.mode, model.repetition));
         % check for calibration
         try
-            calibration = model.file.readCalibrationData(1,'sample');
+            calibration = model.file.readCalibrationData(model.mode, model.repetition, 'sample', 1);
             if ~isempty(calibration)
                 set(handles.calibration, 'String', 'true');
             end

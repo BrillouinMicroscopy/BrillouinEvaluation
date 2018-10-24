@@ -185,12 +185,12 @@ function plotData(handles, model)
         return;
     end
     ax = handles.axesImage;
-    imgs = model.file.readPayloadData(1, 1, 1, 'data');
+    imgs = model.file.readPayloadData(model.mode, model.repetition, 'data', 1, 1, 1);
     imgs = medfilt1(imgs,3);
     img = imgs(:,:,1);
     
     startTime = model.file.date;
-    datestring = model.file.readPayloadData(1, 1, 1, 'date');
+    datestring = model.file.readPayloadData(model.mode, model.repetition, 'date', 1, 1, 1);
     try
         refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
         date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
