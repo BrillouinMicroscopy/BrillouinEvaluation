@@ -534,14 +534,36 @@ function saveData(model, filePath)
     model.log.log(['I/File: Saved file "' filePath '"']);
 end
 
-function img = getPayload(model, type, indX, indY, indZ)
-    img = model.file.readPayloadData(model.mode, model.repetition, type, indX, indY, indZ);
+function value = getPayload(model, type, indX, indY, indZ)
+    value = model.file.readPayloadData(model.mode, model.repetition, type, indX, indY, indZ);
+    if strcmp(type, 'data')
+        value = adjustOrientation(model, value);
+    end
 end
 
-function img = getCalibration(model, type, index)
-    img = model.file.readCalibrationData(model.mode, model.repetition, type, index);
+function value = getCalibration(model, type, index)
+    value = model.file.readCalibrationData(model.mode, model.repetition, type, index);
+    if strcmp(type, 'data')
+        value = adjustOrientation(model, value);
+    end
 end
 
-function img = getBackground(model, type)
-    img = model.file.readBackgroundData(model.mode, model.repetition, type);
+function value = getBackground(model, type)
+    value = model.file.readBackgroundData(model.mode, model.repetition, type);
+    if strcmp(type, 'data')
+        value = adjustOrientation(model, value);
+    end
+end
+
+function img = adjustOrientation(model, img)
+    params = model.defaultParameters.data;
+    if (params.rotate)
+        img = rot90(img, params.rotate);
+    end
+    if (params.flipud)
+        img = flipud(img);
+    end
+    if (params.fliplr)
+        img = fliplr(img);
+    end
 end
