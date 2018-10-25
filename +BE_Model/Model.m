@@ -8,6 +8,7 @@ classdef Model < handle
         filepath = [];      % path to the H5BM file
         mode = 'Brillouin'; % mode
         repetition = 0;     % repetition number
+        repetitionCount = 0;% number of repetitions
         pp = [];            % path to the program
         log;                % logging object
         parameters;         % parameters of the measurement

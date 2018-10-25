@@ -6,6 +6,8 @@ function callbacks = Data(model, view)
     set(view.menubar.fileClose, 'Callback', {@closeFile, model});
     set(view.menubar.fileSave, 'Callback', {@selectSaveData, model});
     
+    set(view.data.repetition, 'Callback', {@selectRepetition, model});
+    
     
     set(view.data.vertically, 'Callback', {@toggleVertically, model, view});
     set(view.data.horizontally, 'Callback', {@toggleHorizontally, model, view});
@@ -62,6 +64,8 @@ function loadData(model, filePath)
         model.filename = [name extension];
         model.file = BE_Utils.HDF5Storage.h5bmread(filePath);
         
+        model.repetitionCount = getRepetitionCount(model.file);
+        
         try
             delete(model.handles.plotPositions);
         catch
@@ -74,7 +78,7 @@ function loadData(model, filePath)
         
         %% check if a corresponding results file exists
         [~, filename, ~] = fileparts(model.filename);
-        defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
+        defaultPath = [model.filepath '..\EvalData\' filename '_rep' num2str(model.repetition) '.mat'];
         if exist(defaultPath, 'file') == 2
             data = load(defaultPath, 'results');
             
@@ -351,7 +355,9 @@ function loadData(model, filePath)
             %% migration steps for files coming from versions older than 1.3.0
             if parameters.programVersion.major <= 1 && (parameters.programVersion.minor < 3 ...
                     || (parameters.programVersion.minor <= 3 && ~isempty(parameters.programVersion.preRelease)))
-                parameters.data = model.defaultParameters.data;
+                if ~isfield(parameters.data, 'rotate')
+                    parameters.data = model.defaultParameters.data;
+                end
                 % set version to 1.3.0 to allow further migration steps
                 % possibly necessary for future versions
                 parameters.programVersion = struct( ...
@@ -517,7 +523,7 @@ function selectSaveData(~, ~, model)
         return
     end
     [~, filename, ~] = fileparts(model.filename);
-    defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
+    defaultPath = [model.filepath '..\EvalData\' filename '_rep' num2str(model.repetition) '.mat'];
     [FileName,PathName,~] = uiputfile('*.mat','Save results as', defaultPath);
     filePath = [PathName, FileName];
     saveData(model, filePath)
@@ -597,4 +603,23 @@ end
 function setRotation(~, ~, model, view)
     rotation = get(view.data.rotationGroup, 'SelectedObject');
     model.parameters.data.rotate = str2double(erase(rotation.Tag, 'rotate_'));
+end
+
+function count = getRepetitionCount(file)
+    count = 0;
+    e = '';
+    while isempty(e)
+        try
+            file.readPayloadData('Brillouin', count, 'date', 1, 1, 1);
+            count = count + 1;
+        catch e %#ok<NASGU>
+        end
+    end
+end
+
+function selectRepetition(src, ~, model)
+    val = get(src, 'Value');
+    model.repetition = val - 1;
+    
+    loadData(model, [model.filepath model.filename]);
 end
