@@ -5,6 +5,11 @@ function callbacks = Data(model, view)
     set(view.menubar.fileOpen, 'Callback', {@selectLoadData, model});
     set(view.menubar.fileClose, 'Callback', {@closeFile, model});
     set(view.menubar.fileSave, 'Callback', {@selectSaveData, model});
+    
+    
+    set(view.data.vertically, 'Callback', {@toggleVertically, model, view});
+    set(view.data.horizontally, 'Callback', {@toggleHorizontally, model, view});
+    set(view.data.rotation, 'Callback', {@setRotation, model, view});
 
     callbacks = struct( ...
         'setActive', @()setActive(view), ...
@@ -334,11 +339,24 @@ function loadData(model, filePath)
                 if isfield(parameters.extraction, 'y0')
                     parameters.extraction = rmfield(parameters.extraction, 'y0');
                 end
-                % set version to 1.1.0 to allow further migration steps
+                % set version to 1.2.0 to allow further migration steps
                 % possibly necessary for future versions
                 parameters.programVersion = struct( ...
                     'major', 1, ...
                     'minor', 2, ...
+                    'patch', 0, ...
+                    'preRelease', '' ...
+                );
+            end
+            %% migration steps for files coming from versions older than 1.3.0
+            if parameters.programVersion.major <= 1 && (parameters.programVersion.minor < 3 ...
+                    || (parameters.programVersion.minor <= 3 && ~isempty(parameters.programVersion.preRelease)))
+                parameters.data = model.defaultParameters.data;
+                % set version to 1.3.0 to allow further migration steps
+                % possibly necessary for future versions
+                parameters.programVersion = struct( ...
+                    'major', 1, ...
+                    'minor', 3, ...
                     'patch', 0, ...
                     'preRelease', '' ...
                 );
@@ -556,7 +574,7 @@ function value = getBackground(model, type)
 end
 
 function img = adjustOrientation(model, img)
-    params = model.defaultParameters.data;
+    params = model.parameters.data;
     if (params.rotate)
         img = rot90(img, params.rotate);
     end
@@ -566,4 +584,17 @@ function img = adjustOrientation(model, img)
     if (params.fliplr)
         img = fliplr(img);
     end
+end
+
+function toggleVertically(~, ~, model, view)
+    model.parameters.data.flipud = get(view.data.vertically, 'Value');
+end
+
+function toggleHorizontally(~, ~, model, view)
+    model.parameters.data.fliplr = get(view.data.horizontally, 'Value');
+end
+
+function setRotation(~, ~, model, view)
+    rotation = get(view.data.rotationGroup, 'SelectedObject');
+    model.parameters.data.rotate = str2double(erase(rotation.Tag, 'rotate_'));
 end
