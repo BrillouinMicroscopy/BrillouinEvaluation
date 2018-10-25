@@ -16,6 +16,7 @@ classdef Model < handle
         status;             % current status of the GUI
         handles;            % structure with handles which need to be set dynamically
         tmp;                % structure for temporary data
+        controllers;        % handle to all controllers
     end
     properties (Constant)
         programVersion = getProgramVersion();

@@ -88,7 +88,7 @@ function evaluate(view, model)
         if strcmp(sample.sampleType, 'measurement')
             break;
         end
-        imgs = model.file.readCalibrationData(model.mode, model.repetition, 'data', sample.position);
+        imgs = model.controllers.data.getCalibration('data', sample.position);
         imgs(imgs >= (2^16 - 1)) = NaN;
         try
             date = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
@@ -114,8 +114,8 @@ function evaluate(view, model)
         lastValidRayleighPeakPos = peaksRayleigh_pos_cal(1);
     end
     
-    imgs = model.file.readPayloadData(model.mode, model.repetition, 'data', 1, 1, 1);
-    datestring = model.file.readPayloadData(model.mode, model.repetition, 'date', 1, 1, 1);
+    imgs = model.controllers.data.getPayload('data', 1, 1, 1);
+    datestring = model.controllers.data.getPayload('date', 1, 1, 1);
     try
         date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
     catch
@@ -167,9 +167,9 @@ function evaluate(view, model)
                 end
                 try
                     % read data from the file
-                    imgs = model.file.readPayloadData(model.mode, model.repetition, 'data', jj, kk, ll);
+                    imgs = model.controllers.data.getPayload('data', jj, kk, ll);
                     
-                    datestring = model.file.readPayloadData(model.mode, model.repetition, 'date', jj, kk, ll);
+                    datestring = model.controllers.data.getPayload('date', jj, kk, ll);
                     try
                         date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
                     catch
@@ -634,8 +634,8 @@ function ImageClickCallback(~, event, model)
         refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
     end
     
-    imgs = model.file.readPayloadData(model.mode, model.repetition, 'data', jj, kk, ll);
-    datestring = model.file.readPayloadData(model.mode, model.repetition, 'date', jj, kk, ll);
+    imgs = model.controllers.data.getPayload('data', jj, kk, ll);
+    datestring = model.controllers.data.getPayload('date', jj, kk, ll);
     try
         date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
     catch

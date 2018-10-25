@@ -13,6 +13,7 @@ function varargout = BrillouinEvaluation
     BE_View.Tabs(model, view);    % view has a reference of the model
     
     controllers = controller(model, view);
+    model.controllers = controllers;
     
     % add logging class
     model.log = BE_Utils.Logging.Logging(model.pp, 'log.log');

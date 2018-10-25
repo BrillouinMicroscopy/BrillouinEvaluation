@@ -11,7 +11,10 @@ function callbacks = Data(model, view)
         'closeFile', @()closeFile('', '', model), ...
         'load', @(filePath)loadData(model, filePath), ...
         'save', @(filePath)saveData(model, filePath), ...
-        'setParameters', @(parameters)setParameters(model, parameters) ...
+        'setParameters', @(parameters)setParameters(model, parameters), ...
+        'getPayload', @(type, indX, indY, indZ)getPayload(model, type, indX, indY, indZ), ...
+        'getCalibration', @(type, index)getCalibration(model, type, index), ...
+        'getBackground', @(type)getBackground(model, type, index) ...
     );
 end
 
@@ -178,14 +181,14 @@ function loadData(model, filePath)
                             sample.position = length(sampleKeys);
                         end
                         if ~isfield(sample, 'time')
-                            sample.time = model.file.readPayloadData(model.mode, model.repetition, 'date', sample.imageNr.x, sample.imageNr.y, sample.imageNr.z);
+                            sample.time = getPayload(model, 'date', sample.imageNr.x, sample.imageNr.y, sample.imageNr.z);
                         end
                     else
                         if ~isfield(sample, 'time')
-                            sample.time = model.file.readCalibrationData(model.mode, model.repetition, 'date', sample.position);
+                            sample.time = getCalibration(model, 'date', sample.position);
                         end
                         if ~isfield(sample, 'nrImages')
-                            data = model.file.readCalibrationData(model.mode, model.repetition, 'data', sample.position);
+                            data = getCalibration(model, 'data', sample.position);
                             nrImages = size(data,3);
                             sample.nrImages = nrImages;
                             sample.active = ones(nrImages,1);
@@ -377,7 +380,7 @@ function loadData(model, filePath)
 
             %% set start values for spectrum axis fitting
             % probably a better algorithm needed
-            img = model.file.readPayloadData(model.mode, model.repetition, 'data', 1, 1, 1);
+            img = getPayload(model, 'data', 1, 1, 1);
             img = img(:,:,parameters.extraction.imageNr);
             parameters.extraction.circleStart = [1, size(img,1), mean(size(img))];
             model.parameters = parameters;
@@ -412,7 +415,7 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
     samples = struct();
     while testCalibration
         try
-            sampleType = model.file.readCalibrationData(model.mode, model.repetition, 'sample', jj);
+            sampleType = getCalibration(model, 'sample', jj);
             if ~isempty(sampleType)
                 hasCalibration = true;
             end
@@ -422,20 +425,20 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
                 sampleKey = [matlab.lang.makeValidName(sampleType) sprintf('_%02d', kk)];
                 kk = kk + 1;
             end
-            data = model.file.readCalibrationData(model.mode, model.repetition, 'data', jj);
+            data = getCalibration(model, 'data', jj);
             nrImages = size(data,3);
             samples.(sampleKey) = struct( ...
                 'sampleType', sampleType, ...
                 'position', jj, ...
                 'indRayleigh', [], ...
                 'indBrillouin', [], ...
-                'shift', model.file.readCalibrationData(model.mode, model.repetition, 'shift', jj), ...
+                'shift', getCalibration(model, 'shift', jj), ...
                 'peaksMeasured', [], ...
                 'peaksFitted', [], ...
                 'BrillouinShift', NaN(nrImages,2), ...
                 'nrImages', nrImages, ...
                 'active', ones(nrImages,1), ...
-                'time', model.file.readCalibrationData(model.mode, model.repetition, 'date', jj), ...
+                'time', getCalibration(model, 'date', jj), ...
                 'values', struct( ...   % struct with all values
                     'd',        [], ... % [m]   width of the cavity
                     'n',        [], ... % [1]   refractive index of the VIPA
@@ -469,7 +472,7 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
         'shift', 5.1, ...
         'peaksMeasured', [], ...
         'peaksFitted', [], ...
-        'time', model.file.readPayloadData(model.mode, model.repetition, 'date', x, y, z), ...
+        'time', getPayload(model, 'date', x, y, z), ...
         'values', struct( ...   % struct with all values
             'd',        [], ... % [m]   width of the cavity
             'n',        [], ... % [1]   refractive index of the VIPA
@@ -529,4 +532,16 @@ function saveData(model, filePath)
         save(filePath, 'results');
     end
     model.log.log(['I/File: Saved file "' filePath '"']);
+end
+
+function img = getPayload(model, type, indX, indY, indZ)
+    img = model.file.readPayloadData(model.mode, model.repetition, type, indX, indY, indZ);
+end
+
+function img = getCalibration(model, type, index)
+    img = model.file.readCalibrationData(model.mode, model.repetition, type, index);
+end
+
+function img = getBackground(model, type)
+    img = model.file.readBackgroundData(model.mode, model.repetition, type);
 end

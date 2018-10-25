@@ -376,11 +376,11 @@ function plotData(handles, model)
     %% Plot
     ax = handles.axesImage;
     if strcmp(selectedMeasurement, 'measurement')
-        imgs = model.file.readPayloadData(model.mode, model.repetition, 'data', sample.imageNr.x, sample.imageNr.y, sample.imageNr.z);
-        datestring = model.file.readPayloadData(model.mode, model.repetition, 'date', sample.imageNr.x, sample.imageNr.y, sample.imageNr.z);
+        imgs = model.controllers.data.getPayload('data', sample.imageNr.x, sample.imageNr.y, sample.imageNr.z);
+        datestring = model.controllers.data.getPayload('date', sample.imageNr.x, sample.imageNr.y, sample.imageNr.z);
     else
-        imgs = model.file.readCalibrationData(model.mode, model.repetition, 'data', sample.position);
-        datestring = model.file.readCalibrationData(model.mode, model.repetition, 'date', sample.position);
+        imgs = model.controllers.data.getCalibration('data', sample.position);
+        datestring = model.controllers.data.getCalibration('date', sample.position);
     end
     try
         date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');

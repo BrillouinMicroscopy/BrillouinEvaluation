@@ -75,7 +75,7 @@ function onFileLoad(view, model)
         set(handles.resolutionZ, 'String', model.file.getResolutionZ(model.mode, model.repetition));
         % check for calibration
         try
-            calibration = model.file.readCalibrationData(model.mode, model.repetition, 'sample', 1);
+            calibration = model.controllers.data.getCalibration('sample', 1);
             if ~isempty(calibration)
                 set(handles.calibration, 'String', 'true');
             end
