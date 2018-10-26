@@ -531,7 +531,7 @@ end
 
 function saveData(model, filePath)
     % Save the results file
-    if isempty(model.filename)
+    if isempty(model.filename) || ~ischar(filePath)
         return
     end
     
