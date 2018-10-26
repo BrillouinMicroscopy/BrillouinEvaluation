@@ -24,7 +24,7 @@ for jj = 1:length(filelist)
         %% extract spectrum from image
         if parameters.extraction.do
             controllers.extraction.setActive();
-            controllers.extraction.findPeaks();                 % find the Rayleigh and Brillouin peaks
+            controllers.extraction.findPeaksAll();              % find the Rayleigh and Brillouin peaks
             drawnow;
         end
 
