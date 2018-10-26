@@ -9,6 +9,8 @@ function Extraction(view, model)
     % (tie listener to model object lifecycle)
     addlistener(model, 'file', 'PostSet', ...
         @(o,e) onFileLoad(view, e.AffectedObject));
+    addlistener(model, 'repetition', 'PostSet', ...
+        @(o,e) onFileLoad(view, e.AffectedObject));
     addlistener(model, 'parameters', 'PostSet', ...
         @(o,e) onSettingsChange(view, e.AffectedObject));
     addlistener(model, 'displaySettings', 'PostSet', ...
@@ -275,10 +277,10 @@ function onFileLoad(view, model)
     handles = view.extraction;
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
+            img = model.controllers.data.getCalibration('data', model.parameters.extraction.currentCalibrationNr);
             img = img(:,:,model.parameters.extraction.imageNr);
         catch
-            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = model.controllers.data.getPayload('data', 1, 1, 1);
             img = img(:,:,model.parameters.extraction.imageNr);
         end
         handles.imageCamera.CData = img;
@@ -327,10 +329,10 @@ function onSettingsChange(view, model)
     
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(extraction.currentCalibrationNr, 'data');
+            img = model.controllers.data.getCalibration('data', extraction.currentCalibrationNr);
             img = img(:,:,extraction.imageNr);
         catch
-            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = model.controllers.data.getPayload('data', 1, 1, 1);
             img = img(:,:,extraction.imageNr);
         end
         handles.imageCamera.CData = img;
@@ -365,9 +367,9 @@ function showInterpolationPositions(handles, model)
 %% clean data for plotting to not show values outside the image
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(model.parameters.extraction.currentCalibrationNr, 'data');
+            img = model.controllers.data.getCalibration('data', model.parameters.extraction.currentCalibrationNr);
         catch
-            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = model.controllers.data.getPayload('data', 1, 1, 1);
         end
     else
         return;

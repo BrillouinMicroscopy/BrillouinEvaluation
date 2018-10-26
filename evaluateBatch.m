@@ -12,8 +12,13 @@ peakTypes = {'R', 'B', 'B', 'B', 'B', 'R'};
 % peakTypes = {'R', 'B', 'B', 'R', 'NaN'};
 
 parameters = struct( ...
+    'data', struct( ...
+        'rotate', -1, ...               % {-1 , 0, 1} rotate the image by k*90 degrees
+        'flipud', false, ...            % flip the image up-down
+        'fliplr', false ...             % flip the image left-right
+    ), ...
     'extraction', struct( ...           % parameters for the extraction
-        'do', true ...                 %  execute extraction?
+        'do', true ...                  %  execute extraction?
     ), ...
     'calibration', struct( ...          % parameters for the calibration
         'do', true, ...                 % execute calibration?

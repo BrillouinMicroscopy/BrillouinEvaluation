@@ -81,13 +81,14 @@ function evaluate(view, model)
     peaksRayleigh_pos_cal = [];
     caltimes = [];
     initRayleighPos = NaN;
+    shift = 0;
     lastValidRayleighPeakPos = NaN;
     for jj = 1:length(samples)
         sample = calibration.samples.(samples{jj});
         if strcmp(sample.sampleType, 'measurement')
             break;
         end
-        imgs = model.file.readCalibrationData(sample.position, 'data');
+        imgs = model.controllers.data.getCalibration('data', sample.position);
         imgs(imgs >= (2^16 - 1)) = NaN;
         try
             date = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
@@ -113,8 +114,8 @@ function evaluate(view, model)
         lastValidRayleighPeakPos = peaksRayleigh_pos_cal(1);
     end
     
-    imgs = model.file.readPayloadData(1, 1, 1, 'data');
-    datestring = model.file.readPayloadData(1, 1, 1, 'date');
+    imgs = model.controllers.data.getPayload('data', 1, 1, 1);
+    datestring = model.controllers.data.getPayload('date', 1, 1, 1);
     try
         date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
     catch
@@ -166,9 +167,9 @@ function evaluate(view, model)
                 end
                 try
                     % read data from the file
-                    imgs = model.file.readPayloadData(jj, kk, ll, 'data');
+                    imgs = model.controllers.data.getPayload('data', jj, kk, ll);
                     
-                    datestring = model.file.readPayloadData(jj, kk, ll, 'date');
+                    datestring = model.controllers.data.getPayload('date', jj, kk, ll);
                     try
                         date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
                     catch
@@ -195,7 +196,10 @@ function evaluate(view, model)
                         
 %                         spectra(kk, jj, ll, mm, :) = spectrum;
 
-                        spectrumSection = spectrum(ind_Rayleigh);
+                        ind_Rayleigh_shifted = ind_Rayleigh + shift;
+                        spectrumSection = spectrum(ind_Rayleigh_shifted);
+%                         figure(123)
+%                         imagesc(img)
                         if ~sum(isnan(spectrumSection))
                             [peakPos, fwhm, int, ~, thres, ~] = ...
                                 BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
@@ -204,7 +208,7 @@ function evaluate(view, model)
                         end
                         
                         %% check if peak position is valid
-                        if peakPos <= 0 || peakPos >= length(ind_Rayleigh) || isnan(peakPos) || (int - thres) < model.parameters.evaluation.minRayleighPeakHeight
+                        if peakPos <= 0 || peakPos >= length(ind_Rayleigh_shifted) || isnan(peakPos) || (int - thres) < model.parameters.evaluation.minRayleighPeakHeight
                             validity_Rayleigh(kk, jj, ll, mm) = false;
                             [peakPos, fwhm, int] = deal(NaN);
                             warningRayleigh = true;
@@ -212,10 +216,10 @@ function evaluate(view, model)
                             lastValidRayleighPeakPos = peakPos;
                         end
                         
-                        peaksRayleigh_pos_exact(kk, jj, ll, mm, :) = peakPos + min(ind_Rayleigh(:)) - 1;
+                        peaksRayleigh_pos_exact(kk, jj, ll, mm, :) = peakPos + min(ind_Rayleigh_shifted(:)) - 1;
                         peaksRayleigh_fwhm(kk, jj, ll, mm, :) = fwhm;
                         peaksRayleigh_int(kk, jj, ll, mm, :) = int;
-                        shift = round(lastValidRayleighPeakPos - initRayleighPos);
+                        shift = round(lastValidRayleighPeakPos - initRayleighPos + shift);
 
                         secInd = ind_Brillouin + shift;
                         spectrumSection = spectrum(secInd);
@@ -630,8 +634,8 @@ function ImageClickCallback(~, event, model)
         refTime = datetime(model.file.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
     end
     
-    imgs = model.file.readPayloadData(jj, kk, ll, 'data');
-    datestring = model.file.readPayloadData(jj, kk, ll, 'date');
+    imgs = model.controllers.data.getPayload('data', jj, kk, ll);
+    datestring = model.controllers.data.getPayload('date', jj, kk, ll);
     try
         date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
     catch

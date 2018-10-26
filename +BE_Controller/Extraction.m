@@ -79,10 +79,10 @@ function findPeaks(varargin)
             peaks.y = [];
             % get the image
             try
-                img = model.file.readCalibrationData(currentCalibrationNr, 'data');
+                img = model.controllers.data.getCalibration('data', currentCalibrationNr);
                 img = img(:,:,model.parameters.extraction.imageNr);
             catch
-                img = model.file.readPayloadData(1, 1, 1, 'data');
+                img = model.controllers.data.getPayload('data', 1, 1, 1);
                 img = img(:,:,model.parameters.extraction.imageNr);
             end
             r=70;
@@ -249,6 +249,7 @@ function clearPeaks(~, ~, model)
         'x', [], ...
         'y', [] ...
     );
+    extraction.calibrations(extraction.currentCalibrationNr).circleFit = [];
     extraction.interpolationCenters.x(:,:,extraction.currentCalibrationNr) = NaN;
     extraction.interpolationCenters.y(:,:,extraction.currentCalibrationNr) = NaN;
     extraction.interpolationBorders.x(:,:,extraction.currentCalibrationNr) = NaN;
@@ -297,10 +298,10 @@ function optimizePeaks(varargin)
     
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
-            img = model.file.readCalibrationData(currentCalibrationNr, 'data');
+            img = model.controllers.data.getCalibration('data', currentCalibrationNr);
             img = img(:,:,model.parameters.extraction.imageNr);
         catch
-            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = model.controllers.data.getPayload('data', 1, 1, 1);
             img = img(:,:,model.parameters.extraction.imageNr);
         end
         
@@ -431,13 +432,13 @@ function getInterpolationPositions(varargin)
             refTime = datetime(model.parameters.date, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
         end
         try
-            img = model.file.readCalibrationData(currentCalibrationNr, 'data');
+            img = model.controllers.data.getCalibration('data', currentCalibrationNr);
             img = img(:,:,model.parameters.extraction.imageNr);
-            datestring = model.file.readCalibrationData(currentCalibrationNr, 'date');
+            datestring = model.controllers.data.getCalibration('date', currentCalibrationNr);
         catch
-            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = model.controllers.data.getPayload('data', 1, 1, 1);
             img = img(:,:,model.parameters.extraction.imageNr);
-            datestring = model.file.readPayloadData(1, 1, 1, 'date');
+            datestring = model.controllers.data.getPayload('date', 1, 1, 1);
         end
         try
             date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');

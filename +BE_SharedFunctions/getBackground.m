@@ -11,7 +11,7 @@ function [thres] = getBackground(img)
 
 %%
 % chose number of bins so that the bin size is 0.5 pix
-nrBins = round(max(img(:))/0.5);
+nrBins = round(length(img(:))/0.5);
 
 % calculate the histogram
 [N,edges] = histcounts(img,nrBins);

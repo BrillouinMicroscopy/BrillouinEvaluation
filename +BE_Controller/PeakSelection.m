@@ -38,12 +38,12 @@ function setActive(view)
 end
 
 function selectFrequencyRange(model, type, range, units)
-    imgs = model.file.readPayloadData(1, 1, 1, 'data');
+    imgs = model.controllers.data.getPayload('data', 1, 1, 1);
     imgs = medfilt1(imgs,3);
     img = imgs(:,:,1);
 
     startTime = model.file.date;
-    datestring = model.file.readPayloadData(1, 1, 1, 'date');
+    datestring = model.controllers.data.getPayload('date', 1, 1, 1);
     try
         refTime = datetime(startTime, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
         date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');

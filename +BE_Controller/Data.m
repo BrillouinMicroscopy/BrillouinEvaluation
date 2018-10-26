@@ -5,13 +5,23 @@ function callbacks = Data(model, view)
     set(view.menubar.fileOpen, 'Callback', {@selectLoadData, model});
     set(view.menubar.fileClose, 'Callback', {@closeFile, model});
     set(view.menubar.fileSave, 'Callback', {@selectSaveData, model});
+    
+    set(view.data.repetition, 'Callback', {@selectRepetition, model});
+    
+    
+    set(view.data.vertically, 'Callback', {@toggleVertically, model, view});
+    set(view.data.horizontally, 'Callback', {@toggleHorizontally, model, view});
+    set(view.data.rotation, 'Callback', {@setRotation, model, view});
 
     callbacks = struct( ...
         'setActive', @()setActive(view), ...
         'closeFile', @()closeFile('', '', model), ...
         'load', @(filePath)loadData(model, filePath), ...
         'save', @(filePath)saveData(model, filePath), ...
-        'setParameters', @(parameters)setParameters(model, parameters) ...
+        'setParameters', @(parameters)setParameters(model, parameters), ...
+        'getPayload', @(type, indX, indY, indZ)getPayload(model, type, indX, indY, indZ), ...
+        'getCalibration', @(type, index)getCalibration(model, type, index), ...
+        'getBackground', @(type)getBackground(model, type, index) ...
     );
 end
 
@@ -54,6 +64,8 @@ function loadData(model, filePath)
         model.filename = [name extension];
         model.file = BE_Utils.HDF5Storage.h5bmread(filePath);
         
+        model.repetitionCount = getRepetitionCount(model.file);
+        
         try
             delete(model.handles.plotPositions);
         catch
@@ -66,7 +78,11 @@ function loadData(model, filePath)
         
         %% check if a corresponding results file exists
         [~, filename, ~] = fileparts(model.filename);
-        defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
+        if (model.repetitionCount > 1)
+            defaultPath = [model.filepath '..\EvalData\' filename '_rep' num2str(model.repetition) '.mat'];
+        else
+            defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
+        end
         if exist(defaultPath, 'file') == 2
             data = load(defaultPath, 'results');
             
@@ -178,14 +194,14 @@ function loadData(model, filePath)
                             sample.position = length(sampleKeys);
                         end
                         if ~isfield(sample, 'time')
-                            sample.time = model.file.readPayloadData(sample.imageNr.x, sample.imageNr.y, sample.imageNr.z, 'date');
+                            sample.time = getPayload(model, 'date', sample.imageNr.x, sample.imageNr.y, sample.imageNr.z);
                         end
                     else
                         if ~isfield(sample, 'time')
-                            sample.time = model.file.readCalibrationData(sample.position,'date');
+                            sample.time = getCalibration(model, 'date', sample.position);
                         end
                         if ~isfield(sample, 'nrImages')
-                            data = model.file.readCalibrationData(sample.position,'data');
+                            data = getCalibration(model, 'data', sample.position);
                             nrImages = size(data,3);
                             sample.nrImages = nrImages;
                             sample.active = ones(nrImages,1);
@@ -331,11 +347,26 @@ function loadData(model, filePath)
                 if isfield(parameters.extraction, 'y0')
                     parameters.extraction = rmfield(parameters.extraction, 'y0');
                 end
-                % set version to 1.1.0 to allow further migration steps
+                % set version to 1.2.0 to allow further migration steps
                 % possibly necessary for future versions
                 parameters.programVersion = struct( ...
                     'major', 1, ...
                     'minor', 2, ...
+                    'patch', 0, ...
+                    'preRelease', '' ...
+                );
+            end
+            %% migration steps for files coming from versions older than 1.3.0
+            if parameters.programVersion.major <= 1 && (parameters.programVersion.minor < 3 ...
+                    || (parameters.programVersion.minor <= 3 && ~isempty(parameters.programVersion.preRelease)))
+                if ~isfield(parameters.data, 'rotate')
+                    parameters.data = model.defaultParameters.data;
+                end
+                % set version to 1.3.0 to allow further migration steps
+                % possibly necessary for future versions
+                parameters.programVersion = struct( ...
+                    'major', 1, ...
+                    'minor', 3, ...
                     'patch', 0, ...
                     'preRelease', '' ...
                 );
@@ -355,14 +386,14 @@ function loadData(model, filePath)
             parameters.comment = model.file.comment;
 
             % get the resolution
-            parameters.resolution.X = model.file.resolutionX;
-            parameters.resolution.Y = model.file.resolutionY;
-            parameters.resolution.Z = model.file.resolutionZ;
+            parameters.resolution.X = model.file.getResolutionX(model.mode, model.repetition);
+            parameters.resolution.Y = model.file.getResolutionY(model.mode, model.repetition);
+            parameters.resolution.Z = model.file.getResolutionZ(model.mode, model.repetition);
 
             % get the positions
-            parameters.positions.X = model.file.positionsX;
-            parameters.positions.Y = model.file.positionsY;
-            parameters.positions.Z = model.file.positionsZ;
+            parameters.positions.X = model.file.getPositionsX(model.mode, model.repetition);
+            parameters.positions.Y = model.file.getPositionsY(model.mode, model.repetition);
+            parameters.positions.Z = model.file.getPositionsZ(model.mode, model.repetition);
 
             %% read in calibration data
             [parameters.calibration.samples, parameters.calibration.hasCalibration] = ...
@@ -377,7 +408,7 @@ function loadData(model, filePath)
 
             %% set start values for spectrum axis fitting
             % probably a better algorithm needed
-            img = model.file.readPayloadData(1, 1, 1, 'data');
+            img = getPayload(model, 'data', 1, 1, 1);
             img = img(:,:,parameters.extraction.imageNr);
             parameters.extraction.circleStart = [1, size(img,1), mean(size(img))];
             model.parameters = parameters;
@@ -412,7 +443,7 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
     samples = struct();
     while testCalibration
         try
-            sampleType = model.file.readCalibrationData(jj,'sample');
+            sampleType = getCalibration(model, 'sample', jj);
             if ~isempty(sampleType)
                 hasCalibration = true;
             end
@@ -422,20 +453,20 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
                 sampleKey = [matlab.lang.makeValidName(sampleType) sprintf('_%02d', kk)];
                 kk = kk + 1;
             end
-            data = model.file.readCalibrationData(jj,'data');
+            data = getCalibration(model, 'data', jj);
             nrImages = size(data,3);
             samples.(sampleKey) = struct( ...
                 'sampleType', sampleType, ...
                 'position', jj, ...
                 'indRayleigh', [], ...
                 'indBrillouin', [], ...
-                'shift', model.file.readCalibrationData(jj,'shift'), ...
+                'shift', getCalibration(model, 'shift', jj), ...
                 'peaksMeasured', [], ...
                 'peaksFitted', [], ...
                 'BrillouinShift', NaN(nrImages,2), ...
                 'nrImages', nrImages, ...
                 'active', ones(nrImages,1), ...
-                'time', model.file.readCalibrationData(jj,'date'), ...
+                'time', getCalibration(model, 'date', jj), ...
                 'values', struct( ...   % struct with all values
                     'd',        [], ... % [m]   width of the cavity
                     'n',        [], ... % [1]   refractive index of the VIPA
@@ -469,7 +500,7 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
         'shift', 5.1, ...
         'peaksMeasured', [], ...
         'peaksFitted', [], ...
-        'time', model.file.readPayloadData(x, y, z, 'date'), ...
+        'time', getPayload(model, 'date', x, y, z), ...
         'values', struct( ...   % struct with all values
             'd',        [], ... % [m]   width of the cavity
             'n',        [], ... % [1]   refractive index of the VIPA
@@ -496,7 +527,11 @@ function selectSaveData(~, ~, model)
         return
     end
     [~, filename, ~] = fileparts(model.filename);
-    defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
+    if (model.repetitionCount > 1)
+        defaultPath = [model.filepath '..\EvalData\' filename '_rep' num2str(model.repetition) '.mat'];
+    else
+        defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
+    end
     [FileName,PathName,~] = uiputfile('*.mat','Save results as', defaultPath);
     filePath = [PathName, FileName];
     saveData(model, filePath)
@@ -504,7 +539,7 @@ end
 
 function saveData(model, filePath)
     % Save the results file
-    if isempty(model.filename)
+    if isempty(model.filename) || ~ischar(filePath)
         return
     end
     
@@ -529,4 +564,70 @@ function saveData(model, filePath)
         save(filePath, 'results');
     end
     model.log.log(['I/File: Saved file "' filePath '"']);
+end
+
+function value = getPayload(model, type, indX, indY, indZ)
+    value = model.file.readPayloadData(model.mode, model.repetition, type, indX, indY, indZ);
+    if strcmp(type, 'data')
+        value = adjustOrientation(model, value);
+    end
+end
+
+function value = getCalibration(model, type, index)
+    value = model.file.readCalibrationData(model.mode, model.repetition, type, index);
+    if strcmp(type, 'data')
+        value = adjustOrientation(model, value);
+    end
+end
+
+function value = getBackground(model, type)
+    value = model.file.readBackgroundData(model.mode, model.repetition, type);
+    if strcmp(type, 'data')
+        value = adjustOrientation(model, value);
+    end
+end
+
+function img = adjustOrientation(model, img)
+    params = model.parameters.data;
+    if (params.rotate)
+        img = rot90(img, params.rotate);
+    end
+    if (params.flipud)
+        img = flipud(img);
+    end
+    if (params.fliplr)
+        img = fliplr(img);
+    end
+end
+
+function toggleVertically(~, ~, model, view)
+    model.parameters.data.flipud = get(view.data.vertically, 'Value');
+end
+
+function toggleHorizontally(~, ~, model, view)
+    model.parameters.data.fliplr = get(view.data.horizontally, 'Value');
+end
+
+function setRotation(~, ~, model, view)
+    rotation = get(view.data.rotationGroup, 'SelectedObject');
+    model.parameters.data.rotate = str2double(erase(rotation.Tag, 'rotate_'));
+end
+
+function count = getRepetitionCount(file)
+    count = 0;
+    e = '';
+    while isempty(e)
+        try
+            file.readPayloadData('Brillouin', count, 'date', 1, 1, 1);
+            count = count + 1;
+        catch e %#ok<NASGU>
+        end
+    end
+end
+
+function selectRepetition(src, ~, model)
+    val = get(src, 'Value');
+    model.repetition = val - 1;
+    
+    loadData(model, [model.filepath model.filename]);
 end
