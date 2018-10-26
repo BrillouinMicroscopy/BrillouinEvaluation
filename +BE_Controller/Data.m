@@ -78,7 +78,11 @@ function loadData(model, filePath)
         
         %% check if a corresponding results file exists
         [~, filename, ~] = fileparts(model.filename);
-        defaultPath = [model.filepath '..\EvalData\' filename '_rep' num2str(model.repetition) '.mat'];
+        if (model.repetitionCount > 1)
+            defaultPath = [model.filepath '..\EvalData\' filename '_rep' num2str(model.repetition) '.mat'];
+        else
+            defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
+        end
         if exist(defaultPath, 'file') == 2
             data = load(defaultPath, 'results');
             
@@ -523,7 +527,11 @@ function selectSaveData(~, ~, model)
         return
     end
     [~, filename, ~] = fileparts(model.filename);
-    defaultPath = [model.filepath '..\EvalData\' filename '_rep' num2str(model.repetition) '.mat'];
+    if (model.repetitionCount > 1)
+        defaultPath = [model.filepath '..\EvalData\' filename '_rep' num2str(model.repetition) '.mat'];
+    else
+        defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
+    end
     [FileName,PathName,~] = uiputfile('*.mat','Save results as', defaultPath);
     filePath = [PathName, FileName];
     saveData(model, filePath)
