@@ -249,6 +249,7 @@ function clearPeaks(~, ~, model)
         'x', [], ...
         'y', [] ...
     );
+    extraction.calibrations(extraction.currentCalibrationNr).circleFit = [];
     extraction.interpolationCenters.x(:,:,extraction.currentCalibrationNr) = NaN;
     extraction.interpolationCenters.y(:,:,extraction.currentCalibrationNr) = NaN;
     extraction.interpolationBorders.x(:,:,extraction.currentCalibrationNr) = NaN;
