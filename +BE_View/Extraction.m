@@ -336,6 +336,7 @@ function onSettingsChange(view, model)
             img = img(:,:,extraction.imageNr);
         end
         handles.imageCamera.CData = img;
+        axis(handles.axesImage, [0.5 size(img,2)+0.5 0.5 size(img,1)+0.5]);
     end
     
     set(handles.extractionAxisGroup,'SelectedObject',findall(handles.extractionAxis, 'String', extraction.extractionAxis));
