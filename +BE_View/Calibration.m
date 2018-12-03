@@ -390,7 +390,7 @@ function plotData(handles, model)
     time = etime(datevec(date),datevec(refTime));
     
     imgs = medfilt1(imgs,3);
-    img = imgs(:,:,mm);
+    img = nanmean(imgs, 3);
     data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
     if ~isempty(data)
         hold(ax, 'off');

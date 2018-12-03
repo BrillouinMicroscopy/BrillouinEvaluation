@@ -99,9 +99,6 @@ end
 
 function findPeaks(~, ~, model)
 	%% selected calibration image
-    % we currently search the peak position only for the first image and
-    % apply this to the remaining images
-    imageNr = 1;
     %% store often used values in separate variables for convenience
     calibration = model.parameters.calibration;         % general calibration
     selectedMeasurement = calibration.selected;         % name of the selected calibration
@@ -134,7 +131,7 @@ function findPeaks(~, ~, model)
     
     %% handle images and roughly find peaks
     imgs = medfilt1(imgs,3);    % median filter to remove salt and pepper noise
-    img = imgs(:,:,imageNr);    % use 
+    img = nanmean(imgs, 3);
     data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
     
     [peaks.height, peaks.locations, peaks.widths, peaks.proms] = findpeaks(data, 'Annotate', 'extents', 'MinPeakProminence', calibration.peakProminence);
