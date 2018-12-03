@@ -49,7 +49,7 @@ function initGUI(model, view)
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     peakTable = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.540 0.22 0.18], ...
-        'ColumnWidth', {86, 87}, 'ColumnName', {'x','y'}, 'FontSize', 12);
+        'ColumnWidth', {78, 77}, 'ColumnName', {'x','y'}, 'FontSize', 12);
     
     
 
