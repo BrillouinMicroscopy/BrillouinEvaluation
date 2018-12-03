@@ -278,11 +278,10 @@ function onFileLoad(view, model)
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
             img = model.controllers.data.getCalibration('data', model.parameters.extraction.currentCalibrationNr);
-            img = img(:,:,model.parameters.extraction.imageNr);
         catch
             img = model.controllers.data.getPayload('data', 1, 1, 1);
-            img = img(:,:,model.parameters.extraction.imageNr);
         end
+        img = nanmean(img, 3);
         handles.imageCamera.CData = img;
         colorbar(handles.axesImage);
         axis(handles.axesImage, [0.5 size(img,2)+0.5 0.5 size(img,1)+0.5]);
@@ -330,11 +329,10 @@ function onSettingsChange(view, model)
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
             img = model.controllers.data.getCalibration('data', extraction.currentCalibrationNr);
-            img = img(:,:,extraction.imageNr);
         catch
             img = model.controllers.data.getPayload('data', 1, 1, 1);
-            img = img(:,:,extraction.imageNr);
         end
+        img = nanmean(img, 3);
         handles.imageCamera.CData = img;
         axis(handles.axesImage, [0.5 size(img,2)+0.5 0.5 size(img,1)+0.5]);
     end
