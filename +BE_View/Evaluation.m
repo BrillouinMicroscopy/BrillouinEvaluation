@@ -321,7 +321,7 @@ function plotData (handles, model, location, full)
     switch dimension
         case 0
             %% 0D data
-            hndl = plot(ax,data);
+            hndl = plot(ax,data, 'marker', 'x');
 %             disp(data(1,1,1));
         case 1
             %% 1D data
@@ -343,7 +343,7 @@ function plotData (handles, model, location, full)
             
             %% plot
             hold(ax,'off');
-            hndl = plot(ax,p,d);
+            hndl = plot(ax,p,d, 'marker', 'x');
             title(ax,labels.titleString);
             pmin = min(p(:));
             pmax = max(p(:));
