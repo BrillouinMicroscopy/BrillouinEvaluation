@@ -255,7 +255,8 @@ function onSettings(view, model)
     if isfield(model.parameters.calibration.samples.(model.parameters.calibration.selected), 'start')
         s = model.parameters.calibration.samples.(model.parameters.calibration.selected).start;
     else
-        s = model.parameters.calibration.start;
+        s = model.parameters.constants_setup.VIPA;
+        s.iterNum = model.parameters.calibration.iterNum;
     end
     startValues = {sprintf('%2.10f',s.d), sprintf('%2.7f',s.n), sprintf('%2.10f',s.theta), ...
         sprintf('%2.5f',s.x0), sprintf('%2.3f',s.xs), sprintf('%2.0f',s.order), sprintf('%2.0f',s.iterNum)};
@@ -408,17 +409,17 @@ function plotData(handles, model)
                 VIPAparams.(params{jj}) = sample.values.(params{jj})(mm);
             end
             
-            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * x, ...
-                VIPAparams, model.parameters.constants, 1);
-            x = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants.lambda0, wavelength);
+            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants_setup.pixelSize * x, ...
+                VIPAparams, model.parameters.constants_setup, 1);
+            x = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants_setup.lambda0, wavelength);
 
-            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksMeasured, ...
-                VIPAparams, model.parameters.constants, 1);
-            peaksMeasured = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants.lambda0, wavelength);
+            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants_setup.pixelSize * peaksMeasured, ...
+                VIPAparams, model.parameters.constants_setup, 1);
+            peaksMeasured = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants_setup.lambda0, wavelength);
             
-            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants.pixelSize * peaksFitted, ...
-                VIPAparams, model.parameters.constants, 1);
-            peaksFitted = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants.lambda0, wavelength);
+            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants_setup.pixelSize * peaksFitted, ...
+                VIPAparams, model.parameters.constants_setup, 1);
+            peaksFitted = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants_setup.lambda0, wavelength);
             
             xLabelString = '$f$ [GHz]';
         end

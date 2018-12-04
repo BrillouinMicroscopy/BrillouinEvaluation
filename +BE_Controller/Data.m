@@ -371,6 +371,29 @@ function loadData(model, filePath)
                     'preRelease', '' ...
                 );
             end
+            %% migration steps for files coming from versions older than 1.4.0
+            if parameters.programVersion.major <= 1 && (parameters.programVersion.minor < 4 ...
+                    || (parameters.programVersion.minor <= 4 && ~isempty(parameters.programVersion.preRelease)))
+                
+                if ~isfield(parameters, 'constants_general')
+                    parameters.constants_general = model.defaultParameters.constants_general;
+                end
+                if ~isfield(parameters, 'constants_setup')
+                    parameters.constants_setup = model.defaultParameters.constants_setup;
+                end
+                parameters = rmfield(parameters, 'constants');
+                parameters.calibration.iterNum = parameters.calibration.start.iterNum;
+                parameters.calibration = rmfield(parameters.calibration, 'start');
+                
+                % set version to 1.4.0 to allow further migration steps
+                % possibly necessary for future versions
+                parameters.programVersion = struct( ...
+                    'major', 1, ...
+                    'minor', 4, ...
+                    'patch', 0, ...
+                    'preRelease', '' ...
+                );
+            end
             % after all calibration steps, set version to program version
             parameters.programVersion = model.programVersion;
             

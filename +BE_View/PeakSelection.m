@@ -210,7 +210,7 @@ function plotData(handles, model)
         valid = ~isnan(calibration.wavelength);
         if ~isempty(calibration.wavelength) && sum(valid(:))
             wavelength = BE_SharedFunctions.getWavelengthFromMap(x, time, calibration);
-            x = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants.lambda0, wavelength);
+            x = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants_setup.lambda0, wavelength);
             
             xLabelString = '$f$ [GHz]';
         end
