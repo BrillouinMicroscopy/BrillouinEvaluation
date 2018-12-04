@@ -48,6 +48,7 @@ end
 function selectLoadData(~, ~, model)
     [FileName,PathName,~] = uigetfile('*.h5','Select the Brillouin file to evaluate.');
     filePath = [PathName FileName];
+    model.repetition = 0;
     loadData(model, filePath);
 end
 
