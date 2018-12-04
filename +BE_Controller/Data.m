@@ -62,9 +62,14 @@ function loadData(model, filePath)
     if ~isequal(PathName,0) && exist(filePath, 'file')
         
         model.filename = [name extension];
-        model.file = BE_Utils.HDF5Storage.h5bmread(filePath);
+        file = BE_Utils.HDF5Storage.h5bmread(filePath);
         
-        model.repetitionCount = getRepetitionCount(model.file);
+        model.repetitionCount = getRepetitionCount(file);
+        if (model.repetition >= model.repetitionCount) 
+            model.repetition = model.repetitionCount - 1;
+        end
+        
+        model.file = file;
         
         try
             delete(model.handles.plotPositions);
