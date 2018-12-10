@@ -99,9 +99,6 @@ end
 
 function findPeaks(~, ~, model)
 	%% selected calibration image
-    % we currently search the peak position only for the first image and
-    % apply this to the remaining images
-    imageNr = 1;
     %% store often used values in separate variables for convenience
     calibration = model.parameters.calibration;         % general calibration
     selectedMeasurement = calibration.selected;         % name of the selected calibration
@@ -134,7 +131,7 @@ function findPeaks(~, ~, model)
     
     %% handle images and roughly find peaks
     imgs = medfilt1(imgs,3);    % median filter to remove salt and pepper noise
-    img = imgs(:,:,imageNr);    % use 
+    img = nanmean(imgs, 3);
     data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
     
     [peaks.height, peaks.locations, peaks.widths, peaks.proms] = findpeaks(data, 'Annotate', 'extents', 'MinPeakProminence', calibration.peakProminence);
@@ -278,7 +275,8 @@ function calibrate(~, ~, model, view)
 	calibration.times(sample.position) = etime(datevec(datestring), datevec(refTime));
     
     if ~isfield(sample, 'start')
-        sample.start = calibration.start;
+        sample.start = model.parameters.constants_setup.VIPA;
+        sample.start.iterNum = model.parameters.calibration.iterNum;
     end
     
     %% find the positions of the Rayleigh and Brillouin peaks    
@@ -337,9 +335,10 @@ function calibrate(~, ~, model, view)
     calibration.pixels = linspace(1,size(data,2),nrPositions);
     
     pixels = calibration.pixels;
-    constants = model.parameters.constants;
+    constants = model.parameters.constants_setup;
+    constants.c = model.parameters.constants_general.c;
     constants.bShiftCal = sample.shift*1e9;
-    pixelSize = model.parameters.constants.pixelSize;
+    pixelSize = model.parameters.constants_setup.pixelSize;
     
     
     %% workaround in case two pairs of peaks are used to calibrate
@@ -719,8 +718,10 @@ function editStartParameters(~, table, model)
     if isfield(model.parameters.calibration.samples.(model.parameters.calibration.selected), 'start')
         model.parameters.calibration.samples.(model.parameters.calibration.selected).start.(fields{table.Indices(2)}) = str2double(table.NewData);
     else
-        model.parameters.calibration.samples.(model.parameters.calibration.selected).start = model.parameters.calibration.start;
-        model.parameters.calibration.samples.(model.parameters.calibration.selected).start.(fields{table.Indices(2)}) = str2double(table.NewData);
+        start = model.parameters.constants_setup.VIPA;
+        start.iterNum = model.parameters.calibration.iterNum;
+        start.(fields{table.Indices(2)}) = str2double(table.NewData);
+        model.parameters.calibration.samples.(model.parameters.calibration.selected).start = start;
     end
 end
 

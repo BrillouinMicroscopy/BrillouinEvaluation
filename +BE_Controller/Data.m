@@ -48,6 +48,7 @@ end
 function selectLoadData(~, ~, model)
     [FileName,PathName,~] = uigetfile('*.h5','Select the Brillouin file to evaluate.');
     filePath = [PathName FileName];
+    model.repetition = 0;
     loadData(model, filePath);
 end
 
@@ -62,9 +63,14 @@ function loadData(model, filePath)
     if ~isequal(PathName,0) && exist(filePath, 'file')
         
         model.filename = [name extension];
-        model.file = BE_Utils.HDF5Storage.h5bmread(filePath);
+        file = BE_Utils.HDF5Storage.h5bmread(filePath);
         
-        model.repetitionCount = getRepetitionCount(model.file);
+        model.repetitionCount = getRepetitionCount(file);
+        if (model.repetition >= model.repetitionCount) 
+            model.repetition = model.repetitionCount - 1;
+        end
+        
+        model.file = file;
         
         try
             delete(model.handles.plotPositions);
@@ -367,6 +373,29 @@ function loadData(model, filePath)
                 parameters.programVersion = struct( ...
                     'major', 1, ...
                     'minor', 3, ...
+                    'patch', 0, ...
+                    'preRelease', '' ...
+                );
+            end
+            %% migration steps for files coming from versions older than 1.4.0
+            if parameters.programVersion.major <= 1 && (parameters.programVersion.minor < 4 ...
+                    || (parameters.programVersion.minor <= 4 && ~isempty(parameters.programVersion.preRelease)))
+                
+                if ~isfield(parameters, 'constants_general')
+                    parameters.constants_general = model.defaultParameters.constants_general;
+                end
+                if ~isfield(parameters, 'constants_setup')
+                    parameters.constants_setup = model.defaultParameters.constants_setup;
+                end
+                parameters = rmfield(parameters, 'constants');
+                parameters.calibration.iterNum = parameters.calibration.start.iterNum;
+                parameters.calibration = rmfield(parameters.calibration, 'start');
+                
+                % set version to 1.4.0 to allow further migration steps
+                % possibly necessary for future versions
+                parameters.programVersion = struct( ...
+                    'major', 1, ...
+                    'minor', 4, ...
                     'patch', 0, ...
                     'preRelease', '' ...
                 );

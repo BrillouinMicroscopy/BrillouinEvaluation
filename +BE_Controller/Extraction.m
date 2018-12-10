@@ -80,11 +80,10 @@ function findPeaks(varargin)
             % get the image
             try
                 img = model.controllers.data.getCalibration('data', currentCalibrationNr);
-                img = img(:,:,model.parameters.extraction.imageNr);
             catch
                 img = model.controllers.data.getPayload('data', 1, 1, 1);
-                img = img(:,:,model.parameters.extraction.imageNr);
             end
+            img = nanmean(img, 3);
             r=70;
             siz=size(img);
             % do a median filtering to prevent finding maxixums which are none,
@@ -299,11 +298,10 @@ function optimizePeaks(varargin)
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
             img = model.controllers.data.getCalibration('data', currentCalibrationNr);
-            img = img(:,:,model.parameters.extraction.imageNr);
         catch
             img = model.controllers.data.getPayload('data', 1, 1, 1);
-            img = img(:,:,model.parameters.extraction.imageNr);
         end
+        img = nanmean(img, 3);
         
         r=10;
         % do a median filtering to prevent finding maxixums which are none,
@@ -433,13 +431,12 @@ function getInterpolationPositions(varargin)
         end
         try
             img = model.controllers.data.getCalibration('data', currentCalibrationNr);
-            img = img(:,:,model.parameters.extraction.imageNr);
             datestring = model.controllers.data.getCalibration('date', currentCalibrationNr);
         catch
             img = model.controllers.data.getPayload('data', 1, 1, 1);
-            img = img(:,:,model.parameters.extraction.imageNr);
             datestring = model.controllers.data.getPayload('date', 1, 1, 1);
         end
+        img = nanmean(img, 3);
         try
             date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
         catch
