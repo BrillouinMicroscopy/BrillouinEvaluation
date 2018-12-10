@@ -395,6 +395,26 @@ function loadData(model, filePath)
                     parameters.calibration = rmfield(parameters.calibration, 'start');
                 end
                 
+                % Migrate Brillouin calibration peak selections
+                % We now fit the two peaks in one fit, so we need the whole
+                % peak region and not the two peaks separately. Hence, the
+                % regions are merged here.
+                samples = parameters.calibration.samples;
+                sampleKeys = fields(samples);
+                for jj = 1:length(sampleKeys)
+                    sample = samples.(sampleKeys{jj});
+                    sample.nrBrillouinSamples = size(sample.indBrillouin,1)/2;
+                    % Merge the peak regions
+                    indBrillouin = NaN(2, 2);
+                    indBrillouin(1, 1) = sample.indBrillouin(1, 1);
+                    indBrillouin(1, 2) = sample.indBrillouin(sample.nrBrillouinSamples, 2);
+                    indBrillouin(2, 1) = sample.indBrillouin(sample.nrBrillouinSamples+1, 1);
+                    indBrillouin(2, 2) = sample.indBrillouin(end, 2);
+                    sample.indBrillouin = indBrillouin;
+                    samples.(sampleKeys{jj}) = sample;
+                end
+                parameters.calibration.samples = samples;
+                
                 % set version to 1.4.0 to allow further migration steps
                 % possibly necessary for future versions
                 parameters.programVersion = struct( ...

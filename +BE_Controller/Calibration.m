@@ -345,7 +345,7 @@ function calibrate(~, ~, model, view)
     %  necessary because currently only one Brillouin shift value is stored
     %  in the raw data file
     sample.shift = 3.769;
-    if size(indBrillouin,1) > 2 && size(constants.bShiftCal,1) < 2
+    if sample.nrBrillouinSamples > 1 && size(constants.bShiftCal,1) < 2
         sample.shift(1) = 3.769;
         sample.shift(2) = 5.098;
         sample.shift(1) = 3.84;
@@ -381,10 +381,11 @@ function calibrate(~, ~, model, view)
                 [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, 1, [6 20], 0);
                 peakPos(jj) = tmp+indRayleigh(jj,1)-1;
             end
-            for jj = 1:length(indBrillouin)
-                spectrumSection = data(indBrillouin(jj,1):indBrillouin(jj,2));
-                [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, 1, [6 20], 0);
-                peakPos(jj+length(indRayleigh)) = tmp+indBrillouin(jj,1)-1;
+            for jj = 1:2
+                spectrumSection = data(indBrillouin(jj,1):indBrillouin(jj, 2));
+                [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, sample.nrBrillouinSamples, [6 20], 0);
+                peakPos(2*jj-1+length(indRayleigh)) = tmp(1) + indBrillouin(jj, 1)-1;
+                peakPos(2*jj+length(indRayleigh)) = tmp(2) + indBrillouin(jj, 1)-1;
             end
             peakPos = sort(peakPos, 'ascend');
             peaksMeasured(mm,:) = peakPos;
