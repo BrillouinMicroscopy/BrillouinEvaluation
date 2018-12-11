@@ -387,9 +387,13 @@ function loadData(model, filePath)
                 if ~isfield(parameters, 'constants_setup')
                     parameters.constants_setup = model.defaultParameters.constants_setup;
                 end
-                parameters = rmfield(parameters, 'constants');
-                parameters.calibration.iterNum = parameters.calibration.start.iterNum;
-                parameters.calibration = rmfield(parameters.calibration, 'start');
+                if isfield(parameters, 'constants')
+                    parameters = rmfield(parameters, 'constants');
+                end
+                if isfield(parameters.calibration, 'start')
+                    parameters.calibration.iterNum = parameters.calibration.start.iterNum;
+                    parameters.calibration = rmfield(parameters.calibration, 'start');
+                end
                 
                 % set version to 1.4.0 to allow further migration steps
                 % possibly necessary for future versions

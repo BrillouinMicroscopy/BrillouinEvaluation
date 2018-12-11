@@ -196,7 +196,7 @@ function evaluate(view, model)
                         
 %                         spectra(kk, jj, ll, mm, :) = spectrum;
 
-                        ind_Rayleigh_shifted = ind_Rayleigh + shift;
+                        ind_Rayleigh_shifted = ind_Rayleigh + 0*shift;
                         spectrumSection = spectrum(ind_Rayleigh_shifted);
 %                         figure(123)
 %                         imagesc(img)
@@ -213,7 +213,7 @@ function evaluate(view, model)
                             [peakPos, fwhm, int] = deal(NaN);
                             warningRayleigh = true;
                         else
-                            lastValidRayleighPeakPos = peakPos;
+                            lastValidRayleighPeakPos = peakPos + min(ind_Rayleigh_shifted(:)) - 1;
                         end
                         
                         peaksRayleigh_pos_exact(kk, jj, ll, mm, :) = peakPos + min(ind_Rayleigh_shifted(:)) - 1;
@@ -221,7 +221,7 @@ function evaluate(view, model)
                         peaksRayleigh_int(kk, jj, ll, mm, :) = int;
                         shift = round(lastValidRayleighPeakPos - initRayleighPos + shift);
 
-                        secInd = ind_Brillouin + shift;
+                        secInd = ind_Brillouin + 0*shift;
                         spectrumSection = spectrum(secInd);
                         if ~sum(isnan(spectrumSection))
                             [peakPos, fwhm, int, ~, thres, deviation] = ...
