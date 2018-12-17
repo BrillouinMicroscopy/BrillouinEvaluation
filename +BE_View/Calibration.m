@@ -66,19 +66,12 @@ function initGUI(model, view)
     peakTableRayleigh = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.479 0.22 0.106], ...
         'ColumnWidth', {80, 75}, 'ColumnName', {'start','end'}, 'FontSize', 12, 'ColumnEditable', true);
     
-    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Start values:', 'Units', 'normalized',...
-        'Position', [0.02,0.44,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
-    
-    startTable = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.34 0.22 0.10], ...
-        'ColumnWidth', {50, 50, 50, 50, 50, 50, 50}, 'ColumnName', {'d / m', 'n', '<html>&#920;</html>', '<html>x<sub>0</sub> / m</html>', ...
-        '<html>x<sub>s</sub> / m </html>', 'order', 'iterNum'}, 'FontSize', 10, 'ColumnEditable', true);
-    
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Fitted values:', 'Units', 'normalized',...
         'Position', [0.02,0.30,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
     
-    valuesTable = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.17 0.22 0.13], ...
-        'ColumnWidth', {50, 50, 50, 50, 50, 50, 40}, 'ColumnName', {'d / m', 'n', '<html>&#920;</html>', '<html>x<sub>0</sub> / m</html>', ...
-        '<html>x<sub>s</sub> / m</html>', '<html>&#963;</html>', 'active'}, 'FontSize', 10, 'ColumnEditable', true, ...
+    valuesTable = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.20 0.22 0.23], ...
+        'ColumnWidth', {40, 40, 40, 60, 30, 30}, 'ColumnName', {'A', 'B', 'C', 'FSR [GHz]', ...
+        '<html>&#963;</html>', 'active'}, 'FontSize', 10, 'ColumnEditable', true, ...
         'ColumnFormat',[repmat({[]},1,6),'logical']);
     
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Extrapolate:', 'Units', 'normalized',...
@@ -189,7 +182,6 @@ function initGUI(model, view)
         'selectRayleigh', selectRayleigh, ...
         'clearRayleigh', clearRayleigh, ...
         'peakTableRayleigh', peakTableRayleigh, ...
-        'startTable', startTable, ...
         'valuesTable', valuesTable, ...
         'progressBar', progressBar, ...
         'clearCalibration', clearCalibration, ...
@@ -251,30 +243,23 @@ function onSettings(view, model)
     data(:,3) = sample.shift(1);
     handles.peakTableBrillouin.Data = data;
     handles.peakTableRayleigh.Data = sample.indRayleigh;
-    
-    if isfield(model.parameters.calibration.samples.(model.parameters.calibration.selected), 'start')
-        s = model.parameters.calibration.samples.(model.parameters.calibration.selected).start;
-    else
-        s = model.parameters.constants_setup.VIPA;
-        s.iterNum = model.parameters.calibration.iterNum;
-    end
-    startValues = {sprintf('%2.10f',s.d), sprintf('%2.7f',s.n), sprintf('%2.10f',s.theta), ...
-        sprintf('%2.5f',s.x0), sprintf('%2.3f',s.xs), sprintf('%2.0f',s.order), sprintf('%2.0f',s.iterNum)};
-    handles.startTable.Data = startValues;
 
     v = sample.values;
-    if ~isempty(v.d)
-        leng = size(v.d,2);
-        v.error = 1e10 * v.error;
-        parameters = {'d', 'n', 'theta', 'x0', 'xs', 'error'};
-        formats = {'%2.10f', '%2.7f', '%2.10f', '%2.5f', '%2.4f', '%d'};
-        fittedValues = cell(leng,7);
+    if ~isempty(v.A)
+        leng = size(v.A,2);
+        v.A = 1e6*v.A;
+        v.B = 1e13*v.B;
+        v.C = 1e16*v.C;
+        v.FSR = 1e-9*v.FSR;
+        parameters = {'A', 'B', 'C', 'FSR', 'error'};
+        formats = {'%2.5f', '%2.5f', '%2.5f', '%2.3f', '%2.4f'};
+        fittedValues = cell(leng,6);
         for jj = 1:length(parameters)
             for ii = 1:leng
                 fittedValues{ii,jj} = sprintf(formats{jj},v.(parameters{jj})(1,ii));
             end
         end
-        fittedValues(:,7) = num2cell(logical(sample.active));
+        fittedValues(:,6) = num2cell(logical(sample.active));
     else
         fittedValues = [];
     end
@@ -331,7 +316,7 @@ function updateBrillouinShifts(view, model)
         AntiStokes = plot(ax, BrillouinShiftsAS, 'color', [0.9290 0.6940 0.1250]);
         AntiStokes_m = plot(ax, BrillouinShiftsAS_mean, 'LineStyle', '--', 'LineWidth', 0.8, 'color', [0.9290 0.6940 0.1250]);
         ax.ColorOrderIndex = 3;
-        calibration = plot(ax, calibrationFrequency, 'color', [0.8500 0.3250 0.0980]);
+        calibration = plot(ax, 1e-9*calibrationFrequency, 'color', [0.8500 0.3250 0.0980]);
         xlabel(ax, 'Calibration image #');
         ylabel(ax, '$f$ [GHz]', 'interpreter', 'latex');
         if sum(~isnan(BrillouinShiftsS(:)))
@@ -400,26 +385,19 @@ function plotData(handles, model)
         peaksMeasured = [];
         peaksFitted = [];
         x = 1:length(data);
-        if ~sum(isempty(sample.values.d)) && ~sum(isnan(sample.values.d))
+        if ~sum(isempty(sample.values.A)) && ~sum(isnan(sample.values.A))
             peaksMeasured = model.parameters.calibration.samples.(selectedMeasurement).peaksMeasured(mm,:);
             peaksFitted = model.parameters.calibration.samples.(selectedMeasurement).peaksFitted(mm,:);
 
-            params = {'d', 'n', 'theta', 'x0Initial', 'x0', 'xs', 'error'};
+            params = {'A', 'B', 'C', 'FSR'};
+            VIPAparams = NaN(length(params),1);
             for jj = 1:length(params)
-                VIPAparams.(params{jj}) = sample.values.(params{jj})(mm);
+                VIPAparams(jj) = sample.values.(params{jj})(mm);
             end
+            x = BE_SharedFunctions.getFrequency(x, VIPAparams, model.parameters.constants_setup.f_0);
             
-            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants_setup.pixelSize * x, ...
-                VIPAparams, model.parameters.constants_setup, 1);
-            x = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants_setup.lambda0, wavelength);
-
-            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants_setup.pixelSize * peaksMeasured, ...
-                VIPAparams, model.parameters.constants_setup, 1);
-            peaksMeasured = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants_setup.lambda0, wavelength);
-            
-            wavelength = BE_SharedFunctions.getWavelength(model.parameters.constants_setup.pixelSize * peaksFitted, ...
-                VIPAparams, model.parameters.constants_setup, 1);
-            peaksFitted = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants_setup.lambda0, wavelength);
+            peaksMeasured = BE_SharedFunctions.getFrequency(peaksMeasured, VIPAparams, model.parameters.constants_setup.f_0);
+            peaksFitted = BE_SharedFunctions.getFrequency(peaksFitted, VIPAparams, model.parameters.constants_setup.f_0);
             
             xLabelString = '$f$ [GHz]';
         end

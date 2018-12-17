@@ -62,8 +62,7 @@ function selectFrequencyRange(model, type, range, units)
             calibration = model.parameters.calibration;
             valid = ~isnan(calibration.wavelength);
             if ~isempty(calibration.wavelength) && sum(valid(:))
-                wavelength = BE_SharedFunctions.getWavelengthFromMap(x, time, calibration);
-                x = 1e-9*BE_SharedFunctions.getFrequencyShift(model.parameters.constants.lambda0, wavelength);
+                x = BE_SharedFunctions.getFrequencyFromMap(x, times, calibration);
 
                 [~, ind1] = min(abs(x - range(1)));
                 [~, ind2] = min(abs(x - range(2)));

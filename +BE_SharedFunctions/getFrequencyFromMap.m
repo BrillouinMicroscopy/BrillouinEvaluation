@@ -1,6 +1,6 @@
-function [ lambda ] = getWavelengthFromMap( peakPos, time, calibration)
-%% GETWAVELENGTHFROMMAP
-%   This function calculates the wavelength corresponding to the peaks at
+function [ f ] = getFrequencyFromMap( peakPos, time, calibration)
+%% GETFREQUENCYFROMMAP
+%   This function calculates the frequency corresponding to the peaks at
 %   location x in the spectrum of the VIPA spectrometer with the following
 %   parameters:
 % 
@@ -9,19 +9,19 @@ function [ lambda ] = getWavelengthFromMap( peakPos, time, calibration)
 %   time:           [s]     time of the measurement point
 %   calibration =
 %         times:    [s]     times at which the calibration was acquired
-%        pixels:    [pix]   pixel number for which the wavelengths have
+%        pixels:    [pix]   pixel number for which the frequencies have
 %                           been calculated
-%    wavelength:    [m]     wavelengths corresponding to time and pixel
+%    frequency:     [GHz]     frequencies corresponding to time and pixel
 %
 %   ##OUTPUT
-%   lambda:         [nm]    5-D array of the wavelengths
+%   f:              [GHz]    5-D array of the frequencies
 
-    %% discard all invalid wavelengths and corresponding times
-    wavelengths = calibration.wavelength;
-    wavelengths(wavelengths == 0) = NaN;
+    %% discard all invalid frequencies and corresponding times
+    frequency = calibration.frequency;
+    frequency(frequency == 0) = NaN;
     
-    inds = sum(isnan(wavelengths),2) < 1;
-    wavelengths_valid = wavelengths(inds,:);
+    inds = sum(isnan(frequency),2) < 1;
+    frequency_valid = frequency(inds,:);
     times_valid = calibration.times(inds);
     
     %% correct the offset
@@ -60,19 +60,19 @@ function [ lambda ] = getWavelengthFromMap( peakPos, time, calibration)
         peakPos = peakPos - peakPos_offset;
     end
     
-    %% calculate the wavelength
+    %% calculate the frequency
     % decide if interpolation is possible (requires at least two sample
     % points)
-    if size(wavelengths_valid,1) > 3
+    if size(frequency_valid,1) > 3
         [pixels, times] = meshgrid(calibration.pixels, times_valid);
         
         % check if extrapolation is wanted and necessary
         if calibration.extrapolate
-            lambda = interp2(pixels, times, wavelengths_valid, peakPos, time, 'spline');
+            f = interp2(pixels, times, frequency_valid, peakPos, time, 'spline');
         else
-            lambda = interp2(pixels, times, wavelengths_valid, peakPos, time, 'linear', NaN);
+            f = interp2(pixels, times, frequency_valid, peakPos, time, 'linear', NaN);
         end
-    elseif size(wavelengths_valid,1) > 1
+    elseif size(frequency_valid,1) > 1
         [pixels, times] = meshgrid(calibration.pixels, times_valid);
         
         % check if extrapolation is wanted and necessary
@@ -80,14 +80,14 @@ function [ lambda ] = getWavelengthFromMap( peakPos, time, calibration)
             maxTime = max(times_valid(:));
             time(time>maxTime) = maxTime;
         end
-        lambda = interp2(pixels, times, wavelengths_valid, peakPos, time);
+        f = interp2(pixels, times, frequency_valid, peakPos, time);
         
-    elseif size(wavelengths_valid,1) > 0
+    elseif size(frequency_valid,1) > 0
     % if 2D interpolation is not possible ignore the time
-        lambda = interp1(calibration.pixels, wavelengths_valid, peakPos);
+        f = interp1(calibration.pixels, frequency_valid, peakPos);
     else
-    % if there is no valid wavelength map at all, return NaN
-        lambda = NaN(size(peakPos));
+    % if there is no valid frequency map at all, return NaN
+        f = NaN(size(peakPos));
     end
 end
 

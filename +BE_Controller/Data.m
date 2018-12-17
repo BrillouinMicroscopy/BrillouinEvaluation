@@ -53,9 +53,10 @@ function selectLoadData(~, ~, model)
 end
 
 function loadData(model, filePath)
-% Load the h5bm data file
+    model.reset;
+    % Load the h5bm data file
     model.log.log(['I/File: Opened file "' filePath '"']);
-    if ~filePath
+    if isempty(filePath)
         return
     end
     [PathName, name, extension] = fileparts(filePath);
@@ -385,7 +386,7 @@ function loadData(model, filePath)
                     parameters.constants_general = model.defaultParameters.constants_general;
                 end
                 if ~isfield(parameters, 'constants_setup')
-                    parameters.constants_setup = model.defaultParameters.constants_setup;
+                    parameters.constants_setup = model.availableSetups.S0;
                 end
                 if isfield(parameters, 'constants')
                     parameters = rmfield(parameters, 'constants');
@@ -400,18 +401,45 @@ function loadData(model, filePath)
                 % peak region and not the two peaks separately. Hence, the
                 % regions are merged here.
                 samples = parameters.calibration.samples;
+                if isfield(parameters.calibration, 'wavelength')
+                    parameters.calibration = rmfield(parameters.calibration, 'wavelength');
+                    parameters.calibration.frequency = [];
+                end
                 sampleKeys = fields(samples);
                 for jj = 1:length(sampleKeys)
                     sample = samples.(sampleKeys{jj});
-                    sample.nrBrillouinSamples = size(sample.indBrillouin,1)/2;
-                    % Merge the peak regions
-                    indBrillouin = NaN(2, 2);
-                    indBrillouin(1, 1) = sample.indBrillouin(1, 1);
-                    indBrillouin(1, 2) = sample.indBrillouin(sample.nrBrillouinSamples, 2);
-                    indBrillouin(2, 1) = sample.indBrillouin(sample.nrBrillouinSamples+1, 1);
-                    indBrillouin(2, 2) = sample.indBrillouin(end, 2);
-                    sample.indBrillouin = indBrillouin;
-                    samples.(sampleKeys{jj}) = sample;
+                    if ~isfield(sample, 'nrBrillouinSamples')
+                        if ~isempty(sample.indBrillouin)
+                            sample.nrBrillouinSamples = size(sample.indBrillouin,1)/2;
+                            % Merge the peak regions
+                            indBrillouin = NaN(2, 2);
+                            indBrillouin(1, 1) = sample.indBrillouin(1, 1);
+                            indBrillouin(1, 2) = sample.indBrillouin(sample.nrBrillouinSamples, 2);
+                            indBrillouin(2, 1) = sample.indBrillouin(sample.nrBrillouinSamples+1, 1);
+                            indBrillouin(2, 2) = sample.indBrillouin(end, 2);
+                            sample.indBrillouin = indBrillouin;
+                        else
+                            sample.nrBrillouinSamples = 2;
+                        end
+                        if isfield(sample, 'start')
+                            sample = rmfield(sample, 'start');
+                        end
+                        if isfield(sample, 'fac')
+                            sample = rmfield(sample, 'fac');
+                        end
+                        sample.values = struct( ...
+                            'A', [], ...
+                            'B', [], ...
+                            'C', [], ...
+                            'FSR', [], ...
+                            'error', [] ...
+                        );
+                        if isfield(sample, 'wavelengths')
+                            sample = rmfield(sample, 'wavelengths');
+                            sample.frequencies = [];
+                        end
+                        samples.(sampleKeys{jj}) = sample;
+                    end
                 end
                 parameters.calibration.samples = samples;
                 
@@ -431,6 +459,8 @@ function loadData(model, filePath)
             model.parameters = parameters;
             model.results = results;
             model.displaySettings = displaySettings;
+            
+            model.controllers.calibration.calibrateAll(false);
             
         else
             parameters = model.parameters;
@@ -456,7 +486,7 @@ function loadData(model, filePath)
             parameters.calibration.selected = sampleKeys{1};
             
             parameters.calibration.times(:) = NaN;
-            parameters.calibration.wavelength(:) = NaN;
+            parameters.calibration.frequency(:) = NaN;
             parameters.calibration.offset(:) = 0;
 
             %% set start values for spectrum axis fitting
@@ -477,6 +507,7 @@ function loadData(model, filePath)
                 'peaksBrillouin_dev',       NaN, ...    % [pix]  the deviation of the Brillouin fit
                 'peaksBrillouin_int',       NaN, ...    % [a.u.] the intensity of the Brillouin peak(s)
                 'peaksBrillouin_fwhm',      NaN, ...    % [pix]  the FWHM of the Brillouin peak
+                'peaksBrillouin_fwhm_frequency', NaN,...% [GHz]  the FWHM of the Brillouin peak in GHz
                 'peaksRayleigh_pos',        NaN, ...    % [pix]  the position of the Rayleigh peak(s) in the spectrum
                 'intensity',                NaN, ...    % [a.u.] the overall intensity of the image
                 'validity',                 false, ...  % [logical] the validity of the results
@@ -513,6 +544,7 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
                 'position', jj, ...
                 'indRayleigh', [], ...
                 'indBrillouin', [], ...
+                'nrBrillouinSamples', 2, ...
                 'shift', getCalibration(model, 'shift', jj), ...
                 'peaksMeasured', [], ...
                 'peaksFitted', [], ...
@@ -521,13 +553,11 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
                 'active', ones(nrImages,1), ...
                 'time', getCalibration(model, 'date', jj), ...
                 'values', struct( ...   % struct with all values
-                    'd',        [], ... % [m]   width of the cavity
-                    'n',        [], ... % [1]   refractive index of the VIPA
-                    'theta',    [], ... % [rad] angle of the VIPA
-                    'x0Initial',[], ... % [m]   offset for fitting
-                    'x0',       [], ... % [m]   offset for fitting, corrected for each measurement
-                    'xs',       [], ... % [1]   scale factor for fitting
-                    'error',    []  ... % [1]   uncertainty of the fit
+                    'A', [], ...
+                    'B', [], ...
+                    'C', [], ...
+                    'FSR', [], ...
+                    'error', [] ...
                 ) ...
             );
             jj = jj + 1;
@@ -550,18 +580,17 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
         ), ...
         'indRayleigh', [47, 85; 255, 284], ...
         'indBrillouin', [151, 162; 206, 222], ...
+        'nrBrillouinSamples', 2, ...
         'shift', 5.1, ...
         'peaksMeasured', [], ...
         'peaksFitted', [], ...
         'time', getPayload(model, 'date', x, y, z), ...
         'values', struct( ...   % struct with all values
-            'd',        [], ... % [m]   width of the cavity
-            'n',        [], ... % [1]   refractive index of the VIPA
-            'theta',    [], ... % [rad] angle of the VIPA
-            'x0Initial',[], ... % [m]   offset for fitting
-            'x0',       [], ... % [m]   offset for fitting, corrected for each measurement
-            'xs',       [], ... % [1]   scale factor for fitting
-            'error',    []  ... % [1]   uncertainty of the fit
+            'A', [], ...
+            'B', [], ...
+            'C', [], ...
+            'FSR', [], ...
+            'error', [] ...
         ) ....
     );
 end
@@ -671,7 +700,7 @@ function count = getRepetitionCount(file)
     e = '';
     while isempty(e)
         try
-            file.readPayloadData('Brillouin', count, 'date', 1, 1, 1);
+            file.getDate('Brillouin', count);
             count = count + 1;
         catch e %#ok<NASGU>
         end

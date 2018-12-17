@@ -1,24 +1,18 @@
-function [ x_F, m ] = peakPosition( VIPAparams, constants, orders, lambda )
-%PEAKPOSITION 
-% Uses the non-linear description from DOI 10.1109/JQE.2004.825210
+function [ r ] = peakPosition( VIPAparams, constants, frequencies )
+%PEAKPOSITION
+% Find the position on the camera for a given frequency
 
-% create shortcuts for often used values
-n = VIPAparams.n;
-theta = VIPAparams.theta;
-F = constants.F;
+a = VIPAparams.C;
+b = VIPAparams.B;
+c = VIPAparams.A - 1./(frequencies + 1e-9*constants.f_0);
 
-%% internal angle
-theta_in = asin(sin(theta)/n);
+r1 = -b./(2*a) + sqrt(b^2 - 4*a*c)./(2*a);
+r2 = -b./(2*a) - sqrt(b^2 - 4*a*c)./(2*a);
 
-%% interesting number of wavelengths
-% (given by startOrder and number of requested peaks)
-m = BE_SharedFunctions.getOrder( VIPAparams, constants, orders );
+if sum(r1(:)) > sum(r2(:))
+    r = r1;
+else
+    r = r2;
+end
 
-%% position of the peaks
-% solve eq. 14 by x_F
-x_F =      -n*F*tan(theta_in)*cos(theta)/(cos(theta_in)) + ...
-      sqrt((n*F*tan(theta_in)*cos(theta)/(cos(theta_in)))^2 + ...
-      2*n^2*F^2 - n*F^2*m.*lambda./(VIPAparams.d*cos(theta_in)));
-
-x_F = (x_F * VIPAparams.xs) + VIPAparams.x0;
 end

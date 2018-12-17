@@ -44,7 +44,7 @@ for jj = 1:length(filelist)
                     controllers.calibration.setActive();
                 %         controllers.calibration.findPeaks();
                 %         controllers.calibration.updateCalibration();
-                    controllers.calibration.calibrateAll();             % calibrate the frequency axis using all reference measurements
+                    controllers.calibration.calibrateAll(true);         % calibrate the frequency axis using all reference measurements
                     drawnow;
                 end
 

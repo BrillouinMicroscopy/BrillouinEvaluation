@@ -47,6 +47,34 @@ classdef Model < handle
             'masks',                    struct() ...%        struct for the masks
         );
         %% Parameters of the acquisition and settings used for evaluating
+        % Available setups
+        availableSetups = struct( ...
+            'S0', struct( ...                   % constants for the 780 nm setup
+                'name', '780 nm @ Biotec R340', ... %   name of the setup
+                'pixelSize', 6.5e-6, ...        % [m]   pixel size of the camera
+                'lambda0', 780.24e-9, ...       % [m]   laser wavelength
+                'F', 0.2, ...                   % [m]   focal length of the lens behind the VIPA
+                'VIPA', struct( ...             % start values for the VIPA fit
+                    'd',     0.006743, ...      % [m]   width of the cavity
+                    'n',     1.45367, ...       % [1]   refractive index of the VIPA
+                    'theta', 0.8*2*pi/360, ...  % [rad] angle of the VIPA
+                    'order', 0 ...              % [1]   observed order of the VIPA spectrum
+                ) ...
+            ), ...
+            'S1', struct( ...                   % constants for the 532 nm setup
+                'name', '532 nm @ Biotec R314', ... %   name of the setup
+                'pixelSize', 6.5e-6, ...        % [m]   pixel size of the camera
+                'lambda0', 523e-9, ...          % [m]   laser wavelength
+                'F', 0.2, ...                   % [m]   focal length of the lens behind the VIPA
+                'VIPA', struct( ...             % start values for the VIPA fit
+                    'd',     0.003371, ...      % [m]   width of the cavity
+                    'n',     1.46071, ...       % [1]   refractive index of the VIPA
+                    'theta', 0.8*2*pi/360, ...  % [rad] angle of the VIPA
+                    'order', 0 ...              % [1]   observed order of the VIPA spectrum
+                ) ...
+            ) ...
+        );
+        
         % Saved to evaluated data file
         defaultParameters = struct( ...
             'programVersion', BE_Model.Model.programVersion, ...
@@ -74,22 +102,16 @@ classdef Model < handle
             'constants_general', struct( ...        % constants used for VIPA fit
                 'c', 299792458 ...         % [m/s] speed of light
             ), ...
-            'constants_setup', struct( ...
+            'constants_setup', struct( ...                   % constants for the 780 nm setup
+                'name', '780 nm @ Biotec R340', ... %   name of the setup
                 'pixelSize', 6.5e-6, ...        % [m]   pixel size of the camera
                 'lambda0', 780.24e-9, ...       % [m]   laser wavelength
                 'F', 0.2, ...                   % [m]   focal length of the lens behind the VIPA
-                'cavitySlope', -3840, ...       % [pix/m] empirically determinded factor between the
-                ...                             %         difference of measured and fitted peak positions
-                ...                             %         (calculated in +BE_Controller\Calibration.m lines 275 ff.)
-                ...                             %         and the VIPA cavity width [see +BE_Controller\Calibration.m:testCavitySlope()]
-                'cavitySlope2', -5830, ...      % same as cavitySlope, but for two pairs of Brillouin peaks
-                'VIPA', struct( ...            % start values for the VIPA fit
-                    'd',    0.006743, ...       % [m]   width of the cavity
-                    'n',    1.4607, ...         % [1]   refractive index of the VIPA
-                    'theta',0.8*2*pi/360, ...   % [rad] angle of the VIPA
-                    'x0',   0.0021, ...         % [m]   offset for fitting
-                    'xs',   1.0000, ...         % [1]   scale factor for fitting
-                    'order', 1 ...              % [1]   observed order of the VIPA spectrum
+                'VIPA', struct( ...             % start values for the VIPA fit
+                    'd',     0.006743, ...      % [m]   width of the cavity
+                    'n',     1.45367, ...       % [1]   refractive index of the VIPA
+                    'theta', 0.8*2*pi/360, ...  % [rad] angle of the VIPA
+                    'order', 0 ...              % [1]   observed order of the VIPA spectrum
                 ) ...
             ), ...
             'extraction', struct( ...
@@ -134,11 +156,10 @@ classdef Model < handle
                 'correctOffset', false, ...
                 'peakTypes', {{'R', 'B', 'B', 'B' ,'B', 'R'}}, ... % expected types of peaks
                 'peakProminence', 15, ...       % the minimal prominence of the peaks (used for finding peaks)
-                'wavelength', [], ...           % [m]   the wavelength corresponding to every pixel
+                'frequency', [], ...            % [GHz] the wavelength corresponding to every pixel
                 'times', [], ...                % [s]   the time vector of the calibration measurements
                 'pixels', [], ...            	% [pix] the pixel value of the calibration axis
-                'offset', [], ...               % [pix] offset of the calibration
-                'iterNum', 8 ...                % [1]   number of iterations for the fit
+                'offset', [] ...               % [pix] offset of the calibration
             ), ...
             'evaluation', struct( ...
                 'fwhm', 5, ...              % [pix] initial value for the FWHM of the Brillouin peak
