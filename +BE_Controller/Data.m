@@ -8,6 +8,7 @@ function callbacks = Data(model, view)
     
     set(view.data.repetition, 'Callback', {@selectRepetition, model});
     
+    set(view.data.setup, 'Callback', {@selectSetup, model});
     
     set(view.data.vertically, 'Callback', {@toggleVertically, model, view});
     set(view.data.horizontally, 'Callback', {@toggleHorizontally, model, view});
@@ -712,4 +713,9 @@ function selectRepetition(src, ~, model)
     model.repetition = val - 1;
     
     loadData(model, [model.filepath model.filename]);
+end
+
+function selectSetup(src, ~, model)
+    val = get(src, 'Value');
+    model.parameters.constants_setup = model.availableSetups.(sprintf('S%d', val-1));
 end

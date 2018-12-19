@@ -305,23 +305,15 @@ function calibrate(~, ~, model, view)
     pixels = calibration.pixels;
     constants = model.parameters.constants_setup;
     constants.c = model.parameters.constants_general.c;
-    constants.bShiftCal = sample.shift*1e9;
 
     %% calculate dependent values
     constants.f_0 = constants.c/constants.lambda0;                                              % [Hz]  frequency of the laser
     constants.VIPA.FSR = constants.c/(2*constants.VIPA.n*constants.VIPA.d*cos(constants.VIPA.theta));   %[Hz]  free spectral range of the VIPAs
     constants.VIPA.m = round(constants.c/(constants.lambda0 * constants.VIPA.FSR));                 % [1]   order
     
-    
-    %% workaround in case two pairs of peaks are used to calibrate
-    %  necessary because currently only one Brillouin shift value is stored
-    %  in the raw data file
-    sample.shift = 3.78e9;
-    if sample.nrBrillouinSamples > 1 && size(constants.bShiftCal,1) < 2
-        sample.shift(1) = 3.78e9;   % [Hz]  Brillouin shift of methanol
-        sample.shift(2) = 5.066e9;  % [Hz]  Brillouin shift of water
-    end
-    constants.bShiftCal = sample.shift;
+    %% get the Brillouin shift of the calibration sample from the setup constants
+    sample.shift = constants.calibration.shifts;
+    sample.nrBrillouinSamples = constants.calibration.nrBrillouinSamples;
     
     model.parameters.constants_setup = constants;
     
@@ -793,7 +785,9 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peaks, const)
     %             F:    [m]     focal length of the lens behind the VIPA
     %     pixelSize:    [m]     pixel size of the camera
     %       lambda0:    [m]     laser wavelength
-    %     bShiftCal:    [Hz]    calibration shift frequency
+    %     calibration: struct
+    %             shifts:   [Hz]    calibration shift frequency
+    % nrBrillouinSamples:   [1]     number of Brillouin calibration samples
     % 
     %   ##OUTPUT
     %   VIPAparams =
@@ -819,10 +813,10 @@ function [VIPAparams, peakPosFitted] = fitVIPA(peaks, const)
     
     shifts = [ ...
         0, ...
-        const.bShiftCal(1), ...
-        const.bShiftCal(2), ...
-        -const.bShiftCal(2), ...
-        -const.bShiftCal(1), ...
+        const.calibration.shifts(1), ...
+        const.calibration.shifts(2), ...
+        -const.calibration.shifts(2), ...
+        -const.calibration.shifts(1), ...
         0 ...
     ];
     
