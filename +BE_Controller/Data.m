@@ -57,7 +57,7 @@ function loadData(model, filePath)
     model.reset;
     % Load the h5bm data file
     model.log.log(['I/File: Opened file "' filePath '"']);
-    if isempty(filePath)
+    if isempty(filePath) || ~sum(filePath)
         return
     end
     [PathName, name, extension] = fileparts(filePath);
