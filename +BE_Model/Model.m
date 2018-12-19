@@ -64,7 +64,7 @@ classdef Model < handle
             'S1', struct( ...                   % constants for the 532 nm setup
                 'name', '532 nm @ Biotec R314', ... %   name of the setup
                 'pixelSize', 6.5e-6, ...        % [m]   pixel size of the camera
-                'lambda0', 523e-9, ...          % [m]   laser wavelength
+                'lambda0', 532e-9, ...          % [m]   laser wavelength
                 'F', 0.2, ...                   % [m]   focal length of the lens behind the VIPA
                 'VIPA', struct( ...             % start values for the VIPA fit
                     'd',     0.003371, ...      % [m]   width of the cavity
