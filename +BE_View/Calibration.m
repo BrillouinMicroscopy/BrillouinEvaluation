@@ -66,6 +66,12 @@ function initGUI(model, view)
     peakTableRayleigh = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.479 0.22 0.106], ...
         'ColumnWidth', {80, 75}, 'ColumnName', {'start','end'}, 'FontSize', 12, 'ColumnEditable', true);
     
+    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Overlay measurement', 'Units', 'normalized',...
+        'Position', [0.02,0.43,0.2,0.04], 'FontSize', 11, 'HorizontalAlignment', 'left');
+
+    overlay = uicontrol('Parent', parent, 'Style', 'checkbox', 'Units', 'normalized',...
+        'Position', [0.224,0.434,0.02,0.04], 'FontSize', 11, 'HorizontalAlignment', 'left', 'tag', 'Positions');
+    
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Fitted values:', 'Units', 'normalized',...
         'Position', [0.02,0.30,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
     
@@ -182,6 +188,7 @@ function initGUI(model, view)
         'selectRayleigh', selectRayleigh, ...
         'clearRayleigh', clearRayleigh, ...
         'peakTableRayleigh', peakTableRayleigh, ...
+        'overlay', overlay, ...
         'valuesTable', valuesTable, ...
         'progressBar', progressBar, ...
         'clearCalibration', clearCalibration, ...
@@ -239,6 +246,7 @@ function onSettings(view, model)
     set(handles.extrapolate, 'Value', model.parameters.calibration.extrapolate);
     set(handles.weighted, 'Value', model.parameters.calibration.weighted);
     set(handles.correctOffset, 'Value', model.parameters.calibration.correctOffset);
+    set(handles.overlay, 'Value', sample.overlay);
     data = sample.indBrillouin;
     data(:,3) = sample.shift(1);
     handles.peakTableBrillouin.Data = data;
@@ -377,6 +385,10 @@ function plotData(handles, model)
     
     imgs = medfilt1(imgs,3);
     img = nanmean(imgs, 3);
+    %% Overlay the calibration image with a measurement image if requested
+    if sample.overlay
+        img = BE_SharedFunctions.overlayMeasurementImage(model, img, calibration.selectedValue);
+    end
     data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
     if ~isempty(data)
         hold(ax, 'off');
