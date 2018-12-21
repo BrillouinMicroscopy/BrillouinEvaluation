@@ -54,15 +54,23 @@ function initGUI(model, view)
     
 
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'General:', 'Units', 'normalized',...
-        'Position', [0.02,0.47,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
+        'Position', [0.02,0.49,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
     
     clearPeaksAll = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
-        'String','Clear','Position',[0.02,0.410,0.1,0.055],...
+        'String','Clear','Position',[0.02,0.450,0.1,0.04],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     autoPeaksAll = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
-        'String','Autofind','Position',[0.14,0.410,0.1,0.055],...
+        'String','Autofind','Position',[0.14,0.450,0.1,0.04],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
+    
+    
+    
+    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Overlay measurement', 'Units', 'normalized',...
+        'Position', [0.02,0.395,0.2,0.04], 'FontSize', 11, 'HorizontalAlignment', 'left');
+
+    overlay = uicontrol('Parent', parent, 'Style', 'checkbox', 'Units', 'normalized',...
+        'Position', [0.224,0.399,0.02,0.04], 'FontSize', 11, 'HorizontalAlignment', 'left', 'tag', 'Positions');
     
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Width of the fit [pix]:', 'Units', 'normalized',...
         'Position', [0.02,0.355,0.17,0.03], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -103,19 +111,19 @@ function initGUI(model, view)
              'Position', [.02 .04 .22 .16]);
     
     uicontrol('Parent', plotSelection, 'Style', 'text', 'String', 'Fit borders', 'Units', 'normalized',...
-        'Position', [0.02,0.75,0.8,0.2], 'FontSize', 11, 'HorizontalAlignment', 'left');
+        'Position', [0.02,0.71,0.8,0.25], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
     showBorders = uicontrol('Parent', plotSelection, 'Style', 'checkbox', 'Units', 'normalized',...
         'Position', [0.85,0.725,0.1,0.2], 'FontSize', 11, 'HorizontalAlignment', 'left', 'tag', 'Borders');
     
     uicontrol('Parent', plotSelection, 'Style', 'text', 'String', 'Fit center', 'Units', 'normalized',...
-        'Position', [0.02,0.45,0.9,0.2], 'FontSize', 11, 'HorizontalAlignment', 'left');
+        'Position', [0.02,0.41,0.9,0.25], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
     showCenter = uicontrol('Parent', plotSelection, 'Style', 'checkbox', 'Units', 'normalized',...
         'Position', [0.85,0.425,0.1,0.2], 'FontSize', 11, 'HorizontalAlignment', 'left', 'tag', 'Center');
     
     uicontrol('Parent', plotSelection, 'Style', 'text', 'String', 'Interpolation positions', 'Units', 'normalized',...
-        'Position', [0.02,0.15,0.9,0.2], 'FontSize', 11, 'HorizontalAlignment', 'left');
+        'Position', [0.02,0.11,0.9,0.25], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
     showPositions = uicontrol('Parent', plotSelection, 'Style', 'checkbox', 'Units', 'normalized',...
         'Position', [0.85,0.125,0.1,0.2], 'FontSize', 11, 'HorizontalAlignment', 'left', 'tag', 'Positions');
@@ -232,6 +240,7 @@ function initGUI(model, view)
         'interpolationDirectionGroup', interpolationDirectionGroup, ...
         'interpolationDirection', interpolationDirection, ...
         'width', width, ...
+        'overlay', overlay, ...
         'showBorders', showBorders, ...
         'showCenter', showCenter, ...
         'showPositions', showPositions ...
@@ -326,9 +335,15 @@ function onSettingsChange(view, model)
     extraction = model.parameters.extraction;
     set(handles.width, 'String', extraction.width);
     
+    set(handles.overlay, 'Value', extraction.overlay);
+    
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
             img = model.controllers.data.getCalibration('data', extraction.currentCalibrationNr);
+            %% Overlay the calibration image with a measurement image if requested
+            if model.parameters.extraction.overlay
+                img = BE_SharedFunctions.overlayMeasurementImage(model, img, extraction.currentCalibrationNr);
+            end
         catch
             img = model.controllers.data.getPayload('data', 1, 1, 1);
         end
@@ -400,7 +415,13 @@ function showInterpolationPositions(handles, model)
             delete(model.handles.plotPositions);
         catch
         end
+        
         model.handles.plotPositions = plot(handles.axesImage, positions.x(:,:,calNr), positions.y(:,:,calNr), 'color', 'yellow');
+        if model.displaySettings.extraction.showPositions
+            set(model.handles.plotPositions, 'Visible', 'on');
+        else
+            set(model.handles.plotPositions, 'Visible', 'off');
+        end
     catch
     end
 end

@@ -444,6 +444,10 @@ function loadData(model, filePath)
                 end
                 parameters.calibration.samples = samples;
                 
+                if ~isfield(parameters.extraction, 'overlay')
+                    parameters.extraction.overlay = false;
+                end
+                
                 % set version to 1.4.0 to allow further migration steps
                 % possibly necessary for future versions
                 parameters.programVersion = struct( ...
