@@ -18,6 +18,7 @@ function callbacks = Calibration(model, view)
     set(view.calibration.clearRayleigh, 'Callback', {@clearPeaks, model, 'Rayleigh'});
     
     set(view.calibration.clearCalibration, 'Callback', {@clearCalibration, model});
+    set(view.calibration.overlay, 'Callback', {@setOverlay, model});
     
     set(view.calibration.zoomIn, 'Callback', {@zoom, 'in', view});
     set(view.calibration.zoomOut, 'Callback', {@zoom, 'out', view});
@@ -111,6 +112,10 @@ function findPeaks(~, ~, model)
     %% handle images and roughly find peaks
     imgs = medfilt1(imgs,3);    % median filter to remove salt and pepper noise
     img = nanmean(imgs, 3);
+    %% Overlay the calibration image with a measurement image if requested
+    if sample.overlay
+        img = BE_SharedFunctions.overlayMeasurementImage(model, img, calibration.selectedValue);
+    end
     data = BE_SharedFunctions.getIntensity1D(img, model.parameters.extraction, time);
     
     [peaks.height, peaks.locations, peaks.widths, peaks.proms] = findpeaks(data, 'Annotate', 'extents', 'MinPeakProminence', calibration.peakProminence);
@@ -336,6 +341,16 @@ function calibrate(~, ~, model, view)
     
     for mm = 1:nrImages
         data = BE_SharedFunctions.getIntensity1D(imgs(:,:,mm), extraction, time);
+        dataRayleigh = data;
+        
+        %% Overlay the calibration image with a measurement image if requested
+        % we only take into account the Rayleigh peak region, because we
+        % don't want to alter the Brillouin region with peaks from the
+        % sample
+        if sample.overlay
+            overlayedImage = BE_SharedFunctions.overlayMeasurementImage(model, imgs(:,:,mm), calibration.selectedValue);
+            dataRayleigh = BE_SharedFunctions.getIntensity1D(overlayedImage, extraction, time);
+        end
 
 %         nrPositions = size(data,2)/0.1;
 %         calibration.pixels = linspace(1,size(data,2),nrPositions);
@@ -343,7 +358,7 @@ function calibrate(~, ~, model, view)
         %% find the measured peaks
         peakPos = NaN(1, nrPeaks);
         for jj = 1:length(indRayleigh)
-            spectrumSection = data(indRayleigh(jj,1):indRayleigh(jj,2));
+            spectrumSection = dataRayleigh(indRayleigh(jj,1):indRayleigh(jj,2));
             [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, 1, [6 20], 0);
             peakPos(jj) = tmp+indRayleigh(jj,1)-1;
         end
@@ -507,6 +522,10 @@ function updateCalibrationBrillouinShift(model)
         end
     end
     model.parameters.calibration = calibration;
+end
+
+function setOverlay(src, ~, model)
+    model.parameters.calibration.samples.(model.parameters.calibration.selected).overlay = get(src, 'Value');
 end
 
 function toggleExtrapolation(src, ~, model)

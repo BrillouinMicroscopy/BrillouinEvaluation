@@ -409,6 +409,9 @@ function loadData(model, filePath)
                 sampleKeys = fields(samples);
                 for jj = 1:length(sampleKeys)
                     sample = samples.(sampleKeys{jj});
+                    if ~isfield(sample, 'overlay')
+                        sample.overlay = false;
+                    end
                     if ~isfield(sample, 'nrBrillouinSamples')
                         if ~isempty(sample.indBrillouin)
                             sample.nrBrillouinSamples = size(sample.indBrillouin,1)/2;
@@ -439,10 +442,14 @@ function loadData(model, filePath)
                             sample = rmfield(sample, 'wavelengths');
                             sample.frequencies = [];
                         end
-                        samples.(sampleKeys{jj}) = sample;
                     end
+                    samples.(sampleKeys{jj}) = sample;
                 end
                 parameters.calibration.samples = samples;
+                
+                if ~isfield(parameters.extraction, 'overlay')
+                    parameters.extraction.overlay = true;
+                end
                 
                 % set version to 1.4.0 to allow further migration steps
                 % possibly necessary for future versions
@@ -542,6 +549,7 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
             nrImages = size(data,3);
             samples.(sampleKey) = struct( ...
                 'sampleType', sampleType, ...
+                'overlay', false, ...
                 'position', jj, ...
                 'indRayleigh', [], ...
                 'indBrillouin', [], ...
@@ -573,6 +581,7 @@ function [samples, hasCalibration] = readCalibrationSamples(model)
     nrSamples = length(fields(samples));
     samples.measurement = struct( ...
         'sampleType', 'measurement', ...
+        'overlay', false, ...
         'position', nrSamples + 1, ...
         'imageNr', struct( ...
             'x', x, ...

@@ -16,6 +16,7 @@ function callbacks = Extraction(model, view)
     set(view.extraction.interpolationDirection, 'Callback', {@changeSettings, view, model});
     
     set(view.extraction.width, 'Callback', {@changeSettings, view, model});
+    set(view.extraction.overlay, 'Callback', {@setOverlay, model});
     
     set(view.extraction.zoomIn, 'Callback', {@zoom, 'in', view, model});
     set(view.extraction.zoomOut, 'Callback', {@zoom, 'out', view, model});
@@ -80,6 +81,10 @@ function findPeaks(varargin)
             % get the image
             try
                 img = model.controllers.data.getCalibration('data', currentCalibrationNr);
+                %% Overlay the calibration image with a measurement image if requested
+                if model.parameters.extraction.overlay
+                    img = BE_SharedFunctions.overlayMeasurementImage(model, img, currentCalibrationNr);
+                end
             catch
                 img = model.controllers.data.getPayload('data', 1, 1, 1);
             end
@@ -298,10 +303,15 @@ function optimizePeaks(varargin)
     if isa(model.file, 'BE_Utils.HDF5Storage.h5bm') && isvalid(model.file)
         try
             img = model.controllers.data.getCalibration('data', currentCalibrationNr);
+            img = nanmean(img, 3);
+            %% Overlay the calibration image with a measurement image if requested
+            if model.parameters.extraction.overlay
+                img = BE_SharedFunctions.overlayMeasurementImage(model, img, currentCalibrationNr);
+            end
         catch
             img = model.controllers.data.getPayload('data', 1, 1, 1);
+            img = nanmean(img, 3);
         end
-        img = nanmean(img, 3);
         
         r=10;
         % do a median filtering to prevent finding maxixums which are none,
@@ -596,6 +606,10 @@ end
 function showGraphs(src, ~, model)
     tag = get(src, 'Tag');
     model.displaySettings.extraction.(['show' tag]) = get(src, 'Value');
+end
+
+function setOverlay(src, ~, model)
+    model.parameters.extraction.overlay = get(src, 'Value');
 end
 
 function setClim(UIControl, ~, model)
