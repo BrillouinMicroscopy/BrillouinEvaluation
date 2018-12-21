@@ -88,6 +88,14 @@ function initGUI(~, view)
     uicontrol('Parent', mirrorGroup, 'Style', 'text', 'String', 'Horizontally', 'Units', 'normalized',...
         'Position', [0.18,0.45,0.9,0.22], 'FontSize', 11, 'HorizontalAlignment', 'left');
     
+    setup_panel = uipanel('Parent', parent, 'Title', 'Setup selection', 'FontSize', 11,...
+                 'Position', [.44 .68 .3 .10]);
+    
+    uicontrol('Parent', setup_panel, 'Style','text','String','Selected setup:', 'Units', 'normalized',...
+               'Position',[0.02,0.03,0.4,0.8], 'FontSize', 11, 'HorizontalAlignment', 'left');   
+    setup = uicontrol('Parent', setup_panel, 'Style','popup', 'Units', 'normalized',...
+               'Position',[0.42,0.1,0.55,0.8], 'FontSize', 11, 'HorizontalAlignment', 'left', 'String', {''});
+    
     %% Return handles
     view.data = struct(...
         'parent', parent, ...
@@ -102,7 +110,8 @@ function initGUI(~, view)
         'rotationGroup', rotationGroup, ...
         'rotation', rotation, ...
         'vertically', vertically, ...
-        'horizontally', horizontally ...
+        'horizontally', horizontally, ...
+        'setup', setup ...
 	);
 end
 
@@ -154,4 +163,17 @@ function onFileLoad(view, model)
     
     set(handles.repetition, 'String', reps);
     set(handles.repetition, 'Value', model.repetition+1);
+    
+    setups = fields(model.availableSetups);
+    setup_names = cell(length(setups), 1);
+    selectedSetup = NaN;
+    for jj = 1:length(setups)
+       setup_names{jj} = model.availableSetups.(setups{jj}).name;
+       if strcmp(model.availableSetups.(setups{jj}).name, model.parameters.constants_setup.name)
+           selectedSetup = jj;
+       end
+    end
+    
+    set(handles.setup, 'String', setup_names);
+    set(handles.setup, 'Value', selectedSetup);
 end

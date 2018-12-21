@@ -1,4 +1,4 @@
-function [frequencyShift] = getFrequencyShift(wavelength, reference)
+function [frequency] = getFrequency(pixel, VIPAparams, f_0)
 %% GETFREQUENCYSHIFT
 %   This function calculates the frequency shift of wavelength compared to
 %   reference
@@ -10,9 +10,7 @@ function [frequencyShift] = getFrequencyShift(wavelength, reference)
 %   ##OUTPUT
 %   frequencyShift: [Hz]    frequency shift
 
-%%
-c = 299792458;    % [m/s]   speed of light
-
-frequencyShift = c./reference - c./wavelength;
+    % define theoretical frequency function
+    frequency = 1 ./ (VIPAparams(1) + VIPAparams(2)*pixel + VIPAparams(3)*pixel.^2) - 1e-9*f_0;  % returns frequency in GHz
 
 end

@@ -286,15 +286,17 @@ function evaluate(view, model)
                         %% calculate the Brillouin shift in [GHz]
                         calibration = model.parameters.calibration;
                         
-                        wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromMap(peaksRayleigh_pos, times, calibration);
-                        wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromMap(peaksBrillouin_pos, times, calibration);
+                        frequencyRayleigh = BE_SharedFunctions.getFrequencyFromMap(peaksRayleigh_pos, times, calibration);
+                        frequencyBrillouin = BE_SharedFunctions.getFrequencyFromMap(peaksBrillouin_pos, times, calibration);
                         
-                        brillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
+                        brillouinShift_frequency = abs(frequencyBrillouin - frequencyRayleigh);
                         
-                        wavelengthLeftSlope = BE_SharedFunctions.getWavelengthFromMap(peaksBrillouin_pos - peaksBrillouin_fwhm/2, times, calibration);
-                        wavelengthRightSlope = BE_SharedFunctions.getWavelengthFromMap(peaksBrillouin_pos + peaksBrillouin_fwhm/2, times, calibration);
-                        
-                        peaksBrillouin_fwhm_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthLeftSlope, wavelengthRightSlope));
+                        frequencyLeftSlope = BE_SharedFunctions.getFrequencyFromMap(...
+                            peaksBrillouin_pos - peaksBrillouin_fwhm/2, times, calibration);
+                        frequencyRightSlope = BE_SharedFunctions.getFrequencyFromMap(...
+                            peaksBrillouin_pos + peaksBrillouin_fwhm/2, times, calibration);
+
+                        peaksBrillouin_fwhm_frequency = abs(frequencyLeftSlope - frequencyRightSlope);
                         
                         %% save the results
                         results = model.results;
@@ -381,15 +383,15 @@ function evaluate(view, model)
     %% calculate the Brillouin shift in [GHz]
     calibration = model.parameters.calibration;
     
-    wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromMap(peaksRayleigh_pos, times, calibration);
-    wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromMap(peaksBrillouin_pos, times, calibration);
-    
-    brillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
-    
-    wavelengthLeftSlope = BE_SharedFunctions.getWavelengthFromMap(peaksBrillouin_pos - peaksBrillouin_fwhm/2, times, calibration);
-    wavelengthRightSlope = BE_SharedFunctions.getWavelengthFromMap(peaksBrillouin_pos + peaksBrillouin_fwhm/2, times, calibration);
+    frequencyRayleigh = BE_SharedFunctions.getFrequencyFromMap(peaksRayleigh_pos, times, calibration);
+    frequencyBrillouin = BE_SharedFunctions.getFrequencyFromMap(peaksBrillouin_pos, times, calibration);
 
-    peaksBrillouin_fwhm_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthLeftSlope, wavelengthRightSlope));
+    brillouinShift_frequency = abs(frequencyBrillouin - frequencyRayleigh);
+
+    frequencyLeftSlope = BE_SharedFunctions.getFrequencyFromMap(peaksBrillouin_pos - peaksBrillouin_fwhm/2, times, calibration);
+    frequencyRightSlope = BE_SharedFunctions.getFrequencyFromMap(peaksBrillouin_pos + peaksBrillouin_fwhm/2, times, calibration);
+
+    peaksBrillouin_fwhm_frequency = abs(frequencyLeftSlope - frequencyRightSlope);
     
     %% save the results
     results = model.results;
@@ -529,14 +531,20 @@ function toggleInterpRayleigh(~, ~, view, model)
     %% calculate the Brillouin shift in [GHz]
     calibration = model.parameters.calibration;
     
-    wavelengthRayleigh = BE_SharedFunctions.getWavelengthFromMap(peaksRayleigh_pos, results.times, calibration);
-    wavelengthBrillouin = BE_SharedFunctions.getWavelengthFromMap(results.peaksBrillouin_pos, results.times, calibration);
-    
-    brillouinShift_frequency = 1e-9*abs(BE_SharedFunctions.getFrequencyShift(wavelengthBrillouin, wavelengthRayleigh));
+    frequencyRayleigh = BE_SharedFunctions.getFrequencyFromMap(peaksRayleigh_pos, times, calibration);
+    frequencyBrillouin = BE_SharedFunctions.getFrequencyFromMap(peaksBrillouin_pos, times, calibration);
+
+    brillouinShift_frequency = abs(frequencyBrillouin - frequencyRayleigh);
+
+    frequencyLeftSlope = BE_SharedFunctions.getFrequencyFromMap(peaksBrillouin_pos - peaksBrillouin_fwhm/2, times, calibration);
+    frequencyRightSlope = BE_SharedFunctions.getFrequencyFromMap(peaksBrillouin_pos + peaksBrillouin_fwhm/2, times, calibration);
+
+    peaksBrillouin_fwhm_frequency = abs(frequencyLeftSlope - frequencyRightSlope);
     
     %% save the results
     results.BrillouinShift            = brillouinShift;           % [pix]  the Brillouin shift in pixels
     results.BrillouinShift_frequency  = brillouinShift_frequency; % [GHz]  the Brillouin shift in GHz
+    results.peaksBrillouin_fwhm_frequency = peaksBrillouin_fwhm_frequency;  % [GHz] the FWHM of the Brillouin peak in GHz
     results.peaksRayleigh_pos         = peaksRayleigh_pos;        % [pix]  the position of the Rayleigh peak(s) in the spectrum
     results.validity                  = validity;                 % [logical] the validity of the results
     model.results = results;
