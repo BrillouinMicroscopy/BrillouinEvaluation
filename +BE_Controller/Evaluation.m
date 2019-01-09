@@ -71,8 +71,9 @@ function evaluate(view, model)
     
     nrPeaks = 1;
     parameters.peaks = [6 20];
+    shift = 0;                  % [pix] the value by which to shift the spectrum section in case of drifting spectrum
     
-    %% find the position of the Rayleigh peaks during calibration
+    %% Find the position of the Rayleigh peaks during calibration
     % this enables evaluating measurements with no valid Rayleigh peaks
     
     calibration = model.parameters.calibration;
@@ -80,9 +81,6 @@ function evaluate(view, model)
 
     peaksRayleigh_pos_cal = [];
     caltimes = [];
-    initRayleighPos = NaN;
-    shift = 0;
-    lastValidRayleighPeakPos = NaN;
     for jj = 1:length(samples)
         sample = calibration.samples.(samples{jj});
         if strcmp(sample.sampleType, 'measurement')
@@ -110,10 +108,13 @@ function evaluate(view, model)
             end
         end
         peaksRayleigh_pos_cal = [peaksRayleigh_pos_cal, nanmean(RayleighPosSample)]; %#ok<AGROW>
-        initRayleighPos = peaksRayleigh_pos_cal(1);
-        lastValidRayleighPeakPos = peaksRayleigh_pos_cal(1);
     end
+    % Use the position of the Rayleigh peaks of the first calibration as
+    % initial position
+    initRayleighPos = peaksRayleigh_pos_cal(1);
+    lastValidRayleighPeakPos = initRayleighPos;
     
+    %% First measurement image
     imgs = model.controllers.data.getPayload('data', 1, 1, 1);
     datestring = model.controllers.data.getPayload('date', 1, 1, 1);
     try
@@ -130,9 +131,12 @@ function evaluate(view, model)
     spectrumSection = spectrum(ind_Rayleigh);
     
     if ~sum(isnan(spectrumSection))
-        [initRayleighPos, ~, ~] = ...
+        [tmp, ~, ~] = ...
             BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
-        lastValidRayleighPeakPos = initRayleighPos;
+        if ~isnan(tmp)
+            initRayleighPos = tmp + min(ind_Rayleigh(:)) - 1;
+            lastValidRayleighPeakPos = initRayleighPos;
+        end
     end
         
     intensity = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
@@ -196,13 +200,13 @@ function evaluate(view, model)
                         
 %                         spectra(kk, jj, ll, mm, :) = spectrum;
 
-                        ind_Rayleigh_shifted = ind_Rayleigh + 0*shift;
-                        spectrumSection = spectrum(ind_Rayleigh_shifted);
+                        ind_Rayleigh_shifted = ind_Rayleigh + shift;
+                        RayleighSection = spectrum(ind_Rayleigh_shifted);
 %                         figure(123)
 %                         imagesc(img)
-                        if ~sum(isnan(spectrumSection))
+                        if ~sum(isnan(RayleighSection))
                             [peakPos, fwhm, int, ~, thres, ~] = ...
-                                BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
+                                BE_SharedFunctions.fitLorentzDistribution(RayleighSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
                         else
                             [peakPos, fwhm, int] = deal(NaN);
                         end
@@ -214,24 +218,33 @@ function evaluate(view, model)
                             warningRayleigh = true;
                         else
                             lastValidRayleighPeakPos = peakPos + min(ind_Rayleigh_shifted(:)) - 1;
+                            % In case we have not found a valid initial
+                            % Rayleigh peak yet, use the current one
+                            if isnan(initRayleighPos)
+                                initRayleighPos = lastValidRayleighPeakPos;
+                            end
                         end
                         
                         peaksRayleigh_pos_exact(kk, jj, ll, mm, :) = peakPos + min(ind_Rayleigh_shifted(:)) - 1;
                         peaksRayleigh_fwhm(kk, jj, ll, mm, :) = fwhm;
                         peaksRayleigh_int(kk, jj, ll, mm, :) = int;
-                        shift = round(lastValidRayleighPeakPos - initRayleighPos + shift);
+                        shift = round(lastValidRayleighPeakPos - initRayleighPos);
+                        % In case shift is NaN, don't shift the section
+                        if isnan(shift)
+                            shift = 0;
+                        end
 
-                        secInd = ind_Brillouin + 0*shift;
-                        spectrumSection = spectrum(secInd);
-                        if ~sum(isnan(spectrumSection))
+                        ind_Brillouin_shifted = ind_Brillouin + shift;
+                        BrillouinSection = spectrum(ind_Brillouin_shifted);
+                        if ~sum(isnan(BrillouinSection))
                             [peakPos, fwhm, int, ~, thres, deviation] = ...
-                                BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
+                                BE_SharedFunctions.fitLorentzDistribution(BrillouinSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
                         else
                             [peakPos, fwhm, int, thres, deviation] = deal(NaN);
                         end
                         
                         %% check if peak position is valid
-                        if peakPos <= 0 || peakPos >= length(secInd) || isnan(peakPos)
+                        if peakPos <= 0 || peakPos >= length(ind_Brillouin_shifted) || isnan(peakPos)
                             validity_Brillouin(kk, jj, ll, mm) = false;
                             [peakPos, fwhm, deviation] = deal(NaN);
                             warningBrillouin = true;
@@ -239,8 +252,19 @@ function evaluate(view, model)
                         
                         peaksBrillouin_fwhm(kk, jj, ll, mm, :) = fwhm;
                         peaksBrillouin_dev(kk, jj, ll, mm, :) = deviation;
-                        peaksBrillouin_pos(kk, jj, ll, mm, :) = peakPos + min(secInd(:)) - 1;
+                        peaksBrillouin_pos(kk, jj, ll, mm, :) = peakPos + min(ind_Brillouin_shifted(:)) - 1;
                         peaksBrillouin_int(kk, jj, ll, mm, :) = int - thres;
+                        
+%                         figure(123);
+%                         plot(spectrum, 'color', 'black');
+%                         hold on;
+%                         plot(ind_Rayleigh_shifted, RayleighSection, 'color', [1, 0, 0, 0.4], 'linewidth', 5);
+%                         plot(ind_Brillouin_shifted, BrillouinSection, 'color', [0, 0, 1, 0.4], 'linewidth', 5);
+%                         hold off;
+%                         ylim([0 15000]);
+%                         clc;
+%                         disp(shift);
+%                         pause(0.1);
 
                     end
                     if model.displaySettings.evaluation.preview
