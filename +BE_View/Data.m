@@ -148,10 +148,10 @@ function onFileLoad(view, model)
         set(handles.comment,  'String', '');
     end
     params = model.parameters.data;
-    if params.flipud
+    if isfield(params, 'flipud')
         set(handles.vertically, 'Value', params.flipud);
     end
-    if params.fliplr
+    if isfield(params, 'fliplr')
         set(handles.horizontally, 'Value', params.fliplr);
     end
     set(handles.rotationGroup, 'SelectedObject', findobj('Tag', ['rotate_' num2str(params.rotate)]));
