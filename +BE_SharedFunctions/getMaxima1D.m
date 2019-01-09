@@ -42,19 +42,23 @@ width = width(ind);
 % drawnow;
 
 % limit number of peaks
-prominence = prominence(1:limit);
-intensity = intensity(1:limit);
-position = position(1:limit);
-width = width(1:limit);
+try
+    prominence = prominence(1:limit);
+    intensity = intensity(1:limit);
+    position = position(1:limit);
+    width = width(1:limit);
 
-% sort the peaks by their position
-[position,ind] = sort(position,'ascend');
-prominence = prominence(ind);
-intensity = intensity(ind);
-width = width(ind);
+    % sort the peaks by their position
+    [position,ind] = sort(position,'ascend');
+    prominence = prominence(ind);
+    intensity = intensity(ind);
+    width = width(ind);
 
-% construct array with position and intensity
-maxima = [position; intensity; prominence; width];
+    % construct array with position and intensity
+    maxima = [position; intensity; prominence; width];
+catch
+    maxima = NaN(4,1);
+end
 
 %% Check result
 % figure(16);
