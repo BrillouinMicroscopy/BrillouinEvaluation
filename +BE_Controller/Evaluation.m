@@ -111,7 +111,11 @@ function evaluate(view, model)
     end
     % Use the position of the Rayleigh peaks of the first calibration as
     % initial position
-    initRayleighPos = peaksRayleigh_pos_cal(1);
+    if ~isempty(peaksRayleigh_pos_cal)
+        initRayleighPos = peaksRayleigh_pos_cal(1);
+    else
+        initRayleighPos = NaN;
+    end
     lastValidRayleighPeakPos = initRayleighPos;
     
     %% First measurement image
