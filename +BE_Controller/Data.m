@@ -54,12 +54,12 @@ function selectLoadData(~, ~, model)
 end
 
 function loadData(model, filePath)
-    model.reset;
-    % Load the h5bm data file
-    model.log.log(['I/File: Opened file "' filePath '"']);
     if isempty(filePath) || ~sum(filePath)
         return
     end
+    model.reset;
+    % Load the h5bm data file
+    model.log.log(['I/File: Opened file "' filePath '"']);
     [PathName, name, extension] = fileparts(filePath);
     model.filepath = [PathName '\'];
     if ~isequal(PathName,0) && exist(filePath, 'file')
