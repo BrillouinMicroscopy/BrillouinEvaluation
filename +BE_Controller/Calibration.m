@@ -260,6 +260,7 @@ function calibrate(~, ~, model, view)
         imgs = model.controllers.data.getCalibration('data', sample.position);
         datestring = model.controllers.data.getCalibration('date', sample.position);
     end
+    imgs = nanmean(imgs, 3);
     try
         date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ssXXX', 'TimeZone', 'UTC');
     catch
@@ -417,6 +418,10 @@ function calibrate(~, ~, model, view)
 
     %% check if field for selecting calibration images is available, set default value if not
     if ~isfield(sample, 'active')
+        sample.active = ones(size(imgs,3),1);
+        sample.nrImages = size(imgs,3);
+    end
+    if size(sample.active,1) ~= size(imgs,3)
         sample.active = ones(size(imgs,3),1);
         sample.nrImages = size(imgs,3);
     end
