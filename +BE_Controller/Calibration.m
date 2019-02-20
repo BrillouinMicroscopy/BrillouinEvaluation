@@ -333,6 +333,9 @@ function calibrate(~, ~, model, view)
     A = NaN(1, nrImages);
     B = A;
     C = A;
+    D = A;
+    E = A;
+    F = A;
     FSR = A;
     error = A;
     peaksMeasured = NaN(nrImages, nrPeaks);
@@ -373,18 +376,21 @@ function calibrate(~, ~, model, view)
         peaksMeasured(mm,:) = peakPos;
 
         %% find the fitted peaks, do the VIPA fit
-        [VIPAparams, peakPos] = fitVIPA(peakPos, constants);
+        [VIPAparams, peakPos] = fitVIPA2(peakPos, constants);
 
         A(mm) = VIPAparams.A;
         B(mm) = VIPAparams.B;
         C(mm) = VIPAparams.C;
-        FSR(mm) = VIPAparams.FSR;
-        error(mm) = VIPAparams.error;
+        D(mm) = VIPAparams.D;
+        E(mm) = VIPAparams.E;
+        F(mm) = VIPAparams.F;
+        FSR(mm) = VIPAparams.D;
+        error(mm) = VIPAparams.E;
 
         peakPos = sort(peakPos, 'ascend');
         peaksFitted(mm,:) = peakPos;
         
-        params = [VIPAparams.A, VIPAparams.B, VIPAparams.C, VIPAparams.FSR];
+        params = [VIPAparams.A, VIPAparams.B, VIPAparams.C, VIPAparams.D, VIPAparams.E, VIPAparams.F];
         frequencies(mm, :) = VIPAtheory(pixels, params, constants.f_0);
 
         offset(mm,:) = interp1(peaksFitted(mm,:), peaksMeasured(mm,:) - peaksFitted(mm,:), pixels, 'spline');
@@ -401,6 +407,9 @@ function calibrate(~, ~, model, view)
     sample.values.A = A;
     sample.values.B = B;
     sample.values.C = C;
+    sample.values.D = D;
+    sample.values.E = E;
+    sample.values.F = F;
     sample.values.FSR = FSR;
     sample.values.error = error;
     sample.frequencies = frequencies;
@@ -791,6 +800,36 @@ function changeClim(UIControl, ~, model, sign)
     model.displaySettings.calibration = calibration;
 end
 
+function [VIPAparams, peakPosFitted] = fitVIPA2(peaks, const)
+    model = @(x, params) VIPAtheory(x, params, const.f_0);
+    
+    shifts = [ ...
+        0, ...
+        const.calibration.shifts(1), ...
+        const.calibration.shifts(2), ...
+        -const.calibration.shifts(2), ...
+        -const.calibration.shifts(1), ...
+        0 ...
+    ] + [0 0 0 const.VIPA.FSR const.VIPA.FSR const.VIPA.FSR];
+    
+    syms A B C D E;
+    eqn1 = model(peaks(2), [A, B, C, D, E, peaks(1)]) == 1e-9*shifts(2);
+    eqn2 = model(peaks(3), [A, B, C, D, E, peaks(1)]) == 1e-9*shifts(3);
+    eqn3 = model(peaks(4), [A, B, C, D, E, peaks(1)]) == 1e-9*shifts(4);
+    eqn4 = model(peaks(5), [A, B, C, D, E, peaks(1)]) == 1e-9*shifts(5);
+    eqn5 = model(peaks(6), [A, B, C, D, E, peaks(1)]) == 1e-9*shifts(6);
+
+    sol = solve([eqn1, eqn2, eqn3, eqn4, eqn5], [A, B, C, D, E]);
+    VIPAparams.A = double(sol.A);
+    VIPAparams.B = double(sol.B);
+    VIPAparams.C = double(sol.C);
+    VIPAparams.D = double(sol.D);
+    VIPAparams.E = double(sol.E);
+    VIPAparams.F = peaks(1);
+    
+    peakPosFitted = peaks;
+end
+
 function [VIPAparams, peakPosFitted] = fitVIPA(peaks, const)
     %% FITVIPA
     %   this function fits the VIPA parameters to the measured peaks. To
@@ -893,7 +932,8 @@ end
 
 function frequency = VIPAtheory(x, params, f_0)
     % define theoretical frequency function
-    frequency = 1 ./ (params(1) + params(2)*x + params(3)*x.^2) - 1e-9*f_0;  % returns frequency in GHz
+%     frequency = 1 ./ (params(1) + params(2)*x + params(3)*x.^2) - 1e-9*f_0;  % returns frequency in GHz
+    frequency = params(1) * (x-params(6)) + params(2) * (x-params(6)).^2 + params(3) * (x-params(6)).^3 + params(4) * (x-params(6)).^4 + params(5) * (x-params(6)).^5;
 end
 
 function openBrillouinShift(~, ~, model, view)

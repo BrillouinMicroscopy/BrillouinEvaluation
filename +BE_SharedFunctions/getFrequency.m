@@ -1,4 +1,4 @@
-function [frequency] = getFrequency(pixel, VIPAparams, f_0)
+function [frequency] = getFrequency(x, params, f_0)
 %% GETFREQUENCYSHIFT
 %   This function calculates the frequency shift of wavelength compared to
 %   reference
@@ -11,6 +11,6 @@ function [frequency] = getFrequency(pixel, VIPAparams, f_0)
 %   frequencyShift: [Hz]    frequency shift
 
     % define theoretical frequency function
-    frequency = 1 ./ (VIPAparams(1) + VIPAparams(2)*pixel + VIPAparams(3)*pixel.^2) - 1e-9*f_0;  % returns frequency in GHz
+    frequency = params(1) * (x-params(6)) + params(2) * (x-params(6)).^2 + params(3) * (x-params(6)).^3 + params(4) * (x-params(6)).^4 + params(5) * (x-params(6)).^5;  % returns frequency in GHz
 
 end

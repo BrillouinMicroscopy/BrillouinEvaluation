@@ -401,7 +401,7 @@ function plotData(handles, model)
             peaksMeasured = model.parameters.calibration.samples.(selectedMeasurement).peaksMeasured(mm,:);
             peaksFitted = model.parameters.calibration.samples.(selectedMeasurement).peaksFitted(mm,:);
 
-            params = {'A', 'B', 'C', 'FSR'};
+            params = {'A', 'B', 'C', 'D', 'E', 'F'};
             VIPAparams = NaN(length(params),1);
             for jj = 1:length(params)
                 VIPAparams(jj) = sample.values.(params{jj})(mm);
@@ -454,6 +454,7 @@ function plotData(handles, model)
         zoom(ax, 'reset');
         xlabel(ax, xLabelString, 'interpreter', 'latex');
         ylabel(ax, '$I$ [a.u.]', 'interpreter', 'latex');
+        xlim(ax, [-1, 17]);
     else
         hold(ax, 'off');
         model.handles.calibration.plotSpectrum = plot(ax, NaN, NaN);
