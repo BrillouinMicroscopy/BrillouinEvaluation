@@ -60,9 +60,9 @@ function selectFrequencyRange(model, type, range, units)
         if strcmp(units, 'GHz')
             x = 1:length(data);
             calibration = model.parameters.calibration;
-            valid = ~isnan(calibration.wavelength);
-            if ~isempty(calibration.wavelength) && sum(valid(:))
-                x = BE_SharedFunctions.getFrequencyFromMap(x, times, calibration);
+            valid = ~isnan(calibration.frequency);
+            if ~isempty(calibration.frequency) && sum(valid(:))
+                x = BE_SharedFunctions.getFrequencyFromMap(x, time, calibration);
 
                 [~, ind1] = min(abs(x - range(1)));
                 [~, ind2] = min(abs(x - range(2)));

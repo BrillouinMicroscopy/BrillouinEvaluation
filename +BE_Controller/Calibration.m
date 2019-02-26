@@ -443,15 +443,15 @@ function [frequency, offset] = averageCalibration(sample, weight)
     try
         if weight
             %% average the single calibrations according to their uncertainty
-            frequency = sample.frequencies(logical(sample.active), :);          % wavelengths from calibration, only select active calibration images
+            frequency = sample.frequencies(logical(sample.active), :);          % frequencies from calibration, only select active calibration images
             offset = sample.offset(logical(sample.active), :);                  % offset from the calibration, only select active calibration images
             weights = repmat(sample.values.error(:,logical(sample.active)).', 1, size(frequency,2));  % map of the weights, only select active calibration images
-            weights(isnan(frequency)) = NaN;                                    % set weights to NaN in case wavelength is NaN
+            weights(isnan(frequency)) = NaN;                                    % set weights to NaN in case frequency is NaN
             norm = repmat(nansum(1./weights,1), size(frequency,1), 1);          % calculate the normalization value
 
             weights = 1 ./ (norm .* weights);
 
-            frequency = nansum((frequency .* weights), 1);                      % calculate the weighted average of the wavelengths
+            frequency = nansum((frequency .* weights), 1);                      % calculate the weighted average of the frequencies
             offset = nansum((offset .* weights), 1);                            % calculate the weighted average of the offset
         else
             frequency = nanmean(sample.frequencies,1);
