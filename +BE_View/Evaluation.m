@@ -454,9 +454,21 @@ function plotData (handles, model, location, full)
             title(ax,labels.titleString);
             shading(ax, 'flat');
             axis(ax, 'equal');
-            xlim([min(positions.X_zm(:)), max(positions.X_zm(:))]);
-            ylim([min(positions.Y_zm(:)), max(positions.Y_zm(:))]);
-            zlim([min(positions.Z_zm(:)), max(positions.Z_zm(:))]);
+            xmin = min(positions.X_zm(:));
+            xmax = max(positions.X_zm(:));
+            if (xmin < xmax)
+                xlim([xmin, xmax]);
+            end
+            ymin = min(positions.Y_zm(:));
+            ymax = max(positions.Y_zm(:));
+            if (ymin < ymax)
+                ylim([ymin, ymax]);
+            end
+            zmin = min(positions.Z_zm(:));
+            zmax = max(positions.Z_zm(:));
+            if (zmin < zmax)
+                zlim([zmin, zmax]);
+            end
             xlabel(ax, '$x$ [$\mu$m]', 'interpreter', 'latex');
             ylabel(ax, '$y$ [$\mu$m]', 'interpreter', 'latex');
             zlabel(ax, '$z$ [$\mu$m]', 'interpreter', 'latex');
