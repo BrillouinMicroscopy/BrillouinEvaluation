@@ -74,97 +74,70 @@ function findPeaks(varargin)
             end
         end
         
-        if (currentCalibrationNr == 1) && (isempty(peaks.x) || isempty(peaks.y))
-            % found peaks
-            peaks.x = [];
-            peaks.y = [];
-            % get the image
-            try
-                img = model.controllers.data.getCalibration('data', currentCalibrationNr);
-                %% Overlay the calibration image with a measurement image if requested
-                if model.parameters.extraction.overlay
-                    img = BE_SharedFunctions.overlayMeasurementImage(model, img, currentCalibrationNr);
-                end
-            catch
-                img = model.controllers.data.getPayload('data', 1, 1, 1);
+        % found peaks
+        peaks.x = [];
+        peaks.y = [];
+        % get the image
+        try
+            img = model.controllers.data.getCalibration('data', currentCalibrationNr);
+            %% Overlay the calibration image with a measurement image if requested
+            if model.parameters.extraction.overlay
+                img = BE_SharedFunctions.overlayMeasurementImage(model, img, currentCalibrationNr);
             end
-            img = nanmean(img, 3);
-            r=70;
-            siz=size(img);
-            % do a median filtering to prevent finding maxixums which are none,
-            % reduce radius if medfilt2 is not possible (license checkout
-            % failure)
-            try
-                img = medfilt2(img);
-            catch
-            end
-
-            %% find the (hopefully) four Rayleigh peaks
-            % assumes that Rayleigh peaks are stronger than Brillouin peaks
-            % this might become a problem later on :(
-            tmpImg = img;
-            for jj = 1:4
-                % find highest value in the image
-                [~, ind] = max(tmpImg(:));
-                [cy,cx] = ind2sub(siz,ind);
-                % set peak region to zero for finding new peak
-                [x,y]=meshgrid(-(cx-1):(siz(2)-cx),-(cy-1):(siz(1)-cy));
-                mask=((x.^2+y.^2)<=r^2);
-                tmpImg(mask) = 0;
-                % select Rayleigh peaks in upper left and lower right corner
-                if ((cy < siz(2)/2) && (cx < siz(1)/2)) || ((cy > siz(2)/2) && (cx > siz(1)/2))
-                    peaks.x = [peaks.x cx];
-                    peaks.y = [peaks.y cy];
-                end
-            end
-
-            %% Select only the area between the Rayleigh peaks
-            m = (peaks.y(1) - peaks.y(2))/(peaks.x(1) - peaks.x(2));
-            n = peaks.y(1) - m*peaks.x(1);
-
-            [~,order] = sort(peaks.x);
-            peaks.x = peaks.x(order);
-            peaks.y = peaks.y(order);
-
-            mask = zeros(size(img));
-            width = 50;
-            % only select point inbetween the Rayleigh peaks
-            for jj = peaks.y(1):peaks.y(2)
-                for kk = peaks.x(1):peaks.x(2)
-                    if (jj > (m * kk) + n - width) && (jj < (m * kk) + n + width/2)
-                        mask(jj,kk) = 1;
-                    end
-                end
-            end
-
-            tmpImg(mask == 0) = NaN;
-
-            %% find two Brillouin peaks
-            for jj = 1:2
-                % find highest value in the image
-                [~, ind] = max(tmpImg(:));
-                [cy,cx] = ind2sub(siz,ind);
-                % set peak region to zero for finding new peak
-                [x,y]=meshgrid(-(cx-1):(siz(2)-cx),-(cy-1):(siz(1)-cy));
-                mask=((x.^2+y.^2)<=r^2);
-                tmpImg(mask) = 0;
-                % add peaks
-                peaks.x = [peaks.x cx];
-                peaks.y = [peaks.y cy];
-            end
-
-            % sort the peaks (just nice to have)
-            [~,order] = sort(peaks.x);
-            peaks.x = peaks.x(order);
-            peaks.y = peaks.y(order);
-        elseif currentCalibrationNr > 1
-            peaks = model.parameters.extraction.calibrations(currentCalibrationNr-1).peaks;
+        catch
+            img = model.controllers.data.getPayload('data', 1, 1, 1);
         end
+        img = nanmean(img, 3);
+
+        minPeakHeight = 10;
+        distanceToLine = 20;
+        background = nanmedian(img(:));
+        siz=size(img);
+        img = medfilt2(img);
+
+        %% Find all peaks
+        tmpImg = img;
+        tmpImg(tmpImg < background + minPeakHeight) = 0;
+        tmpImg_binary = logical(tmpImg);
+
+        %% erode and dilate image to remove small peak artifacts and preserve approx. peak mask size
+        se = strel('disk',2,0);
+        tmpImg_binary = imerode(tmpImg_binary, se);
+        tmpImg_binary = imdilate(tmpImg_binary, se);
+        % select only image regions covered by logical mask
+        img(~tmpImg_binary) = 0;
+
+        while sum(img(:))
+            % find highest value in the image
+            [~, ind] = max(img(:));
+            [cy, cx] = ind2sub(siz,ind);
+            % set peak region to zero for finding new peak
+            mask = bwselect(tmpImg_binary, cx, cy);
+            img(mask) = 0;
+            peaks.x = [peaks.x cx];
+            peaks.y = [peaks.y cy];
+        end
+
+        %% Select peaks closest to the top-left and bottom-right corner,
+        % and all peaks close to the line connecting the both
+        peaks.distance = sqrt(peaks.x.^2 + peaks.y.^2);
+        [~, indMin] = min(peaks.distance);
+        [~, indMax] = max(peaks.distance);
+
+        % calculate distance to line
+        x1 = peaks.x(indMin);
+        x2 = peaks.x(indMax);
+        y1 = peaks.y(indMin);
+        y2 = peaks.y(indMax);
+        peaks.d = abs((y2-y1).*peaks.x - (x2-x1)*peaks.y + x2*y1 - y2*x1) ./ sqrt((y2-y1)^2 + (x2-x1)^2);
+
+        peaks.x = peaks.x(peaks.d < distanceToLine);
+        peaks.y = peaks.y(peaks.d < distanceToLine);
         
         % store new peak positions
         model.parameters.extraction.calibrations(currentCalibrationNr).peaks = peaks;
-        % optimize the peak position
-        optimizePeaks(model, currentCalibrationNr);
+        % Fit the extraction line
+        fitSpectrum(model, currentCalibrationNr);
         model.log.log('I/Extraction: Extraction successful.');
     end
 end
