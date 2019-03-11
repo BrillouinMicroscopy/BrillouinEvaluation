@@ -468,7 +468,7 @@ function loadData(model, filePath)
             model.results = results;
             model.displaySettings = displaySettings;
             
-            model.controllers.calibration.calibrateAll(false);
+%             model.controllers.calibration.calibrateAll(false);
             
         else
             parameters = model.parameters;
