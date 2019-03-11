@@ -39,7 +39,7 @@ function [image, diftime] = getMeasurementImage(model, time)
     diftimes = abs(model.results.times - time);
     [diftime, ind] = min(diftimes(:));
     
-    [x, y, z, imgNr] = ind2sub(size(model.results.times), ind);
+    [y, x, z, imgNr] = ind2sub(size(model.results.times), ind);
     
     image = model.controllers.data.getPayload('data', x, y, z);
     image = image(:,:,imgNr);
