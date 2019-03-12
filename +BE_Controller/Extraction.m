@@ -101,7 +101,7 @@ function findPeaks(varargin)
         tmpImg_binary = logical(tmpImg);
 
         %% erode and dilate image to remove small peak artifacts and preserve approx. peak mask size
-        se = strel('disk',2,0);
+        se = strel('disk',1,0);
         tmpImg_binary = imerode(tmpImg_binary, se);
         tmpImg_binary = imdilate(tmpImg_binary, se);
         % select only image regions covered by logical mask
