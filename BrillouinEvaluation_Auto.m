@@ -15,14 +15,16 @@ for jj = 1:length(filelist)
 
         %% load the data file
         controllers.data.setActive();
+        model.repetition = 0;
         controllers.data.load(loadFile);
-        controllers.data.setParameters(parameters);
         
         for ii = 0:(model.repetitionCount-1)
             try
-                %% set active repetition
+                %% set current repetition
+                controllers.data.setActive();
                 model.repetition = ii;
                 controllers.data.load([model.filepath model.filename]);
+                controllers.data.setParameters(parameters);
                 
                 %% construct filename of save file
                 [~, name, ~] = fileparts(filelist(jj).name);
@@ -60,10 +62,13 @@ for jj = 1:length(filelist)
                 end
 
                 %% evaluate
-                if parameters.evaluation.do
-                    controllers.evaluation.setActive();
-                    controllers.evaluation.startEvaluation();
-                    drawnow;
+                try
+                    if parameters.evaluation.do
+                        controllers.evaluation.setActive();
+                        controllers.evaluation.startEvaluation();
+                        drawnow;
+                    end
+                catch
                 end
 
                 %% save the data file
