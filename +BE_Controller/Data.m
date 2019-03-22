@@ -464,8 +464,8 @@ function loadData(model, filePath)
             parameters.programVersion = model.programVersion;
             
             %% actually load data into model
-            model.parameters = parameters;
             model.results = results;
+            model.parameters = parameters;
             model.displaySettings = displaySettings;
             
 %             model.controllers.calibration.calibrateAll(false);

@@ -317,6 +317,10 @@ function plotData (handles, model, location, full)
         end
     end
     
+    if ~sum(~isnan(positions.X_zm(:)))
+        return;
+    end
+    
     %% plot data for different dimensions
     switch dimension
         case 0
