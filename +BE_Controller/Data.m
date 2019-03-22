@@ -448,7 +448,7 @@ function loadData(model, filePath)
                 parameters.calibration.samples = samples;
                 
                 if ~isfield(parameters.extraction, 'overlay')
-                    parameters.extraction.overlay = true;
+                    parameters.extraction.overlay = false;
                 end
                 
                 % set version to 1.4.0 to allow further migration steps
