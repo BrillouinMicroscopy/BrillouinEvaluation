@@ -20,7 +20,7 @@ function [maxima] = getMaxima1D(img, limit)
 
 %%
 % remove salt and pepper pixels by a median filter
-img = medfilt1(img,3);
+% img = medfilt1(img,3);
 
 % find all local peaks
 [intensity,position,width,prominence] = findpeaks(img);
