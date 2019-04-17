@@ -246,6 +246,7 @@ function plotData (handles, model, location, full)
             data(validity > model.displaySettings.evaluation.valThreshould) = NaN;
         end
     end
+    data = nanmean(data,5);
     data = nanmean(data,4);
 
     %% find non-singleton dimensions

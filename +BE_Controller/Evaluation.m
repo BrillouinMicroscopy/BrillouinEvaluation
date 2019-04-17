@@ -144,18 +144,20 @@ function evaluate(view, model)
     end
         
     intensity = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
-    peaksBrillouin_pos = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrPeaks);
+    
+    nrBrillouinPeaks = 1;
+    peaksBrillouin_pos = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrBrillouinPeaks);
     peaksBrillouin_dev = peaksBrillouin_pos;
     peaksBrillouin_fwhm = peaksBrillouin_pos;
     peaksBrillouin_int = peaksBrillouin_pos;
-    peaksRayleigh_pos_exact = peaksBrillouin_pos;
-    peaksRayleigh_pos = peaksBrillouin_pos;
-    peaksRayleigh_fwhm = peaksBrillouin_pos;
-    peaksRayleigh_int = peaksBrillouin_pos;
-    times = peaksBrillouin_pos;
+    peaksRayleigh_pos_exact = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrPeaks);
+    peaksRayleigh_pos = peaksRayleigh_pos_exact;
+    peaksRayleigh_fwhm = peaksRayleigh_pos_exact;
+    peaksRayleigh_int = peaksRayleigh_pos_exact;
+    times = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
     validity = true(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
     validity_Rayleigh = validity;
-    validity_Brillouin = validity;
+    validity_Brillouin = true(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrBrillouinPeaks);
     
 %     spectra = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), size(model.parameters.extraction.interpolationPositions.x,2));
     %% start evaluation
@@ -242,15 +244,20 @@ function evaluate(view, model)
                         BrillouinSection = spectrum(ind_Brillouin_shifted);
                         if ~sum(isnan(BrillouinSection))
                             [peakPos, fwhm, int, ~, thres, deviation] = ...
-                                BE_SharedFunctions.fitLorentzDistribution(BrillouinSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
+                                BE_SharedFunctions.fitLorentzDistribution(BrillouinSection, model.parameters.evaluation.fwhm, nrBrillouinPeaks, parameters.peaks, 0);
                         else
                             [peakPos, fwhm, int, thres, deviation] = deal(NaN);
                         end
                         
                         %% check if peak position is valid
-                        if peakPos <= 0 || peakPos >= length(ind_Brillouin_shifted) || isnan(peakPos)
-                            validity_Brillouin(kk, jj, ll, mm) = false;
-                            [peakPos, fwhm, deviation] = deal(NaN);
+                        peakPos(peakPos <= 0) = NaN;
+                        peakPos(peakPos >= length(ind_Brillouin_shifted)) = NaN;
+
+                        validity_Brillouin(kk, jj, ll, mm, :) = ~isnan(peakPos);
+                        fwhm(isnan(peakPos)) = NaN;
+                        deviation(isnan(peakPos)) = NaN;
+
+                        if sum(isnan(peakPos)) > 0
                             warningBrillouin = true;
                         end
                         
@@ -601,9 +608,11 @@ function ImageClickCallback(~, event, model)
 
     data = model.results.(model.displaySettings.evaluation.type);
     data = double(data);
-    data = nanmean(data,4);
     %% find non-singleton dimensions
     dimensions = size(data);
+    if numel(dimensions) > 3
+        dimensions = dimensions(1:3);
+    end
     if numel(dimensions) < 3
         dimensions(3) = 1;
     end
