@@ -604,6 +604,9 @@ function ImageClickCallback(~, event, model)
     data = nanmean(data,4);
     %% find non-singleton dimensions
     dimensions = size(data);
+    if numel(dimensions) < 3
+        dimensions(3) = 1;
+    end
     dimension = sum(dimensions > 1);
     
     %% define possible dimensions and their labels
