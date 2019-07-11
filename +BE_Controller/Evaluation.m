@@ -150,6 +150,7 @@ function evaluate(view, model)
     peaksBrillouin_dev = peaksBrillouin_pos;
     peaksBrillouin_fwhm = peaksBrillouin_pos;
     peaksBrillouin_int = peaksBrillouin_pos;
+    peaksBrillouin_int_real = peaksBrillouin_pos;
     peaksRayleigh_pos_exact = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrPeaks);
     peaksRayleigh_pos = peaksRayleigh_pos_exact;
     peaksRayleigh_fwhm = peaksRayleigh_pos_exact;
@@ -243,10 +244,10 @@ function evaluate(view, model)
                         ind_Brillouin_shifted = ind_Brillouin + shift;
                         BrillouinSection = spectrum(ind_Brillouin_shifted);
                         if ~sum(isnan(BrillouinSection))
-                            [peakPos, fwhm, int, ~, thres, deviation] = ...
-                                BE_SharedFunctions.fitLorentzDistribution(BrillouinSection, model.parameters.evaluation.fwhm, nrBrillouinPeaks, parameters.peaks, 0);
+                            [peakPos, fwhm, intensity, ~, thres, deviation, intensity_real] = ...
+                                BE_SharedFunctions.fitLorentzDistribution(BrillouinSection, model.parameters.evaluation.fwhm, nrBrillouinPeaks, parameters.peaks, 0);                            
                         else
-                            [peakPos, fwhm, int, thres, deviation] = deal(NaN);
+                            [peakPos, fwhm, intensity, thres, deviation] = deal(NaN);
                         end
                         
                         %% check if peak position is valid
@@ -256,6 +257,8 @@ function evaluate(view, model)
                         validity_Brillouin(kk, jj, ll, mm, :) = ~isnan(peakPos);
                         fwhm(isnan(peakPos)) = NaN;
                         deviation(isnan(peakPos)) = NaN;
+                        intensity(isnan(peakPos)) = NaN;
+                        intensity_real(isnan(peakPos)) = NaN;
 
                         if sum(isnan(peakPos)) > 0
                             warningBrillouin = true;
@@ -264,7 +267,8 @@ function evaluate(view, model)
                         peaksBrillouin_fwhm(kk, jj, ll, mm, :) = fwhm;
                         peaksBrillouin_dev(kk, jj, ll, mm, :) = deviation;
                         peaksBrillouin_pos(kk, jj, ll, mm, :) = peakPos + min(ind_Brillouin_shifted(:)) - 1;
-                        peaksBrillouin_int(kk, jj, ll, mm, :) = int - thres;
+                        peaksBrillouin_int(kk, jj, ll, mm, :) = intensity - thres;
+                        peaksBrillouin_int_real(kk, jj, ll, mm, :) = intensity_real - thres;
                         
 %                         figure(123);
 %                         plot(spectrum, 'color', 'black');
@@ -339,7 +343,8 @@ function evaluate(view, model)
                         results.BrillouinShift_frequency  = brillouinShift_frequency; % [GHz]  the Brillouin shift in GHz
                         results.peaksBrillouin_pos        = peaksBrillouin_pos;       % [pix]  the position of the Brillouin peak(s) in the spectrum
                         results.peaksBrillouin_dev        = peaksBrillouin_dev;       % [pix]  the deviation of the Brillouin fit
-                        results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the intensity of the Brillouin peak(s)
+                        results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the fitted intensity of the Brillouin peak(s)
+                        results.peaksBrillouin_int_real   = peaksBrillouin_int_real;  % [a.u.] the real intensity of the Brillouin peak(s)
                         results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
                         results.peaksBrillouin_fwhm_frequency = peaksBrillouin_fwhm_frequency;  % [GHz] the FWHM of the Brillouin peak in GHz
                         results.peaksRayleigh_pos_interp  = peaksRayleigh_pos_interp; % [pix]  the position of the Rayleigh peak(s) in the spectrum (interpoalted)
@@ -434,7 +439,8 @@ function evaluate(view, model)
     results.BrillouinShift_frequency  = brillouinShift_frequency; % [GHz]  the Brillouin shift in GHz
     results.peaksBrillouin_pos        = peaksBrillouin_pos;       % [pix]  the position of the Brillouin peak(s) in the spectrum
     results.peaksBrillouin_dev        = peaksBrillouin_dev;       % [pix]  the deviation of the Brillouin fit
-    results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the intensity of the Brillouin peak(s)
+    results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the fitted intensity of the Brillouin peak(s)
+    results.peaksBrillouin_int_real   = peaksBrillouin_int_real;  % [a.u.] the real intensity of the Brillouin peak(s)
     results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
     results.peaksBrillouin_fwhm_frequency = peaksBrillouin_fwhm_frequency;  % [GHz] the FWHM of the Brillouin peak in GHz
     results.peaksRayleigh_pos_interp  = peaksRayleigh_pos_interp; % [pix]  the position of the Rayleigh peak(s) in the spectrum (interpoalted)
