@@ -24,6 +24,10 @@ function [ f ] = getFrequencyFromMap( peakPos, time, calibration)
     frequency_valid = frequency(inds,:);
     times_valid = calibration.times(inds);
     
+    if size(peakPos, 5) > 1
+        time = repmat(time, (size(peakPos) - [size(time) 1] + 1));
+    end
+    
     %% correct the offset
     if calibration.correctOffset
         
