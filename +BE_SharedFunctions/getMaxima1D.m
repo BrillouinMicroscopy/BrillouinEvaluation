@@ -48,11 +48,11 @@ try
     position = position(1:limit);
     width = width(1:limit);
 
-    % sort the peaks by their position
-    [position,ind] = sort(position,'ascend');
-    prominence = prominence(ind);
-    intensity = intensity(ind);
-    width = width(ind);
+    % % sort the peaks by their position
+    % [position,ind] = sort(position,'ascend');
+    % prominence = prominence(ind);
+    % intensity = intensity(ind);
+    % width = width(ind);
 
     % construct array with position and intensity
     maxima = [position; intensity; prominence; width];
