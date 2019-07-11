@@ -565,6 +565,9 @@ function toggleInterpRayleigh(~, ~, view, model)
 
     %% calculate the Brillouin shift in [GHz]
     calibration = model.parameters.calibration;
+    times = results.times;
+    peaksBrillouin_pos = results.peaksBrillouin_pos;
+    peaksBrillouin_fwhm = results.peaksBrillouin_fwhm;
     
     frequencyRayleigh = BE_SharedFunctions.getFrequencyFromMap(peaksRayleigh_pos, times, calibration);
     frequencyBrillouin = BE_SharedFunctions.getFrequencyFromMap(peaksBrillouin_pos, times, calibration);
