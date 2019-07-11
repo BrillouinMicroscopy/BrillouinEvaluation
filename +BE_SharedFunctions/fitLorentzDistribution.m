@@ -1,4 +1,4 @@
-function [peakPos, peakFWHM, peakInt, fittedCurve, thres, deviation] = fitLorentzDistribution(intensity, fwhm, nrPeaks, borders, debug)
+function [peakPos, peakFWHM, peakInt, fittedCurve, thres, deviation, peakIntReal] = fitLorentzDistribution(intensity, fwhm, nrPeaks, borders, debug)
 %% FITLORENTZDISTRIBUTION
 %   This function will fit a Lorentzian distribution with the requested
 %   number of peaks to a given 1-D intensity distribution
@@ -12,7 +12,8 @@ function [peakPos, peakFWHM, peakInt, fittedCurve, thres, deviation] = fitLorent
 %
 %   ##OUTPUT
 %   peakPos:        [pix]   peak positions
-%   peakInt:        [1]     peak intensities
+%   peakInt:        [1]     fitted peak intensities
+%   peakIntReal:    [1]     real peak intensities
 %   fwhm:           [pix]   full width at half maximum of the peaks
 %   fittedCurve:    [1]     fitted intensity distribution
 
@@ -89,6 +90,20 @@ switch nrPeaks
         peakInt = params(9:12);
     otherwise
         error('select fitting mode 2 or 4');
+end
+
+%% Get the peak intensity based on the measurement data (not fitted)
+centers = round(peakPos);
+peakIntReal = NaN(size(peakPos));
+for jj = 1:length(peakPos)
+    ind = [-1 1] + centers(jj);
+    ind(ind < 1) = 1;
+    ind(ind > length(intensity)) = length(intensity);
+    try
+        peakIntReal(jj) = max(intensity(ind(1):ind(2)));
+    catch
+        peakIntReal(jj) = NaN;
+    end
 end
 
 %% check result
