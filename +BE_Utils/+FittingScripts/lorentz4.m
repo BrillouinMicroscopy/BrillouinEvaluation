@@ -11,10 +11,10 @@ function [sseb, FittedCurve2b] = lorentz4(params, newxb, newdata2b, floorb)
     w2b = params(7);
     w3b = params(8);
 
-    B0b = params(9)-floorb;
-    B1b = params(10)-floorb;
-    B2b = params(11)-floorb;
-    B3b = params(12)-floorb;
+    B0b = abs(params(9))-floorb;
+    B1b = abs(params(10))-floorb;
+    B2b = abs(params(11))-floorb;
+    B3b = abs(params(12))-floorb;
 
     FittedCurve2b = floorb + ...
                     B0b*((w0b/2).^2)./((newxb-s0b).^2+(w0b/2).^2) + ...

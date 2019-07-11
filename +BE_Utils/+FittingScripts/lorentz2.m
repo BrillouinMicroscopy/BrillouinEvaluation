@@ -7,8 +7,8 @@ function [sseb, FittedCurve2b] = lorentz2(params, newxb, newdata2b, floorb)
     w0b = params(3);
     w1b = params(4);
 
-    B0b = params(5)-floorb;
-    B1b = params(6)-floorb;
+    B0b = abs(params(5))-floorb;
+    B1b = abs(params(6))-floorb;
 
     FittedCurve2b = floorb + ...
                     B0b*((w0b/2).^2)./((newxb-s0b).^2+(w0b/2).^2) + ...

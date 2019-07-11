@@ -5,7 +5,7 @@ function [sseb, FittedCurve2b] = lorentz1(params, newxb, newdata2b, floorb)
 
     w0b = params(2);
 
-    B0b = params(3)-floorb;
+    B0b = abs(params(3))-floorb;
 
     FittedCurve2b = floorb + ...
                     B0b*((w0b/2).^2)./((newxb-s0b).^2+(w0b/2).^2);
