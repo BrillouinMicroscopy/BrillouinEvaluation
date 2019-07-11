@@ -236,6 +236,13 @@ function plotData (handles, model, location, full)
     intFac = model.displaySettings.evaluation.intFac - 1;
     
     data = model.results.(model.displaySettings.evaluation.type);
+    if size(data, 5) > 1
+        int_real = model.results.peaksBrillouin_int_real;
+        int = model.results.peaksBrillouin_int;
+        data(int_real < 10) = NaN;
+        data(int < 10) = NaN;
+    end
+    
     data = double(data);
     if ~strcmp(model.displaySettings.evaluation.type, 'brightfield') && ~strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')
         if model.displaySettings.evaluation.discardInvalid && ~strcmp(model.displaySettings.evaluation.type, 'validity')
