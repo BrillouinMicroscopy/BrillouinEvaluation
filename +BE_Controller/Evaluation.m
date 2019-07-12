@@ -156,6 +156,8 @@ function evaluate(view, model)
     peaksRayleigh_fwhm = peaksRayleigh_pos_exact;
     peaksRayleigh_int = peaksRayleigh_pos_exact;
     times = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
+    peaksBrillouin_nrFittedPeaks = times;
+    peaksBrillouin_nrFittedPeaks(:) = nrBrillouinPeaks;
     validity = true(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
     validity_Rayleigh = validity;
     validity_Brillouin = true(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrBrillouinPeaks);
@@ -245,7 +247,18 @@ function evaluate(view, model)
                         BrillouinSection = spectrum(ind_Brillouin_shifted);
                         if ~sum(isnan(BrillouinSection))
                             [peakPos, fwhm, intensity, ~, thres, deviation, intensity_real] = ...
-                                BE_SharedFunctions.fitLorentzDistribution(BrillouinSection, model.parameters.evaluation.fwhm, nrBrillouinPeaks, parameters.peaks, 0);                            
+                                BE_SharedFunctions.fitLorentzDistribution(BrillouinSection, model.parameters.evaluation.fwhm, nrBrillouinPeaks, parameters.peaks, 0);
+                            %% We check whether a two-peak fit is reasonable
+                            if size(peakPos,2) == 2
+                                % If the peaks are very close, we fall back
+                                % to one-peak fitting
+                                if ~checkTwoPeaks(BrillouinSection, peakPos, fwhm, intensity, intensity_real, thres)
+                                    peaksBrillouin_nrFittedPeaks(kk, jj, ll, mm) = 1;
+                                    [peakPos, fwhm, intensity, intensity_real] = deal(NaN(2,1));
+                                    [peakPos(1), fwhm(1), intensity(1), ~, thres, deviation, intensity_real(1)] = ...
+                                        BE_SharedFunctions.fitLorentzDistribution(BrillouinSection, model.parameters.evaluation.fwhm, 1, parameters.peaks, 0);
+                                end
+                            end
                         else
                             [peakPos, fwhm, intensity, thres, deviation] = deal(NaN);
                         end
@@ -345,6 +358,7 @@ function evaluate(view, model)
                         results.peaksBrillouin_dev        = peaksBrillouin_dev;       % [pix]  the deviation of the Brillouin fit
                         results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the fitted intensity of the Brillouin peak(s)
                         results.peaksBrillouin_int_real   = peaksBrillouin_int_real;  % [a.u.] the real intensity of the Brillouin peak(s)
+                        results.peaksBrillouin_nrFittedPeaks = peaksBrillouin_nrFittedPeaks;
                         results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
                         results.peaksBrillouin_fwhm_frequency = peaksBrillouin_fwhm_frequency;  % [GHz] the FWHM of the Brillouin peak in GHz
                         results.peaksRayleigh_pos_interp  = peaksRayleigh_pos_interp; % [pix]  the position of the Rayleigh peak(s) in the spectrum (interpoalted)
@@ -441,6 +455,7 @@ function evaluate(view, model)
     results.peaksBrillouin_dev        = peaksBrillouin_dev;       % [pix]  the deviation of the Brillouin fit
     results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the fitted intensity of the Brillouin peak(s)
     results.peaksBrillouin_int_real   = peaksBrillouin_int_real;  % [a.u.] the real intensity of the Brillouin peak(s)
+    results.peaksBrillouin_nrFittedPeaks = peaksBrillouin_nrFittedPeaks;
     results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
     results.peaksBrillouin_fwhm_frequency = peaksBrillouin_fwhm_frequency;  % [GHz] the FWHM of the Brillouin peak in GHz
     results.peaksRayleigh_pos_interp  = peaksRayleigh_pos_interp; % [pix]  the position of the Rayleigh peak(s) in the spectrum (interpoalted)
@@ -455,6 +470,34 @@ function evaluate(view, model)
     results.times                     = times;                    % [s]    time of the measurement
     model.results = results;
     model.log.log('I/Evaluation: Finished.');
+end
+
+function twoPeaks = checkTwoPeaks(BrillouinSection, peakPos, fwhm, intensity, intensity_real, thres)
+    twoPeaks = true;
+    %% If the peaks are to close together --> 1 peak
+    if (abs(diff(peakPos)) < 0.8*nanmax(fwhm(:)))
+        twoPeaks = false;
+    end
+    
+    %% If the found peaks are to narrow --> 1 peak
+    if (nanmin(fwhm(:)) < 1)
+        twoPeaks = false;
+    end
+    
+    %% If the fitted intensity is higher than 2 times the real max --> 1 peak
+    if nanmax(intensity(:)) > 2*nanmax(BrillouinSection(:))
+        twoPeaks = false;
+    end
+    
+    %% If the fitted intensity is to low --> 1 peak
+    if (nanmin(intensity(:)) - thres < 10)
+        twoPeaks = false;
+    end
+    
+    %% If the real intensity is to low --> 1 peak
+    if (nanmin(intensity_real(:)) - thres < 10)
+        twoPeaks = false;
+    end
 end
 
 function zoom(src, ~, str, view)
