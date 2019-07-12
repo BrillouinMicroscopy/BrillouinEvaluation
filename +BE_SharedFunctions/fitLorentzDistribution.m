@@ -45,7 +45,7 @@ switch nrPeaks
         peakInt = params(3); 
     case 2
         %start parameters
-        start = [maxima(1, 1), maxima(1, 1), fwhm, fwhm, maxima(2, 1), maxima(2, 1)];
+        start = [maxima(1, 1), maxima(1, 2), fwhm, fwhm, maxima(2, 1), maxima(2, 2)];
         x = 1:1:length(intensity);
         % fitting
         [params, ~, ~, fittedCurve, deviation]  = BE_Utils.FittingScripts.nfit_2peaks(x, intensity, start, thres);
