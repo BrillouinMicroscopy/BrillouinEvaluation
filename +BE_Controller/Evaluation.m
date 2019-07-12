@@ -53,6 +53,7 @@ function startEvaluation(~, ~, view, model)
 end
 
 function evaluate(view, model)
+    res = {};
     totalPoints = (model.parameters.resolution.X*model.parameters.resolution.Y*model.parameters.resolution.Z);
     
     if isempty(model.parameters.peakSelection.Rayleigh) || isempty(model.parameters.peakSelection.Brillouin)
@@ -79,8 +80,8 @@ function evaluate(view, model)
     calibration = model.parameters.calibration;
     samples = fields(calibration.samples);
 
-    peaksRayleigh_pos_cal = [];
-    caltimes = [];
+    res.peaksRayleigh_pos_cal = [];
+    res.caltimes = [];
     for jj = 1:length(samples)
         sample = calibration.samples.(samples{jj});
         if strcmp(sample.sampleType, 'measurement')
@@ -94,7 +95,7 @@ function evaluate(view, model)
             date = datetime(sample.time, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
         end
         time = etime(datevec(date),datevec(refTime));
-        caltimes = [caltimes, time]; %#ok<AGROW>
+        res.caltimes = [res.caltimes, time];
 
         RayleighPosSample = NaN(size(imgs, 3), 1);
         for kk = 1:size(imgs,3)
@@ -107,12 +108,12 @@ function evaluate(view, model)
                  RayleighPosSample(kk) = tmp + min(ind_Rayleigh(:)) - 1;
             end
         end
-        peaksRayleigh_pos_cal = [peaksRayleigh_pos_cal, nanmean(RayleighPosSample)]; %#ok<AGROW>
+        res.peaksRayleigh_pos_cal = [res.peaksRayleigh_pos_cal, nanmean(RayleighPosSample)];
     end
     % Use the position of the Rayleigh peaks of the first calibration as
     % initial position
-    if ~isempty(peaksRayleigh_pos_cal)
-        initRayleighPos = peaksRayleigh_pos_cal(1);
+    if ~isempty(res.peaksRayleigh_pos_cal)
+        initRayleighPos = res.peaksRayleigh_pos_cal(1);
     else
         initRayleighPos = NaN;
     end
@@ -143,24 +144,24 @@ function evaluate(view, model)
         end
     end
         
-    intensity = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
+    res.intensity = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
     
-    nrBrillouinPeaks = 1;
-    peaksBrillouin_pos = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrBrillouinPeaks);
-    peaksBrillouin_dev = peaksBrillouin_pos;
-    peaksBrillouin_fwhm = peaksBrillouin_pos;
-    peaksBrillouin_int = peaksBrillouin_pos;
-    peaksBrillouin_int_real = peaksBrillouin_pos;
-    peaksRayleigh_pos_exact = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrPeaks);
-    peaksRayleigh_pos = peaksRayleigh_pos_exact;
-    peaksRayleigh_fwhm = peaksRayleigh_pos_exact;
-    peaksRayleigh_int = peaksRayleigh_pos_exact;
-    times = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
-    peaksBrillouin_nrFittedPeaks = times;
-    peaksBrillouin_nrFittedPeaks(:) = nrBrillouinPeaks;
-    validity = true(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
-    validity_Rayleigh = validity;
-    validity_Brillouin = true(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrBrillouinPeaks);
+    nrBrillouinPeaks = 2;
+    res.peaksBrillouin_pos = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrBrillouinPeaks);
+    res.peaksBrillouin_dev = res.peaksBrillouin_pos;
+    res.peaksBrillouin_fwhm = res.peaksBrillouin_pos;
+    res.peaksBrillouin_int = res.peaksBrillouin_pos;
+    res.peaksBrillouin_int_real = res.peaksBrillouin_pos;
+    res.peaksRayleigh_pos_exact = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrPeaks);
+    res.peaksRayleigh_pos = res.peaksRayleigh_pos_exact;
+    res.peaksRayleigh_fwhm = res.peaksRayleigh_pos_exact;
+    res.peaksRayleigh_int = res.peaksRayleigh_pos_exact;
+    res.times = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
+    res.peaksBrillouin_nrFittedPeaks = res.times;
+    res.peaksBrillouin_nrFittedPeaks(:) = nrBrillouinPeaks;
+    res.validity = true(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
+    res.validity_Rayleigh = res.validity;
+    res.validity_Brillouin = true(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrBrillouinPeaks);
     
 %     spectra = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), size(model.parameters.extraction.interpolationPositions.x,2));
     %% start evaluation
@@ -191,7 +192,7 @@ function evaluate(view, model)
 
                     for mm = 1:size(imgs,3)
                         time = etime(datevec(date),datevec(refTime)) + (mm-1) * model.parameters.exposureTime;
-                        times(kk, jj, ll, mm) = time;
+                        res.times(kk, jj, ll, mm) = time;
                         if ~model.status.evaluation.evaluate
                             break
                         end
@@ -200,7 +201,7 @@ function evaluate(view, model)
                         %  The intensity will be underestimated, but
                         %  otherwise no value will be available at all at
                         %  saturated measurement points
-                        intensity(kk, jj, ll, mm) = nansum(img(:));
+                        res.intensity(kk, jj, ll, mm) = nansum(img(:));
                         
                         %% set invalid values to NaN
                         img(img >= (2^16 - 1)) = NaN;
@@ -222,7 +223,7 @@ function evaluate(view, model)
                         
                         %% check if peak position is valid
                         if peakPos <= 0 || peakPos >= length(ind_Rayleigh_shifted) || isnan(peakPos) || (int - thres) < model.parameters.evaluation.minRayleighPeakHeight
-                            validity_Rayleigh(kk, jj, ll, mm) = false;
+                            res.validity_Rayleigh(kk, jj, ll, mm) = false;
                             [peakPos, fwhm, int] = deal(NaN);
                             warningRayleigh = true;
                         else
@@ -234,9 +235,9 @@ function evaluate(view, model)
                             end
                         end
                         
-                        peaksRayleigh_pos_exact(kk, jj, ll, mm, :) = peakPos + min(ind_Rayleigh_shifted(:)) - 1;
-                        peaksRayleigh_fwhm(kk, jj, ll, mm, :) = fwhm;
-                        peaksRayleigh_int(kk, jj, ll, mm, :) = int;
+                        res.peaksRayleigh_pos_exact(kk, jj, ll, mm, :) = peakPos + min(ind_Rayleigh_shifted(:)) - 1;
+                        res.peaksRayleigh_fwhm(kk, jj, ll, mm, :) = fwhm;
+                        res.peaksRayleigh_int(kk, jj, ll, mm, :) = int;
                         shift = round(lastValidRayleighPeakPos - initRayleighPos);
                         % In case shift is NaN, don't shift the section
                         if isnan(shift)
@@ -246,42 +247,42 @@ function evaluate(view, model)
                         ind_Brillouin_shifted = ind_Brillouin + shift;
                         BrillouinSection = spectrum(ind_Brillouin_shifted);
                         if ~sum(isnan(BrillouinSection))
-                            [peakPos, fwhm, intensity, ~, thres, deviation, intensity_real] = ...
+                            [peakPos, fwhm, BrillouinIntensity, ~, thres, deviation, intensity_real] = ...
                                 BE_SharedFunctions.fitLorentzDistribution(BrillouinSection, model.parameters.evaluation.fwhm, nrBrillouinPeaks, parameters.peaks, 0);
                             %% We check whether a two-peak fit is reasonable
                             if size(peakPos,2) == 2
                                 % If the peaks are very close, we fall back
                                 % to one-peak fitting
-                                if ~checkTwoPeaks(BrillouinSection, peakPos, fwhm, intensity, intensity_real, thres)
-                                    peaksBrillouin_nrFittedPeaks(kk, jj, ll, mm) = 1;
-                                    [peakPos, fwhm, intensity, intensity_real] = deal(NaN(2,1));
-                                    [peakPos(1), fwhm(1), intensity(1), ~, thres, deviation, intensity_real(1)] = ...
+                                if ~checkTwoPeaks(BrillouinSection, peakPos, fwhm, BrillouinIntensity, intensity_real, thres)
+                                    res.peaksBrillouin_nrFittedPeaks(kk, jj, ll, mm) = 1;
+                                    [peakPos, fwhm, BrillouinIntensity, intensity_real] = deal(NaN(2,1));
+                                    [peakPos(1), fwhm(1), BrillouinIntensity(1), ~, thres, deviation, intensity_real(1)] = ...
                                         BE_SharedFunctions.fitLorentzDistribution(BrillouinSection, model.parameters.evaluation.fwhm, 1, parameters.peaks, 0);
                                 end
                             end
                         else
-                            [peakPos, fwhm, intensity, thres, deviation] = deal(NaN);
+                            [peakPos, fwhm, BrillouinIntensity, thres, deviation] = deal(NaN);
                         end
                         
                         %% check if peak position is valid
                         peakPos(peakPos <= 0) = NaN;
                         peakPos(peakPos >= length(ind_Brillouin_shifted)) = NaN;
 
-                        validity_Brillouin(kk, jj, ll, mm, :) = ~isnan(peakPos);
+                        res.validity_Brillouin(kk, jj, ll, mm, :) = ~isnan(peakPos);
                         fwhm(isnan(peakPos)) = NaN;
                         deviation(isnan(peakPos)) = NaN;
-                        intensity(isnan(peakPos)) = NaN;
+                        BrillouinIntensity(isnan(peakPos)) = NaN;
                         intensity_real(isnan(peakPos)) = NaN;
 
                         if sum(isnan(peakPos)) > 0
                             warningBrillouin = true;
                         end
                         
-                        peaksBrillouin_fwhm(kk, jj, ll, mm, :) = fwhm;
-                        peaksBrillouin_dev(kk, jj, ll, mm, :) = deviation;
-                        peaksBrillouin_pos(kk, jj, ll, mm, :) = peakPos + min(ind_Brillouin_shifted(:)) - 1;
-                        peaksBrillouin_int(kk, jj, ll, mm, :) = intensity - thres;
-                        peaksBrillouin_int_real(kk, jj, ll, mm, :) = intensity_real - thres;
+                        res.peaksBrillouin_fwhm(kk, jj, ll, mm, :) = fwhm;
+                        res.peaksBrillouin_dev(kk, jj, ll, mm, :) = deviation;
+                        res.peaksBrillouin_pos(kk, jj, ll, mm, :) = peakPos + min(ind_Brillouin_shifted(:)) - 1;
+                        res.peaksBrillouin_int(kk, jj, ll, mm, :) = BrillouinIntensity - thres;
+                        res.peaksBrillouin_int_real(kk, jj, ll, mm, :) = intensity_real - thres;
                         
 %                         figure(123);
 %                         plot(spectrum, 'color', 'black');
@@ -295,83 +296,9 @@ function evaluate(view, model)
 %                         pause(0.1);
 
                     end
+                    
                     if model.displaySettings.evaluation.preview
-                        
-                        %% interpolate Rayleigh peak position for invalid/saturated peaks
-                        t_vec = times(:);
-                        peaksRayleigh_pos_vec = peaksRayleigh_pos_exact(:);
-
-                        [t_vec_sort, sortOrder] = sort(t_vec);
-                        peaksRayleigh_pos_vec_sort = peaksRayleigh_pos_vec(sortOrder);
-                        
-                        % concat Rayleigh peak positions from calibration and sort again
-                        t_vec_sort_cal = [t_vec_sort; caltimes(:)];
-                        peaksRayleigh_pos_vec_sort_cal = [peaksRayleigh_pos_vec_sort; peaksRayleigh_pos_cal(:)];
-                        
-                        [t_vec_sort_cal, sortOrderCal] = sort(t_vec_sort_cal);
-                        peaksRayleigh_pos_vec_sort_cal = peaksRayleigh_pos_vec_sort_cal(sortOrderCal);
-
-                        % only use not NaN values
-                        notnan = ~isnan(peaksRayleigh_pos_vec_sort_cal);
-
-                        % actually interpolate
-                        peaksRayleigh_pos_vec_sort_int = interp1(t_vec_sort_cal(notnan), peaksRayleigh_pos_vec_sort_cal(notnan), t_vec_sort);
-
-                        % reverse sorting
-                        [~, invSortOrder] = sort(sortOrder);
-
-                        peaksRayleigh_pos_vec_sort_int_inv = peaksRayleigh_pos_vec_sort_int(invSortOrder);
-
-                        peaksRayleigh_pos_interp = reshape(peaksRayleigh_pos_vec_sort_int_inv, size(peaksRayleigh_pos));
-
-                        if model.parameters.evaluation.interpRayleigh
-                            peaksRayleigh_pos = peaksRayleigh_pos_interp;
-                            validity = validity_Brillouin & ~isnan(peaksRayleigh_pos_interp);
-                        else
-                            peaksRayleigh_pos = peaksRayleigh_pos_exact;
-                            validity = validity_Rayleigh & validity_Brillouin;
-                        end
-
-                        %% calculate the Brillouin shift in [pix]
-                        brillouinShift = abs(peaksRayleigh_pos-peaksBrillouin_pos);
-                        
-                        %% calculate the Brillouin shift in [GHz]
-                        calibration = model.parameters.calibration;
-                        
-                        frequencyRayleigh = BE_SharedFunctions.getFrequencyFromMap(peaksRayleigh_pos, times, calibration);
-                        frequencyBrillouin = BE_SharedFunctions.getFrequencyFromMap(peaksBrillouin_pos, times, calibration);
-                        
-                        brillouinShift_frequency = abs(frequencyBrillouin - frequencyRayleigh);
-                        
-                        frequencyLeftSlope = BE_SharedFunctions.getFrequencyFromMap(...
-                            peaksBrillouin_pos - peaksBrillouin_fwhm/2, times, calibration);
-                        frequencyRightSlope = BE_SharedFunctions.getFrequencyFromMap(...
-                            peaksBrillouin_pos + peaksBrillouin_fwhm/2, times, calibration);
-
-                        peaksBrillouin_fwhm_frequency = abs(frequencyLeftSlope - frequencyRightSlope);
-                        
-                        %% save the results
-                        results = model.results;
-                        results.BrillouinShift            = brillouinShift;           % [pix]  the Brillouin shift in pixels
-                        results.BrillouinShift_frequency  = brillouinShift_frequency; % [GHz]  the Brillouin shift in GHz
-                        results.peaksBrillouin_pos        = peaksBrillouin_pos;       % [pix]  the position of the Brillouin peak(s) in the spectrum
-                        results.peaksBrillouin_dev        = peaksBrillouin_dev;       % [pix]  the deviation of the Brillouin fit
-                        results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the fitted intensity of the Brillouin peak(s)
-                        results.peaksBrillouin_int_real   = peaksBrillouin_int_real;  % [a.u.] the real intensity of the Brillouin peak(s)
-                        results.peaksBrillouin_nrFittedPeaks = peaksBrillouin_nrFittedPeaks;
-                        results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
-                        results.peaksBrillouin_fwhm_frequency = peaksBrillouin_fwhm_frequency;  % [GHz] the FWHM of the Brillouin peak in GHz
-                        results.peaksRayleigh_pos_interp  = peaksRayleigh_pos_interp; % [pix]  the position of the Rayleigh peak(s) in the spectrum (interpoalted)
-                        results.peaksRayleigh_pos_exact   = peaksRayleigh_pos_exact;  % [pix]  the position of the Rayleigh peak(s) in the spectrum (exact)
-                        results.peaksRayleigh_pos         = peaksRayleigh_pos;        % [pix]  the position of the Rayleigh peak(s) in the spectrum
-                        results.peaksRayleigh_int         = peaksRayleigh_int;        % [a.u.] the intensity of the Rayleigh peak(s)
-                        results.peaksRayleigh_fwhm        = peaksRayleigh_fwhm;       % [pix]  the FWHM of the Rayleigh peak(s)
-                        results.intensity                 = intensity;                % [a.u.] the overall intensity of the image
-                        results.validity_Rayleigh         = validity_Rayleigh;        % [logical] the validity of the Rayleigh peaks
-                        results.validity_Brillouin        = validity_Brillouin;       % [logical] the validity of the Brillouin peaks
-                        results.validity                  = validity;                 % [logical] the validity of the general results
-                        results.times                     = times;                    % [s]    time of the measurement
-                        model.results = results;
+                        model.results = calculateResults(model, res);
                     end
                     drawnow;
 
@@ -395,17 +322,23 @@ function evaluate(view, model)
     if warningBrillouin
         model.log.log('W', 'Some Brillouin peaks could not be fitted.');
     end
-                        
+    
+    %% save the results
+    model.results = calculateResults(model, res);
+    model.log.log('I/Evaluation: Finished.');
+end
+
+function results = calculateResults(model, res)
     %% interpolate Rayleigh peak position for invalid/saturated peaks
-    t_vec = times(:);
-    peaksRayleigh_pos_vec = peaksRayleigh_pos_exact(:);
+    t_vec = res.times(:);
+    peaksRayleigh_pos_vec = res.peaksRayleigh_pos_exact(:);
 
     [t_vec_sort, sortOrder] = sort(t_vec);
     peaksRayleigh_pos_vec_sort = peaksRayleigh_pos_vec(sortOrder);
 
     % concat Rayleigh peak positions from calibration and sort again
-    t_vec_sort_cal = [t_vec_sort; caltimes(:)];
-    peaksRayleigh_pos_vec_sort_cal = [peaksRayleigh_pos_vec_sort; peaksRayleigh_pos_cal(:)];
+    t_vec_sort_cal = [t_vec_sort; res.caltimes(:)];
+    peaksRayleigh_pos_vec_sort_cal = [peaksRayleigh_pos_vec_sort; res.peaksRayleigh_pos_cal(:)];
 
     [t_vec_sort_cal, sortOrderCal] = sort(t_vec_sort_cal);
     peaksRayleigh_pos_vec_sort_cal = peaksRayleigh_pos_vec_sort_cal(sortOrderCal);
@@ -421,55 +354,52 @@ function evaluate(view, model)
 
     peaksRayleigh_pos_vec_sort_int_inv = peaksRayleigh_pos_vec_sort_int(invSortOrder);
 
-    peaksRayleigh_pos_interp = reshape(peaksRayleigh_pos_vec_sort_int_inv, size(peaksRayleigh_pos));
+    peaksRayleigh_pos_interp = reshape(peaksRayleigh_pos_vec_sort_int_inv, size(res.peaksRayleigh_pos));
 
     if model.parameters.evaluation.interpRayleigh
         peaksRayleigh_pos = peaksRayleigh_pos_interp;
-        validity = validity_Brillouin & ~isnan(peaksRayleigh_pos_interp);
+        validity = res.validity_Brillouin & ~isnan(peaksRayleigh_pos_interp);
     else
-        peaksRayleigh_pos = peaksRayleigh_pos_exact;
-        validity = validity_Rayleigh & validity_Brillouin;
+        peaksRayleigh_pos = res.peaksRayleigh_pos_exact;
+        validity = res.validity_Rayleigh & res.validity_Brillouin;
     end
     
     %% calculate the Brillouin shift in [pix]
-    brillouinShift = abs(peaksRayleigh_pos-peaksBrillouin_pos);
+    brillouinShift = abs(peaksRayleigh_pos - res.peaksBrillouin_pos);
 
     %% calculate the Brillouin shift in [GHz]
     calibration = model.parameters.calibration;
     
-    frequencyRayleigh = BE_SharedFunctions.getFrequencyFromMap(peaksRayleigh_pos, times, calibration);
-    frequencyBrillouin = BE_SharedFunctions.getFrequencyFromMap(peaksBrillouin_pos, times, calibration);
+    frequencyRayleigh = BE_SharedFunctions.getFrequencyFromMap(peaksRayleigh_pos, res.times, calibration);
+    frequencyBrillouin = BE_SharedFunctions.getFrequencyFromMap(res.peaksBrillouin_pos, res.times, calibration);
 
     brillouinShift_frequency = abs(frequencyBrillouin - frequencyRayleigh);
 
-    frequencyLeftSlope = BE_SharedFunctions.getFrequencyFromMap(peaksBrillouin_pos - peaksBrillouin_fwhm/2, times, calibration);
-    frequencyRightSlope = BE_SharedFunctions.getFrequencyFromMap(peaksBrillouin_pos + peaksBrillouin_fwhm/2, times, calibration);
+    frequencyLeftSlope = BE_SharedFunctions.getFrequencyFromMap(res.peaksBrillouin_pos - res.peaksBrillouin_fwhm/2, res.times, calibration);
+    frequencyRightSlope = BE_SharedFunctions.getFrequencyFromMap(res.peaksBrillouin_pos + res.peaksBrillouin_fwhm/2, res.times, calibration);
 
     peaksBrillouin_fwhm_frequency = abs(frequencyLeftSlope - frequencyRightSlope);
-    
-    %% save the results
+
     results = model.results;
-    results.BrillouinShift            = brillouinShift;           % [pix]  the Brillouin shift in pixels
-    results.BrillouinShift_frequency  = brillouinShift_frequency; % [GHz]  the Brillouin shift in GHz
-    results.peaksBrillouin_pos        = peaksBrillouin_pos;       % [pix]  the position of the Brillouin peak(s) in the spectrum
-    results.peaksBrillouin_dev        = peaksBrillouin_dev;       % [pix]  the deviation of the Brillouin fit
-    results.peaksBrillouin_int        = peaksBrillouin_int;       % [a.u.] the fitted intensity of the Brillouin peak(s)
-    results.peaksBrillouin_int_real   = peaksBrillouin_int_real;  % [a.u.] the real intensity of the Brillouin peak(s)
-    results.peaksBrillouin_nrFittedPeaks = peaksBrillouin_nrFittedPeaks;
-    results.peaksBrillouin_fwhm       = peaksBrillouin_fwhm;      % [pix]  the FWHM of the Brillouin peak
+    results.BrillouinShift            = brillouinShift;                 % [pix]  the Brillouin shift in pixels
+    results.BrillouinShift_frequency  = brillouinShift_frequency;       % [GHz]  the Brillouin shift in GHz
+    results.peaksBrillouin_pos        = res.peaksBrillouin_pos;         % [pix]  the position of the Brillouin peak(s) in the spectrum
+    results.peaksBrillouin_dev        = res.peaksBrillouin_dev;         % [pix]  the deviation of the Brillouin fit
+    results.peaksBrillouin_int        = res.peaksBrillouin_int;         % [a.u.] the fitted intensity of the Brillouin peak(s)
+    results.peaksBrillouin_int_real   = res.peaksBrillouin_int_real;    % [a.u.] the real intensity of the Brillouin peak(s)
+    results.peaksBrillouin_nrFittedPeaks = res.peaksBrillouin_nrFittedPeaks;
+    results.peaksBrillouin_fwhm       = res.peaksBrillouin_fwhm;        % [pix]  the FWHM of the Brillouin peak
     results.peaksBrillouin_fwhm_frequency = peaksBrillouin_fwhm_frequency;  % [GHz] the FWHM of the Brillouin peak in GHz
-    results.peaksRayleigh_pos_interp  = peaksRayleigh_pos_interp; % [pix]  the position of the Rayleigh peak(s) in the spectrum (interpoalted)
-    results.peaksRayleigh_pos_exact   = peaksRayleigh_pos_exact;  % [pix]  the position of the Rayleigh peak(s) in the spectrum (exact)
-    results.peaksRayleigh_pos         = peaksRayleigh_pos;        % [pix]  the position of the Rayleigh peak(s) in the spectrum
-    results.peaksRayleigh_int         = peaksRayleigh_int;        % [a.u.] the intensity of the Rayleigh peak(s)
-    results.peaksRayleigh_fwhm        = peaksRayleigh_fwhm;       % [pix]  the FWHM of the Rayleigh peak(s)
-    results.intensity                 = intensity;                % [a.u.] the overall intensity of the image
-    results.validity_Rayleigh         = validity_Rayleigh;        % [logical] the validity of the Rayleigh peaks
-    results.validity_Brillouin        = validity_Brillouin;       % [logical] the validity of the Brillouin peaks
-    results.validity                  = validity;                 % [logical] the validity of the general results
-    results.times                     = times;                    % [s]    time of the measurement
-    model.results = results;
-    model.log.log('I/Evaluation: Finished.');
+    results.peaksRayleigh_pos_interp  = peaksRayleigh_pos_interp;       % [pix]  the position of the Rayleigh peak(s) in the spectrum (interpoalted)
+    results.peaksRayleigh_pos_exact   = res.peaksRayleigh_pos_exact;    % [pix]  the position of the Rayleigh peak(s) in the spectrum (exact)
+    results.peaksRayleigh_pos         = peaksRayleigh_pos;              % [pix]  the position of the Rayleigh peak(s) in the spectrum
+    results.peaksRayleigh_int         = res.peaksRayleigh_int;          % [a.u.] the intensity of the Rayleigh peak(s)
+    results.peaksRayleigh_fwhm        = res.peaksRayleigh_fwhm;         % [pix]  the FWHM of the Rayleigh peak(s)
+    results.intensity                 = res.intensity;                  % [a.u.] the overall intensity of the image
+    results.validity_Rayleigh         = res.validity_Rayleigh;          % [logical] the validity of the Rayleigh peaks
+    results.validity_Brillouin        = res.validity_Brillouin;         % [logical] the validity of the Brillouin peaks
+    results.validity                  = validity;                       % [logical] the validity of the general results
+    results.times                     = res.times;                      % [s]    time of the measurement
 end
 
 function twoPeaks = checkTwoPeaks(BrillouinSection, peakPos, fwhm, intensity, intensity_real, thres)
