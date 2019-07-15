@@ -215,6 +215,7 @@ function plotBrillouinImage(handles, model)
             data(validity > model.displaySettings.evaluation.valThreshould) = NaN;
         end
     end
+    data = nanmean(data,5);
     data = nanmean(data,4);
 
     %% find non-singleton dimensions
@@ -331,6 +332,7 @@ function onDisplaySettings(handles, model)
             data(validity > model.displaySettings.evaluation.valThreshould) = NaN;
         end
     end
+    data = nanmean(data,5);
     data = squeeze(nanmean(data,4));
     
     if ~model.displaySettings.masking.showOverlay
