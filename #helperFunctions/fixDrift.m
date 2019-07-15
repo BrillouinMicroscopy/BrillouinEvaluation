@@ -51,7 +51,7 @@ valid = ~isnan(BS_medium_sorted);
 % Interpolate the missing values and smoothen the curve to not average out
 % the noise
 BS_mask_sorted_int = interp1(times_sorted(valid), BS_medium_sorted(valid), times_sorted, 'linear');
-BS_mask_sorted_int_smooth = movmedian(BS_mask_sorted_int, 40, 'omitnan');
+BS_mask_sorted_int_smooth = movmedian(BS_mask_sorted_int, 500, 'omitnan');
 
 % Reverse the sort by acquisition time to allow reshaping to 4D array
 BS_mask_int_smooth = BS_mask_sorted_int_smooth(indices_reverse);
