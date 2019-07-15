@@ -8,6 +8,7 @@ results = results.results;
 
 % Brillouin shift
 BS = results.results.BrillouinShift_frequency;
+BS = nanmean(BS, 5);
 
 % Positions
 x = results.parameters.positions.X;
