@@ -450,6 +450,10 @@ function loadData(model, filePath)
                 if ~isfield(parameters.extraction, 'overlay')
                     parameters.extraction.overlay = false;
                 end
+
+                if ~isfield(parameters.evaluation, 'nrBrillouinPeaks')
+                    parameters.evaluation.nrBrillouinPeaks = 1;
+                end
                 
                 % set version to 1.4.0 to allow further migration steps
                 % possibly necessary for future versions

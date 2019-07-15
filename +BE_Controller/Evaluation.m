@@ -32,6 +32,8 @@ function callbacks = Evaluation(model, view)
     set(view.evaluation.decreaseFloor, 'Callback', {@changeClim, model, -1});
     set(view.evaluation.increaseCap, 'Callback', {@changeClim, model, 1});
     set(view.evaluation.decreaseCap, 'Callback', {@changeClim, model, -1});
+
+    set(view.evaluation.nrBrillouinPeaks, 'Callback', {@setNrBrillouinPeaks, model, view});
     
     callbacks = struct( ...
         'setActive', @()setActive(view), ...
@@ -146,7 +148,7 @@ function evaluate(view, model)
         
     res.intensity = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3));
     
-    nrBrillouinPeaks = 2;
+    nrBrillouinPeaks = model.parameters.evaluation.nrBrillouinPeaks;
     res.peaksBrillouin_pos = NaN(model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z, size(imgs,3), nrBrillouinPeaks);
     res.peaksBrillouin_dev = res.peaksBrillouin_pos;
     res.peaksBrillouin_fwhm = res.peaksBrillouin_pos;
@@ -800,3 +802,7 @@ function startMasking(~, ~, view, model)
     BE_Controller.Masking(model, view);
 end
 
+function setNrBrillouinPeaks(~, ~, model, view)
+    nrBrillouinPeaks = get(view.evaluation.nrBrillouinPeaksGroup, 'SelectedObject');
+    model.parameters.evaluation.nrBrillouinPeaks = str2double(erase(nrBrillouinPeaks.Tag, 'nrBrillouinPeaks_'));
+end

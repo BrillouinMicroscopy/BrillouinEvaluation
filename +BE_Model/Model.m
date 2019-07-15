@@ -212,7 +212,8 @@ classdef Model < handle
                 'centery', 860, ...         % [pix]             y-center of the image
                 'scaling', 0.086, ...       % [micro m / pix]   scaling factor
                 'xl', NaN, ...              %
-                'yl', NaN ...               %
+                'yl', NaN, ...              %
+                'nrBrillouinPeaks', 1 ...   % [1]   number of Brillouin peaks to fit
             ), ...
             'masking', struct( ...
                 'brushSize', 40, ...        % [micro m] size of the brush
