@@ -455,6 +455,10 @@ function loadData(model, filePath)
                     parameters.evaluation.nrBrillouinPeaks = 1;
                 end
                 
+                if ~isfield(results, 'peaksBrillouin_nrFittedPeaks')
+                    results.peaksBrillouin_nrFittedPeaks = NaN(size(results.peaksBrillouin_pos));
+                end
+                
                 % set version to 1.4.0 to allow further migration steps
                 % possibly necessary for future versions
                 parameters.programVersion = struct( ...
