@@ -7,8 +7,8 @@ results = load(filepath, 'results');
 results = results.results;
 
 % Brillouin shift
-BS = results.results.BrillouinShift_frequency;
-BS = nanmean(BS, 5);
+BS_initial = results.results.BrillouinShift_frequency;
+BS = nanmean(BS_initial, 5);
 
 % Positions
 x = results.parameters.positions.X;
@@ -64,7 +64,7 @@ BS_mask_int_smooth_4D = reshape(BS_mask_int_smooth, size(BS));
 normalization = BS_mask_mean/BS_mask_int_smooth_4D;
 
 % Finally normalize the Brillouin shift
-BS_normalized = BS.*normalization;
+BS_normalized = BS_initial.*repmat(normalization, 1, 1, 1, 1, size(BS_initial, 5));
 
 %% Save the values back to the evaluation file
 results.results.BrillouinShift_frequency_normalized = BS_normalized;
@@ -82,7 +82,7 @@ title(cb, '$\nu_\mathrm{B}$ [GHz]', 'interpreter', 'latex');
 
 %% Plot data after correction
 figure;
-imagesc(x(1,:), y(:,1), nanmean(BS_normalized,4));
+imagesc(x(1,:), y(:,1), nanmean(nanmean(BS_normalized,5),4));
 axis image;
 caxis([6.8 7.4]);
 xlabel('$x$ [$\mu$m]', 'interpreter', 'latex');
