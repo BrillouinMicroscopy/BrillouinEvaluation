@@ -40,6 +40,7 @@ BS_mask_mean = nanmean(BS_mask(:));
 % array by acquisition time
 [times_sorted, indices] = sort(times, 'ascend');
 % Create indices vector for reversing the sort
+indices_reverse = NaN(1, numel(BS));
 indices_reverse(indices) = 1:numel(BS);
 
 % Sort the Brillouin shift by acquisition time
