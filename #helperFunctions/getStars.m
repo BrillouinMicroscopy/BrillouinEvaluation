@@ -1,5 +1,7 @@
 function stars = getStars(p)
-    if p<=1e-3
+    if p<=1e-4
+        stars='****';
+    elseif p<=1e-3
         stars='***'; 
     elseif p<=1e-2
         stars='**';
