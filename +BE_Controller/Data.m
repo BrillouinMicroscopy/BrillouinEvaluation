@@ -61,7 +61,7 @@ function loadData(model, filePath)
     % Load the h5bm data file
     model.log.log(['I/File: Opened file "' filePath '"']);
     [PathName, name, extension] = fileparts(filePath);
-    model.filepath = [PathName '\'];
+    model.filepath = [PathName filesep];
     if ~isequal(PathName,0) && exist(filePath, 'file')
         
         model.filename = [name extension];
@@ -87,9 +87,9 @@ function loadData(model, filePath)
         %% check if a corresponding results file exists
         [~, filename, ~] = fileparts(model.filename);
         if (model.repetitionCount > 1)
-            defaultPath = [model.filepath '..\EvalData\' filename '_rep' num2str(model.repetition) '.mat'];
+            defaultPath = [model.filepath '..' filesep 'EvalData' filesep filename '_rep' num2str(model.repetition) '.mat'];
         else
-            defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
+            defaultPath = [model.filepath '..' filesep 'EvalData' filesep filename '.mat'];
         end
         if exist(defaultPath, 'file') == 2
             data = load(defaultPath, 'results');
@@ -628,9 +628,9 @@ function selectSaveData(~, ~, model)
     end
     [~, filename, ~] = fileparts(model.filename);
     if (model.repetitionCount > 1)
-        defaultPath = [model.filepath '..\EvalData\' filename '_rep' num2str(model.repetition) '.mat'];
+        defaultPath = [model.filepath '..' filesep 'EvalData' filesep filename '_rep' num2str(model.repetition) '.mat'];
     else
-        defaultPath = [model.filepath '..\EvalData\' filename '.mat'];
+        defaultPath = [model.filepath '..' filesep 'EvalData' filesep filename '.mat'];
     end
     [FileName,PathName,~] = uiputfile('*.mat','Save results as', defaultPath);
     filePath = [PathName, FileName];
