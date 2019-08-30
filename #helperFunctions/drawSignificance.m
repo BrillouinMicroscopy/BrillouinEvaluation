@@ -1,4 +1,10 @@
-function drawSignificance(ax, measurement)
+function drawSignificance(ax, measurement, positions, show)
+    if ~exist('positions', 'var')
+        positions = 1:max(measurement.significance(:,2));
+    end
+    if ~exist('show', 'var')
+        show = ones(size(measurement.significance,1));
+    end
     h = ishold(ax);
     hold(ax, 'on');
     dy = diff(ax.YLim);
@@ -9,15 +15,17 @@ function drawSignificance(ax, measurement)
     ind = 0;
     if (measurement.p < 0.05)
         for jj = 1:size(measurement.significance,1)
-            if (measurement.significance(jj,6) < 0.05)
+            if (measurement.significance(jj,6) < 0.05) && show(jj)
+                xStart = positions(measurement.significance(jj,1));
+                xEnd = positions(measurement.significance(jj,2));
                 stars = getStars(measurement.significance(jj,6));
-                xPos = mean(measurement.significance(jj,1:2));
+                xPos = mean([xStart, xEnd]);
                 text(xPos,measurement.significance_yPos + stardistance + ind * bracketspacing,stars,...
                     'HorizontalAlignment','Center',...
                     'BackGroundColor','none',...
                     'Tag','sigstar_stars');
-                line([measurement.significance(jj,1), measurement.significance(jj,1),...
-                      measurement.significance(jj,2), measurement.significance(jj,2)],...
+                line([xStart, xStart,...
+                      xEnd, xEnd],...
                      [measurement.significance_yPos - bracketheight, measurement.significance_yPos,...
                       measurement.significance_yPos, measurement.significance_yPos - bracketheight] + ind * bracketspacing, 'color', 'k');
                 
