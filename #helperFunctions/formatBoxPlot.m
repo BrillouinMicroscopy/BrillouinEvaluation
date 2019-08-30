@@ -4,8 +4,11 @@ function formatBoxPlot(hndl, colors)
     for kk = 1:size(hndl,2)
         color = colors(mod(kk-1, nrColors)+1,:);
         
+        xData = get(hndl(5,kk), 'XData');
+        xPos = mean(xData(1,[1,3]));
+        
         %% format boxes
-        set(hndl(5,kk), 'XData', [kk kk]);
+        set(hndl(5,kk), 'XData', xPos*[1 1]);
         tmp = get(hndl(5,kk), 'YData');
         set(hndl(5,kk), 'YData', tmp(1:2));
         set(hndl(5,kk), 'LineWidth', 10);
@@ -22,7 +25,7 @@ function formatBoxPlot(hndl, colors)
         set(hndl(4,kk), 'Visible', 'off');
 
         %% format median line
-        set(hndl(6,kk), 'XData', [-0.15 0.15] + kk);
+        set(hndl(6,kk), 'XData', [-0.15 0.15] + xPos);
         set(hndl(6,kk), 'Color', 'white');
         set(hndl(6,kk), 'LineWidth', 1);
     end
