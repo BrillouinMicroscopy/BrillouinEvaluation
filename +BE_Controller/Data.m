@@ -468,6 +468,23 @@ function loadData(model, filePath)
                     'preRelease', '' ...
                 );
             end
+            
+            %% migration steps for files coming from versions older than 1.4.1
+            if parameters.programVersion.major <= 1 && parameters.programVersion.minor <= 4 ...
+                    && parameters.programVersion.patch < 1
+               
+                parameters.date = model.file.getDate(model.mode, model.repetition);
+                
+                % set version to 1.4.1 to allow further migration steps
+                % possibly necessary for future versions
+                parameters.programVersion = struct( ...
+                    'major', 1, ...
+                    'minor', 4, ...
+                    'patch', 1, ...
+                    'preRelease', '' ...
+                );
+                
+            end
             % after all calibration steps, set version to program version
             parameters.programVersion = model.programVersion;
             
@@ -481,7 +498,7 @@ function loadData(model, filePath)
         else
             parameters = model.parameters;
             parameters.programVersion = model.programVersion;   % set program versio key to current program version
-            parameters.date = model.file.date;
+            parameters.date = model.file.getDate(model.mode, model.repetition);
             parameters.comment = model.file.comment;
 
             % get the resolution
