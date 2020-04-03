@@ -95,13 +95,107 @@ function findPeaks(varargin)
             % reduce radius if medfilt2 is not possible (license checkout
             % failure)
             try
-                img = medfilt2(img);
+                img = medfilt2(img, 'symmetric');
             catch
             end
 
             %% find the (hopefully) four Rayleigh peaks
             % assumes that Rayleigh peaks are stronger than Brillouin peaks
             % this might become a problem later on :(
+%             
+            %consider prelocating the memory
+            peak_info_x_scan = [];
+
+%             peak_prominece_ii_kk = 0
+      
+            for ii = 1:siz(1) 
+                [height,locs_y, width_x, proms_x] = findpeaks(img(ii,:), ...
+                'MinPeakProminence',20, ...
+                'MinPeakDistance', 50);%, ...
+%                'SortStr','descend');
+                if ~ isempty(height) 
+                    for kk = 1:size(height,2)
+                        peak_info_x_scan = [peak_info_x_scan; ...
+                        [ii, height(kk), locs_y(kk), ...
+                        width_x(kk), proms_x(kk)]];
+                        %disp([ii,kk]);
+                        %disp(peak_info);
+                    end
+                end
+                % if found 1D peak is next to the previous and prominence
+                % is higher: add the located peak to the peak list
+%                 if ~ isempty(peak_info) && (peak_info(ii-1,0) == ...
+%                         peak_info(ii,0))
+%                 end
+%                 
+%                 else
+%                     peak_prominece_ii_kk = 0
+%                 end   
+            end
+            
+%             peak_info_y_scan = []
+%             for kk = 1:size(peak_info_x_scan, 1)
+%                 %scan all the y locations where peaks were found
+%                 [pks_y,locs_y, width_y, proms_y] = findpeaks(img(:,peak_info_x_scan(kk,3)), ...
+%                 'MinPeakProminence',10, ...
+%                 'MinPeakDistance', 50);
+%                 if ~ isempty(pks_y) 
+%                     for ii = 1:size(pks_y,2)
+%                         peak_info_y_scan = [peak_info_y_scan; ...
+%                         [kk, pks_y(ii), locs_y(ii), width_y(ii), proms_y(ii)]];
+%                     end
+%                 end
+%             end
+            
+
+            peak_index_x = 1;
+            peak_index_y = 1;
+            peak_index = 1;
+            peak_list = [];
+            peak_group =[];        
+% peak_group [peak_index_x, peak_index_y, peak info];
+% peak info [ii, height(kk), locs_y(kk), width_x(kk), proms_x(kk)]];            
+            
+            for ii = 1 : (size(peak_info_x_scan, 1)-1)
+                %if peaks connected x is either equal or 
+               if abs(peak_info_x_scan(ii+1,1) - peak_info_x_scan(ii,1)) <= 1 
+                    peak_group = [peak_group; [peak_index_x,  nan, nan,...
+                       peak_info_x_scan(ii,:)]];          
+               else
+                   peak_index_x = peak_index_x +1;
+                   peak_group = [peak_group; ...
+                                [peak_index_x,  nan, nan,...
+                                 peak_info_x_scan(ii,:)]];     
+               end             
+            end
+            
+            peak_info_x_scan = sortrows(peak_info_x_scan, 3);
+            for kk = 1 : (size(peak_info_x_scan, 1)-1)
+                %if peaks connected (2 as border is arbitrary) 
+               if abs(peak_info_x_scan(kk+1,3) - peak_info_x_scan(kk,3)) <= 2
+                    %disp(kk);
+                    peak_group(kk, 2) = peak_index_y;
+               else
+                   peak_index_y = peak_index_y +1;
+                   peak_group(kk, 2) = peak_index_y;
+               end             
+            end
+            
+            
+            for ll = 1 : (size(peak_info_x_scan, 1)-1)
+                peak_group(ll,3) = peak_index;
+                %if peak_index_x or peak_index_y is grater than the
+                %previous, the new peak is not connected and therefore gets
+                % a new index
+                if (peak_group(ll+1,1) + peak_group(ll+1,2) > ...
+                    peak_group(ll,1) + peak_group(ll,2))
+                
+                    peak_index = peak_index + 1;
+                end
+                
+            end
+                
+
             tmpImg = img;
             for jj = 1:4
                 % find highest value in the image

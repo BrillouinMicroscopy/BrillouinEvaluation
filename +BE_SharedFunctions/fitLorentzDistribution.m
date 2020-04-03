@@ -44,15 +44,27 @@ switch nrPeaks
         peakFWHM = params(2);
         peakInt = params(3); 
     case 2
+
+        %start = [maxima(1, 1), maxima(1, 2), fwhm, maxima(2, 1), maxima(2, 2)];
+        x = 1:1:length(intensity);
         %start parameters
         start = [maxima(1, 1), maxima(1, 2), fwhm, fwhm, maxima(2, 1), maxima(2, 2)];
-        x = 1:1:length(intensity);
+        
         % fitting
-        [params, ~, ~, fittedCurve, deviation]  = BE_Utils.FittingScripts.nfit_2peaks(x, intensity, start, thres);
+        if  true
+            %identify left peak
+            %fit with constrains if debug active
+            [params, ~, ~, fittedCurve, deviation]  = BE_Utils.FittingScripts.nfit_2peakscon(x, intensity, start, thres);
+        else
 
+            [params, ~, ~, fittedCurve, deviation]  = BE_Utils.FittingScripts.nfit_2peaks(x, intensity, start, thres);
+        end
+        
         peakPos = params(1:2);
         peakFWHM = params(3:4);
+        %peakFWHM = [11.6 params(3)];
         peakInt = params(5:6);
+        %peakInt = params(4:5);
     case 4
         if (mean(maxima(2,1:3:end)) > 5 * mean(maxima(2,[2,3])))
         % fit Rayleigh and Brillouin peaks separately

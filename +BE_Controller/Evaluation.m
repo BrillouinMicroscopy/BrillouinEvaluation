@@ -250,7 +250,7 @@ function evaluate(view, model)
                         BrillouinSection = spectrum(ind_Brillouin_shifted);
                         if ~sum(isnan(BrillouinSection))
                             [peakPos, fwhm, BrillouinIntensity, ~, thres, deviation, intensity_real] = ...
-                                BE_SharedFunctions.fitLorentzDistribution(BrillouinSection, model.parameters.evaluation.fwhm, nrBrillouinPeaks, parameters.peaks, 0);
+                                BE_SharedFunctions.fitLorentzDistribution(BrillouinSection, model.parameters.evaluation.fwhm, nrBrillouinPeaks, parameters.peaks, 1);
                             %% We check whether a two-peak fit is reasonable
                             if size(peakPos,2) == 2
                                 % If the peaks are very close, we fall back
@@ -412,7 +412,7 @@ end
 function twoPeaks = checkTwoPeaks(BrillouinSection, peakPos, fwhm, intensity, intensity_real, thres)
     twoPeaks = true;
     %% If the peaks are to close together --> 1 peak
-    if (abs(diff(peakPos)) < 0.8*nanmax(fwhm(:)))
+    if (abs(diff(peakPos)) < 0.3*nanmin(fwhm(:)))
         twoPeaks = false;
     end
     
@@ -427,7 +427,7 @@ function twoPeaks = checkTwoPeaks(BrillouinSection, peakPos, fwhm, intensity, in
     end
     
     %% If the fitted intensity is to low --> 1 peak
-    if (nanmin(intensity(:)) - thres < 10)
+    if (nanmin(intensity(:)) - thres < 15)
         twoPeaks = false;
     end
     
