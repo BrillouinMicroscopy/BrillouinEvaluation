@@ -107,7 +107,7 @@ function findPeaks(varargin)
             peak_info_x_scan = [];
 
 %             peak_prominece_ii_kk = 0
-      
+            peak_count = 1;
             for ii = 1:siz(1) 
                 [height,locs_y, width_x, proms_x] = findpeaks(img(ii,:), ...
                 'MinPeakProminence',20, ...
@@ -115,9 +115,11 @@ function findPeaks(varargin)
 %                'SortStr','descend');
                 if ~ isempty(height) 
                     for kk = 1:size(height,2)
+                        
                         peak_info_x_scan = [peak_info_x_scan; ...
                         [ii, height(kk), locs_y(kk), ...
-                        width_x(kk), proms_x(kk)]];
+                        width_x(kk), proms_x(kk), peak_count]];
+                        peak_count = peak_count+1;
                         %disp([ii,kk]);
                         %disp(peak_info);
                     end
@@ -152,49 +154,66 @@ function findPeaks(varargin)
             peak_index_y = 1;
             peak_index = 1;
             peak_list = [];
-            peak_group =[];        
+            peak_group =[peak_index_x, peak_index_y, peak_index,...
+                peak_info_x_scan(1,:)];        
 % peak_group [peak_index_x, peak_index_y, peak info];
-% peak info [ii, height(kk), locs_y(kk), width_x(kk), proms_x(kk)]];            
+% peak info [ii, height(kk), locs_y(kk), width_x(kk), proms_x(kk)]];    
             
-            for ii = 1 : (size(peak_info_x_scan, 1)-1)
+            
+            for ii = 2 : (size(peak_info_x_scan, 1))
                 %if peaks connected x is either equal or 
-               if abs(peak_info_x_scan(ii+1,1) - peak_info_x_scan(ii,1)) <= 1 
-                    peak_group = [peak_group; [peak_index_x,  nan, nan,...
-                       peak_info_x_scan(ii,:)]];          
-               else
-                   peak_index_x = peak_index_x +1;
-                   peak_group = [peak_group; ...
-                                [peak_index_x,  nan, nan,...
-                                 peak_info_x_scan(ii,:)]];     
-               end             
+                if abs(peak_info_x_scan(ii-1,1) - peak_info_x_scan(ii,1)) > 1 
+                    peak_index_x = peak_index_x +1;
+                end
+                
+                peak_group = [peak_group; [peak_index_x,  nan, nan,...
+                    peak_info_x_scan(ii,:)]];
+%                        peak_info_x_scan(ii,:)]];
+%                if abs(peak_info_x_scan(ii-1,1) - peak_info_x_scan(ii,1)) <= 1 
+%                     peak_group = [peak_group; [peak_index_x,  nan, nan,...
+%                        peak_info_x_scan(ii,:)]];          
+%                else
+%                    peak_index_x = peak_index_x +1;
+%                    peak_group = [peak_group; ...
+%                                 [peak_index_x,  nan, nan,...
+%                                  peak_info_x_scan(ii,:)]];     
+%                end             
             end
             
             peak_info_x_scan = sortrows(peak_info_x_scan, 3);
-            for kk = 1 : (size(peak_info_x_scan, 1)-1)
-                %if peaks connected (2 as border is arbitrary) 
-               if abs(peak_info_x_scan(kk+1,3) - peak_info_x_scan(kk,3)) <= 2
-                    %disp(kk);
-                    peak_group(kk, 2) = peak_index_y;
-               else
+            for kk = 2 : (size(peak_info_x_scan, 1))
+%             for kk = 1 : (size(peak_info_x_scan, 1)-1)
+%                 %if peaks connected (2 as border is arbitrary) 
+%               disp(peak_info_x_scan(kk));
+               if abs(peak_info_x_scan(kk-1,3) - peak_info_x_scan(kk,3)) > 5
                    peak_index_y = peak_index_y +1;
-                   peak_group(kk, 2) = peak_index_y;
-               end             
+                   
+%                     peak_group(kk, 2) = peak_index_y;
+%                else
+%                    peak_index_y = peak_index_y +1;
+%                    peak_group(kk, 2) = peak_index_y;
+               end     
+               %index_unsorted = peak_info_x_scan(:,6)==kk;
+               index_unsorted = peak_info_x_scan(kk,6);
+
+               peak_group(index_unsorted, 2) = peak_index_y;
             end
             
             
-            for ll = 1 : (size(peak_info_x_scan, 1)-1)
-                peak_group(ll,3) = peak_index;
-                %if peak_index_x or peak_index_y is grater than the
-                %previous, the new peak is not connected and therefore gets
-                % a new index
-                if (peak_group(ll+1,1) + peak_group(ll+1,2) > ...
-                    peak_group(ll,1) + peak_group(ll,2))
+            peak_group = sortrows(peak_group, [1,2]);
+            for ll = 2 : (size(peak_info_x_scan, 1))
+                if abs((peak_group(ll-1,1) + peak_group(ll-1,2)) - ...
+                    (peak_group(ll,1) + peak_group(ll,2))) > 0
                 
                     peak_index = peak_index + 1;
                 end
-                
-            end
-                
+                 peak_group(ll,3) = peak_index;
+                %if peak_index_x or peak_index_y is grater than the
+                %previous, the new peak is not connected and therefore gets
+                % a new index
+%                 
+             end
+%            sortrows(peak_group, 6)    
 
             tmpImg = img;
             for jj = 1:4
