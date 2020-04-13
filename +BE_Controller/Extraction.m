@@ -153,7 +153,6 @@ function findPeaks(varargin)
             peak_index_x = 1;
             peak_index_y = 1;
             peak_index = 1;
-            peak_list = [];
             peak_group =[peak_index_x, peak_index_y, peak_index,...
                 peak_info_x_scan(1,:)];        
 % peak_group [peak_index_x, peak_index_y, peak info];
@@ -214,62 +213,116 @@ function findPeaks(varargin)
 %                 
              end
 %            sortrows(peak_group, 6)    
-
-            tmpImg = img;
-            for jj = 1:4
-                % find highest value in the image
-                [~, ind] = max(tmpImg(:));
-                [cy,cx] = ind2sub(siz,ind);
-                % set peak region to zero for finding new peak
-                [x,y]=meshgrid(-(cx-1):(siz(2)-cx),-(cy-1):(siz(1)-cy));
-                mask=((x.^2+y.^2)<=r^2);
-                tmpImg(mask) = 0;
-                % select Rayleigh peaks in upper left and lower right corner
-                if ((cy < siz(2)/2) && (cx < siz(1)/2)) || ((cy > siz(2)/2) && (cx > siz(1)/2))
-                    peaks.x = [peaks.x cx];
-                    peaks.y = [peaks.y cy];
-                end
+            %max(peak_group(:,3)) corresponds to number of idientified
+            %peaks
+            peak_list = NaN( max(peak_group(:,3)),9);
+            for nn = 1 : max(peak_group(:,3))
+                single_peak_ind_nn = peak_group(:,3)==nn;
+                single_peak_nn = peak_group(single_peak_ind_nn, :)
+                [~, peak_max_ind_nn] = max(single_peak_nn(:,8));
+                peak_list(nn,:) = single_peak_nn(peak_max_ind_nn,:)
             end
-
-            %% Select only the area between the Rayleigh peaks
-            m = (peaks.y(1) - peaks.y(2))/(peaks.x(1) - peaks.x(2));
-            n = peaks.y(1) - m*peaks.x(1);
-
-            [~,order] = sort(peaks.x);
-            peaks.x = peaks.x(order);
-            peaks.y = peaks.y(order);
-
-            mask = zeros(size(img));
-            width = 50;
-            % only select point inbetween the Rayleigh peaks
-            for jj = peaks.y(1):peaks.y(2)
-                for kk = peaks.x(1):peaks.x(2)
-                    if (jj > (m * kk) + n - width) && (jj < (m * kk) + n + width/2)
-                        mask(jj,kk) = 1;
-                    end
-                end
-            end
-
-            tmpImg(mask == 0) = NaN;
-
-            %% find two Brillouin peaks
-            for jj = 1:2
-                % find highest value in the image
-                [~, ind] = max(tmpImg(:));
-                [cy,cx] = ind2sub(siz,ind);
-                % set peak region to zero for finding new peak
-                [x,y]=meshgrid(-(cx-1):(siz(2)-cx),-(cy-1):(siz(1)-cy));
-                mask=((x.^2+y.^2)<=r^2);
-                tmpImg(mask) = 0;
-                % add peaks
-                peaks.x = [peaks.x cx];
-                peaks.y = [peaks.y cy];
-            end
-
-            % sort the peaks (just nice to have)
-            [~,order] = sort(peaks.x);
-            peaks.x = peaks.x(order);
-            peaks.y = peaks.y(order);
+            
+            dist_up_left_corner = sqrt(peak_list(:,4).^2 + peak_list(:,6).^2);
+            %One Rayleighpeak is the peak closest to the uppper left corner
+            Rayleigh_up_left = peak_list(find(...
+            dist_up_left_corner==min(dist_up_left_corner)),:);
+            %the other Rayleighpeak most distant to the uppper left corner
+            Rayleigh_low_right = peak_list(find(...
+            dist_up_left_corner==max(dist_up_left_corner)),:);
+            %The Brillouin peaks should be between the Rayleighpeaks, so 
+            % x and why should be greater
+            Brillouin_peaks_preselec = peak_list( ...
+                           peak_list(:,4) > Rayleigh_up_left(4)...
+                           & peak_list(:,6) > Rayleigh_up_left(6)...
+                           & peak_list(:,4) < Rayleigh_low_right(4)...
+                           & peak_list(:,6) < Rayleigh_low_right(6),:);
+            % The two peaks closest to upper left Rayleigh are identified 
+            % as Antistokes
+            dist_up_left_Rayleigh = sqrt( (Rayleigh_up_left(:,4) - ...
+                                    Brillouin_peaks_preselec(:,4)).^2 + ...
+                                         (Rayleigh_up_left(:,6) - ...
+                                    Brillouin_peaks_preselec(:,6)).^2);  
+                                
+            [~, closest_ulR_ind]  = sortrows(dist_up_left_Rayleigh);
+            Antistokes_ind = closest_ulR_ind(1:2);
+            Antistokes = Brillouin_peaks_preselec(Antistokes_ind,:)
+            
+            % The two peaks closest to upper left Rayleigh are identified 
+            % as Stokes
+            dist_low_right_Rayleigh = sqrt( (Rayleigh_low_right(:,4) - ...
+                        Brillouin_peaks_preselec(:,4)).^2 + ...
+                             (Rayleigh_low_right(:,6) - ...
+                        Brillouin_peaks_preselec(:,6)).^2);
+                    
+            [~, closest_lrR_ind]  = sortrows(dist_low_right_Rayleigh);
+            Stokes_ind = closest_lrR_ind(1:2);
+            Stokes = Brillouin_peaks_preselec(Stokes_ind,:)
+            
+            
+            peaks.y = [Rayleigh_up_left(4) Rayleigh_low_right(4)...
+                        reshape(Antistokes(:,4),1,2)  ...
+                        reshape(Stokes(:,4),1,2)];
+                    
+            peaks.x = [Rayleigh_up_left(6) Rayleigh_low_right(6)...   
+                        reshape(Antistokes(:,6),1,2) ...
+                        reshape(Stokes(:,6),1,2)];
+            
+%             tmpImg = img;
+%             for jj = 1:4
+%                 % find highest value in the image
+%                 [~, ind] = max(tmpImg(:));
+%                 [cy,cx] = ind2sub(siz,ind);
+%                 % set peak region to zero for finding new peak
+%                 [x,y]=meshgrid(-(cx-1):(siz(2)-cx),-(cy-1):(siz(1)-cy));
+%                 mask=((x.^2+y.^2)<=r^2);
+%                 tmpImg(mask) = 0;
+%                 % select Rayleigh peaks in upper left and lower right corner
+%                 if ((cy < siz(2)/2) && (cx < siz(1)/2)) || ((cy > siz(2)/2) && (cx > siz(1)/2))
+%                     peaks.x = [peaks.x cx];
+%                     peaks.y = [peaks.y cy];
+%                 end
+%             end
+% 
+%             %% Select only the area between the Rayleigh peaks
+%             m = (peaks.y(1) - peaks.y(2))/(peaks.x(1) - peaks.x(2));
+%             n = peaks.y(1) - m*peaks.x(1);
+% 
+%             [~,order] = sort(peaks.x);
+%             peaks.x = peaks.x(order);
+%             peaks.y = peaks.y(order);
+% 
+%             mask = zeros(size(img));
+%             width = 50;
+%             % only select point inbetween the Rayleigh peaks
+%             for jj = peaks.y(1):peaks.y(2)
+%                 for kk = peaks.x(1):peaks.x(2)
+%                     if (jj > (m * kk) + n - width) && (jj < (m * kk) + n + width/2)
+%                         mask(jj,kk) = 1;
+%                     end
+%                 end
+%             end
+% 
+%             tmpImg(mask == 0) = NaN;
+% 
+%             %% find two Brillouin peaks
+%             for jj = 1:2
+%                 % find highest value in the image
+%                 [~, ind] = max(tmpImg(:));
+%                 [cy,cx] = ind2sub(siz,ind);
+%                 % set peak region to zero for finding new peak
+%                 [x,y]=meshgrid(-(cx-1):(siz(2)-cx),-(cy-1):(siz(1)-cy));
+%                 mask=((x.^2+y.^2)<=r^2);
+%                 tmpImg(mask) = 0;
+%                 % add peaks
+%                 peaks.x = [peaks.x cx];
+%                 peaks.y = [peaks.y cy];
+%             end
+% 
+%             % sort the peaks (just nice to have)
+%             [~,order] = sort(peaks.x);
+%             peaks.x = peaks.x(order);
+%             peaks.y = peaks.y(order);
         elseif currentCalibrationNr > 1
             peaks = model.parameters.extraction.calibrations(currentCalibrationNr-1).peaks;
         end
