@@ -89,12 +89,14 @@ function findPeaks(varargin)
                 img = model.controllers.data.getPayload('data', 1, 1, 1);
             end
             img = nanmean(img, 3);
-            r=70;
+            %r=70;
             siz=size(img);
             % do a median filtering to prevent finding maxixums which are none,
             % reduce radius if medfilt2 is not possible (license checkout
             % failure)
             try
+                % medfilt2 might not be necessary for peakfinding,
+                % because of the 'MinPeakWidth' criterium in findpeaks
                 img = medfilt2(img, 'symmetric');
             catch
             end
@@ -102,16 +104,21 @@ function findPeaks(varargin)
             %% find the (hopefully) four Rayleigh peaks
             % assumes that Rayleigh peaks are stronger than Brillouin peaks
             % this might become a problem later on :(
-%             
-            %consider prelocating the memory
+            
+            %% finding and indentifying peaks ussing findpeaks()
             peak_info_x_scan = [];
-
-%             peak_prominece_ii_kk = 0
+%             peak_info_x_scan = NaN( siz(1),6);
+            
             peak_count = 1;
+            % img(i,:) corresponds to scanning the x-axis with img(y,x)
+            % scanning y axis should give same result, but coordinates have
+            % to be swapped when values are assigned to peak.x and peak.y
+            %tic
             for ii = 1:siz(1) 
-                [height,locs_y, width_x, proms_x] = findpeaks(img(ii,:), ...
+                [height,locs_y, width_x, proms_x] = findpeaks(img(:,ii), ...
                 'MinPeakProminence',20, ...
-                'MinPeakDistance', 50);%, ...
+                'MinPeakDistance', 50, ...
+                'MinPeakWidth', 2);%, ...
 %                'SortStr','descend');
                 if ~ isempty(height) 
                     for kk = 1:size(height,2)
@@ -119,83 +126,59 @@ function findPeaks(varargin)
                         peak_info_x_scan = [peak_info_x_scan; ...
                         [ii, height(kk), locs_y(kk), ...
                         width_x(kk), proms_x(kk), peak_count]];
+%                         peak_info_x_scan(peak_count,:) = [ii, height(kk), locs_y(kk), ...
+%                         width_x(kk), proms_x(kk), peak_count];                
                         peak_count = peak_count+1;
-                        %disp([ii,kk]);
-                        %disp(peak_info);
+                        
                     end
                 end
-                % if found 1D peak is next to the previous and prominence
-                % is higher: add the located peak to the peak list
-%                 if ~ isempty(peak_info) && (peak_info(ii-1,0) == ...
-%                         peak_info(ii,0))
-%                 end
-%                 
-%                 else
-%                     peak_prominece_ii_kk = 0
-%                 end   
             end
             
-%             peak_info_y_scan = []
-%             for kk = 1:size(peak_info_x_scan, 1)
-%                 %scan all the y locations where peaks were found
-%                 [pks_y,locs_y, width_y, proms_y] = findpeaks(img(:,peak_info_x_scan(kk,3)), ...
-%                 'MinPeakProminence',10, ...
-%                 'MinPeakDistance', 50);
-%                 if ~ isempty(pks_y) 
-%                     for ii = 1:size(pks_y,2)
-%                         peak_info_y_scan = [peak_info_y_scan; ...
-%                         [kk, pks_y(ii), locs_y(ii), width_y(ii), proms_y(ii)]];
-%                     end
-%                 end
-%             end
+            %toc
             
-
+%             peak_info_x_scan_a = [{'x' 'height' 'loc_y' ...
+%                 'width_x' 'Prominence' 'peak count'};
+%                 num2cell(peak_info_x_scan)]
+            
+            %counts peaks that are separated in x
             peak_index_x = 1;
+            %counts peaks that are separated in y
             peak_index_y = 1;
+            %counts peaks that are separated in x and y
             peak_index = 1;
-            peak_group =[peak_index_x, peak_index_y, peak_index,...
-                peak_info_x_scan(1,:)];        
-% peak_group [peak_index_x, peak_index_y, peak info];
-% peak info [ii, height(kk), locs_y(kk), width_x(kk), proms_x(kk)]];    
             
+            % peak_group: [peak_index_x, peak_index_y, peak info];
+            % peak info: [ii, height(kk), locs_y(kk), width_x(kk), proms_x(kk)]];
+            peak_group =[peak_index_x, peak_index_y, peak_index,...
+                peak_info_x_scan(1,:)];             
             
             for ii = 2 : (size(peak_info_x_scan, 1))
-                %if peaks connected x is either equal or 
+                % check if peaks are connected in x direction
                 if abs(peak_info_x_scan(ii-1,1) - peak_info_x_scan(ii,1)) > 1 
+                    
                     peak_index_x = peak_index_x +1;
+                    
                 end
                 
                 peak_group = [peak_group; [peak_index_x,  nan, nan,...
                     peak_info_x_scan(ii,:)]];
-%                        peak_info_x_scan(ii,:)]];
-%                if abs(peak_info_x_scan(ii-1,1) - peak_info_x_scan(ii,1)) <= 1 
-%                     peak_group = [peak_group; [peak_index_x,  nan, nan,...
-%                        peak_info_x_scan(ii,:)]];          
-%                else
-%                    peak_index_x = peak_index_x +1;
-%                    peak_group = [peak_group; ...
-%                                 [peak_index_x,  nan, nan,...
-%                                  peak_info_x_scan(ii,:)]];     
-%                end             
+        
             end
             
             peak_info_x_scan = sortrows(peak_info_x_scan, 3);
             for kk = 2 : (size(peak_info_x_scan, 1))
-%             for kk = 1 : (size(peak_info_x_scan, 1)-1)
-%                 %if peaks connected (2 as border is arbitrary) 
-%               disp(peak_info_x_scan(kk));
+                 
+               % check if peaks are connected in y direction, the treshold
+               % 5 is arbitrary and could also be chosen smaller or greater
                if abs(peak_info_x_scan(kk-1,3) - peak_info_x_scan(kk,3)) > 5
-                   peak_index_y = peak_index_y +1;
                    
-%                     peak_group(kk, 2) = peak_index_y;
-%                else
-%                    peak_index_y = peak_index_y +1;
-%                    peak_group(kk, 2) = peak_index_y;
+                   peak_index_y = peak_index_y +1;
+       
                end     
-               %index_unsorted = peak_info_x_scan(:,6)==kk;
-               index_unsorted = peak_info_x_scan(kk,6);
 
+               index_unsorted = peak_info_x_scan(kk,6);
                peak_group(index_unsorted, 2) = peak_index_y;
+               
             end
             
             
@@ -205,22 +188,23 @@ function findPeaks(varargin)
                     (peak_group(ll,1) + peak_group(ll,2))) > 0
                 
                     peak_index = peak_index + 1;
+                    
                 end
+                % if peak_index_x or peak_index_y is grater than the
+                % previous, the new peak is not connected and therefore 
+                % gets a new index
                  peak_group(ll,3) = peak_index;
-                %if peak_index_x or peak_index_y is grater than the
-                %previous, the new peak is not connected and therefore gets
-                % a new index
-%                 
+          
              end
-%            sortrows(peak_group, 6)    
-            %max(peak_group(:,3)) corresponds to number of idientified
-            %peaks
+   
+            % max(peak_group(:,3)) corresponds to number of idientified
+            % peaks
             peak_list = NaN( max(peak_group(:,3)),9);
             for nn = 1 : max(peak_group(:,3))
                 single_peak_ind_nn = peak_group(:,3)==nn;
-                single_peak_nn = peak_group(single_peak_ind_nn, :)
+                single_peak_nn = peak_group(single_peak_ind_nn, :);
                 [~, peak_max_ind_nn] = max(single_peak_nn(:,8));
-                peak_list(nn,:) = single_peak_nn(peak_max_ind_nn,:)
+                peak_list(nn,:) = single_peak_nn(peak_max_ind_nn,:);
             end
             
             dist_up_left_corner = sqrt(peak_list(:,4).^2 + peak_list(:,6).^2);
@@ -246,7 +230,7 @@ function findPeaks(varargin)
                                 
             [~, closest_ulR_ind]  = sortrows(dist_up_left_Rayleigh);
             Antistokes_ind = closest_ulR_ind(1:2);
-            Antistokes = Brillouin_peaks_preselec(Antistokes_ind,:)
+            Antistokes = Brillouin_peaks_preselec(Antistokes_ind,:);
             
             % The two peaks closest to upper left Rayleigh are identified 
             % as Stokes
@@ -257,14 +241,14 @@ function findPeaks(varargin)
                     
             [~, closest_lrR_ind]  = sortrows(dist_low_right_Rayleigh);
             Stokes_ind = closest_lrR_ind(1:2);
-            Stokes = Brillouin_peaks_preselec(Stokes_ind,:)
+            Stokes = Brillouin_peaks_preselec(Stokes_ind,:);
             
             
-            peaks.y = [Rayleigh_up_left(4) Rayleigh_low_right(4)...
+            peaks.x = [Rayleigh_up_left(4) Rayleigh_low_right(4)...
                         reshape(Antistokes(:,4),1,2)  ...
                         reshape(Stokes(:,4),1,2)];
                     
-            peaks.x = [Rayleigh_up_left(6) Rayleigh_low_right(6)...   
+            peaks.y = [Rayleigh_up_left(6) Rayleigh_low_right(6)...   
                         reshape(Antistokes(:,6),1,2) ...
                         reshape(Stokes(:,6),1,2)];
             
