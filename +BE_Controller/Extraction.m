@@ -243,7 +243,6 @@ function findPeaks(varargin)
             Stokes_ind = closest_lrR_ind(1:2);
             Stokes = Brillouin_peaks_preselec(Stokes_ind,:);
             
-            
             peaks.x = [Rayleigh_up_left(4) Rayleigh_low_right(4)...
                         reshape(Antistokes(:,4),1,2)  ...
                         reshape(Stokes(:,4),1,2)];
