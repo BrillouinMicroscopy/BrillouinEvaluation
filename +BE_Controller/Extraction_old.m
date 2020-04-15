@@ -89,16 +89,22 @@ function findPeaks(varargin)
                 img = model.controllers.data.getPayload('data', 1, 1, 1);
             end
             img = nanmean(img, 3);
-            
+            %r=70;
             siz=size(img);
             % do a median filtering to prevent finding maxixums which are none,
             % reduce radius if medfilt2 is not possible (license checkout
             % failure)
             try
+                % medfilt2 might not be necessary for peakfinding,
+                % because of the 'MinPeakWidth' criterium in findpeaks
                 img = medfilt2(img, 'symmetric');
             catch
             end
-           
+
+            %% find the (hopefully) four Rayleigh peaks
+            % assumes that Rayleigh peaks are stronger than Brillouin peaks
+            % this might become a problem later on :(
+            
             %% finding and indentifying peaks ussing findpeaks()
             peak_info_x_scan = [];
 %             peak_info_x_scan = NaN( siz(1),6);
@@ -112,8 +118,7 @@ function findPeaks(varargin)
                 [height,locs_y, width_x, proms_x] = findpeaks(img(:,ii), ...
                 'MinPeakProminence',20, ...
                 'MinPeakDistance', 50, ...
-                'MinPeakWidth', 2, ...
-                'MaxPeakWidth', 20);
+                'MinPeakWidth', 2);
 %                'SortStr','descend');
                 if ~ isempty(height) 
                     for kk = 1:size(height,2)
@@ -128,7 +133,12 @@ function findPeaks(varargin)
                     end
                 end
             end
+            
             %toc
+            
+%             peak_info_x_scan_a = [{'x' 'height' 'loc_y' ...
+%                 'width_x' 'Prominence' 'peak count'};
+%                 num2cell(peak_info_x_scan)]
             
             %counts peaks that are separated in x
             peak_index_x = 1;
@@ -240,7 +250,7 @@ function findPeaks(varargin)
             peaks.y = [Rayleigh_up_left(6) Rayleigh_low_right(6)...   
                         reshape(Antistokes(:,6),1,2) ...
                         reshape(Stokes(:,6),1,2)];
-
+ 
         elseif currentCalibrationNr > 1
             peaks = model.parameters.extraction.calibrations(currentCalibrationNr-1).peaks;
         end
