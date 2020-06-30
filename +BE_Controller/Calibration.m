@@ -358,15 +358,15 @@ function calibrate(~, ~, model, view)
         %% find the measured peaks
         peakPos = NaN(1, nrPeaks);
         for jj = 1:length(indRayleigh)
-            spectrumSection = dataRayleigh(indRayleigh(jj,1):indRayleigh(jj,2));
+            spectrumSection = dataRayleigh(indRayleigh(jj, 1) : indRayleigh(jj, 2));
             [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, 1, [6 20], 0);
-            peakPos(jj) = tmp+indRayleigh(jj,1)-1;
+            peakPos(jj) = tmp + indRayleigh(jj,1) - 1;
         end
-        for jj = 1:2
-            spectrumSection = data(indBrillouin(jj,1):indBrillouin(jj, 2));
+        for jj = 1:length(indBrillouin)
+            spectrumSection = data(indBrillouin(jj, 1) : indBrillouin(jj, 2));
             [tmp, ~, ~] = BE_SharedFunctions.fitLorentzDistribution(spectrumSection, fwhm, sample.nrBrillouinSamples, [6 20], 0);
-            peakPos(2*jj-1+length(indRayleigh)) = tmp(1) + indBrillouin(jj, 1)-1;
-            peakPos(2*jj+length(indRayleigh)) = tmp(2) + indBrillouin(jj, 1)-1;
+            peakPos(2 * jj - 1 + length(indRayleigh)) = tmp(1) + indBrillouin(jj, 1) - 1;
+            peakPos(2 * jj + length(indRayleigh)) = tmp(2) + indBrillouin(jj, 1) - 1;
         end
         peakPos = sort(peakPos, 'ascend');
         peaksMeasured(mm,:) = peakPos;
