@@ -22,6 +22,7 @@ parameters = struct( ...
     ), ...
     'calibration', struct( ...          % parameters for the calibration
         'do', true, ...                 % execute calibration?
+        'findPeaks', false, ...         % find the Rayleigh and Brillouin peaks
         'peakProminence', 15, ...       % the minimal prominence of the peaks
         'peakTypes', {peakTypes}, ...   % expected types of peaks
         'correctOffset', false, ...     % correct the calibration offset?
