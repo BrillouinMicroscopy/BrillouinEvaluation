@@ -15,7 +15,8 @@ parameters = struct( ...
     'data', struct( ...
         'rotate', -1, ...               % {-1 , 0, 1} rotate the image by k*90 degrees
         'flipud', false, ...            % flip the image up-down
-        'fliplr', false ...             % flip the image left-right
+        'fliplr', false, ...            % flip the image left-right
+        'setup', 'S2' ...               % The used setup
     ), ...
     'extraction', struct( ...           % parameters for the extraction
         'do', true ...                  % execute extraction?
