@@ -931,6 +931,7 @@ function openBrillouinShift(~, ~, model, view)
     calibrationFrequency(calibrationFrequency == 0) = NaN;
     
     if isfield(view.calibration, 'BrillouinShiftView') && ishandle(view.calibration.BrillouinShiftView)
+        figure(view.calibration.BrillouinShiftView);
         return;
     else
         width = 500;

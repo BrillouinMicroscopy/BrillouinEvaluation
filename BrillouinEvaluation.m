@@ -46,6 +46,10 @@ function closeGUI(~, ~, model, view, controllers)
         close(view.help.parent);
         delete(view.help.parent);
     end
+    if isfield(view.calibration, 'BrillouinShiftView') && ishandle(view.calibration.BrillouinShiftView)
+        close(view.calibration.BrillouinShiftView);
+        delete(view.calibration.BrillouinShiftView);
+    end
     controllers.data.closeFile();
     model.log.write('=====================================================');
     model.log.log('V/BrillouinEvaluation: Closed program.');
