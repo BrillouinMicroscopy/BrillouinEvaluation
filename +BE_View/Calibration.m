@@ -394,6 +394,12 @@ function plotData(handles, model)
         hold(ax, 'off');
         xLabelString = '$f$ [pix]';
         
+        minData = min(data, [], 'all');
+        maxData = max(data, [], 'all');
+        deltaData = maxData - minData;
+        minData = minData - 0.03 * deltaData;
+        maxData = maxData + 0.03 * deltaData;
+        
         peaksMeasured = [];
         peaksFitted = [];
         x = 1:length(data);
@@ -432,16 +438,16 @@ function plotData(handles, model)
         end
         if ~isempty(peaksMeasured) && ~isempty(peaksFitted)
             for jj = 1:length(peaksMeasured)
-                measured = plot(ax, [peaksMeasured(jj), peaksMeasured(jj)], [min(data(:)) max(data(:))], 'color', 'Green');
+                measured = plot(ax, [peaksMeasured(jj), peaksMeasured(jj)], [minData maxData], 'color', 'Green');
             end
             for jj = 1:length(peaksFitted)
-                fitted = plot(ax, [peaksFitted(jj), peaksFitted(jj)], [min(data(:)) max(data(:))], 'color', 'Red');
+                fitted = plot(ax, [peaksFitted(jj), peaksFitted(jj)], [minData maxData], 'color', 'Red');
             end
             legend(ax, [measured, fitted], {'Measurement', 'Fit'}, 'location', 'north');
         end
         
         if model.displaySettings.calibration.autoscale
-            ylim(ax, 'auto');
+            ylim(ax, [minData maxData]);
         else
             ylim(ax, [model.displaySettings.calibration.floor model.displaySettings.calibration.cap]);
         end
@@ -466,7 +472,19 @@ function onDisplaySettings(view, model)
     set(handles.cap, 'String', model.displaySettings.calibration.cap);
     set(handles.floor, 'String', model.displaySettings.calibration.floor);
     if model.displaySettings.calibration.autoscale
-        ylim(handles.axesImage,'auto');
+        if isfield(model.handles, 'calibration')
+            data = model.handles.calibration.plotSpectrum.YData;
+            minData = min(data, [], 'all');
+            maxData = max(data, [], 'all');
+            deltaData = maxData - minData;
+            minData = minData - 0.03 * deltaData;
+            maxData = maxData + 0.03 * deltaData;
+            if minData < maxData
+                ylim(handles.axesImage, [minData maxData]);
+            end
+        else
+            ylim(handles.axesImage, 'auto');
+        end
     else
         if model.displaySettings.calibration.floor < model.displaySettings.calibration.cap
             ylim(handles.axesImage, [model.displaySettings.calibration.floor model.displaySettings.calibration.cap]);

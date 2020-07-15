@@ -171,7 +171,19 @@ function onDisplaySettings(view, model)
     set(handles.cap, 'String', model.displaySettings.peakSelection.cap);
     set(handles.floor, 'String', model.displaySettings.peakSelection.floor);
     if model.displaySettings.peakSelection.autoscale
-        ylim(handles.axesImage,'auto');
+        if isfield(model.handles, 'peakSelection')
+            data = model.handles.peakSelection.plotSpectrum.YData;
+            minData = min(data, [], 'all');
+            maxData = max(data, [], 'all');
+            deltaData = maxData - minData;
+            minData = minData - 0.03 * deltaData;
+            maxData = maxData + 0.03 * deltaData;
+            if minData < maxData
+                ylim(handles.axesImage, [minData maxData]);
+            end
+        else
+            ylim(handles.axesImage, 'auto');
+        end
     else
         if model.displaySettings.peakSelection.floor < model.displaySettings.peakSelection.cap
             ylim(handles.axesImage, [model.displaySettings.peakSelection.floor model.displaySettings.peakSelection.cap]);
@@ -205,6 +217,12 @@ function plotData(handles, model)
         hold(ax, 'off');
         xLabelString = '$f$ [pix]';
         
+        minData = min(data, [], 'all');
+        maxData = max(data, [], 'all');
+        deltaData = maxData - minData;
+        minData = minData - 0.03 * deltaData;
+        maxData = maxData + 0.03 * deltaData;
+        
         x = 1:length(data);
         calibration = model.parameters.calibration;
         valid = ~isnan(calibration.frequency);
@@ -214,7 +232,7 @@ function plotData(handles, model)
             xLabelString = '$f$ [GHz]';
         end
         
-        model.handles.plotSpectrum = plot(ax, x, data);
+        model.handles.peakSelection.plotSpectrum = plot(ax, x, data);
         hold(ax, 'on');
         ind = model.parameters.peakSelection.Rayleigh;
         for jj = 1:size(ind,1)
@@ -231,7 +249,7 @@ function plotData(handles, model)
             end
         end
         if model.displaySettings.peakSelection.autoscale
-            ylim(ax, 'auto');
+            ylim(ax, [minData maxData]);
         else
             ylim(ax, [model.displaySettings.peakSelection.floor model.displaySettings.peakSelection.cap]);
         end

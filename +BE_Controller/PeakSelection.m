@@ -97,10 +97,10 @@ function selectPeaks(~, ~, view, model, type)
         end
         set(view.peakSelection.brushHandle, 'Enable', 'on', 'color', color);
     else
-        if ~isfield(model.handles, 'plotSpectrum')
+        if ~isfield(model.handles, 'peakSelection')
             return;
         end
-        brushed = logical(get(model.handles.plotSpectrum, 'BrushData'));
+        brushed = logical(get(model.handles.peakSelection.plotSpectrum, 'BrushData'));
         set(view.peakSelection.brushHandle, 'Enable', 'off');
         
         xd = 1:length(brushed);
