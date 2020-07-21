@@ -1,4 +1,5 @@
-function [peakPos, peakFWHM, peakInt, fittedCurve, thres, deviation, peakIntReal] = fitLorentzDistribution(intensity, fwhm, nrPeaks, borders, debug)
+function [peakPos, peakFWHM, peakInt, fittedCurve, thres, deviation, peakIntReal] = ...
+    fitLorentzDistribution(intensity, fwhm, nrPeaks, borders, debug)
 %% FITLORENTZDISTRIBUTION
 %   This function will fit a Lorentzian distribution with the requested
 %   number of peaks to a given 1-D intensity distribution
