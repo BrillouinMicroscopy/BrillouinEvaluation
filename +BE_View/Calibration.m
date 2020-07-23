@@ -98,10 +98,8 @@ function initGUI(model, view)
     correctOffset = uicontrol('Parent', parent, 'Style', 'checkbox', 'Units', 'normalized',...
         'Position', [0.223,0.01,0.04,0.03], 'FontSize', 11, 'HorizontalAlignment', 'left');
     
-    progressBar = javax.swing.JProgressBar;
-    javacomponent(progressBar,[19,70,70,27.5],parent);
+    progressBar = BE_Utils.ProgressBar.ProgressBar(parent, [0.02 0.113, 0.08, 0.042]);
     progressBar.setValue(0);
-    progressBar.setStringPainted(true);
     progressBar.setString('0%');
     
     clearCalibration = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...

@@ -153,10 +153,8 @@ function initGUI(model, view)
     panHandle = pan;
     rotate3dHandle = rotate3d;
 
-    progressBar = javax.swing.JProgressBar;
-    javacomponent(progressBar,[19,20,208,30],parent);
+    progressBar = BE_Utils.ProgressBar.ProgressBar(parent, [0.02 0.03, 0.22, 0.04]);
     progressBar.setValue(0);
-    progressBar.setStringPainted(true);
     progressBar.setString('0%');
 
     %% Return handles
