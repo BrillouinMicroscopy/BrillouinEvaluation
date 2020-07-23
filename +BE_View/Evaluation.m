@@ -30,59 +30,62 @@ function initGUI(model, view)
         'String','Open figure','Position',[0.14,0.92,0.1,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
 
-    plotTypes = uicontrol('Parent', parent, 'Style','popup', 'Units', 'normalized','Position',[0.02 0.85,0.22,0.055],...
+    plotTypes = uicontrol('Parent', parent, 'Style','popup', 'Units', 'normalized','Position',[0.02 0.855,0.22,0.055],...
         'String',model.labels.evaluation.types,'FontSize', 11, 'HorizontalAlignment', 'left');
 
+    peakNumber = uicontrol('Parent', parent, 'Style','popup', 'Units', 'normalized','Position',[0.02 0.805,0.22,0.055],...
+        'String',{'Peak 1'},'FontSize', 11, 'HorizontalAlignment', 'left');
+
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Live preview (2x slower)', 'Units', 'normalized',...
-        'Position', [0.02,0.8,0.19,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
+        'Position', [0.02,0.78,0.19,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
     livePreview = uicontrol('Parent', parent, 'Style', 'checkbox', 'Units', 'normalized',...
-        'Position', [0.22,0.8,0.04,0.034], 'FontSize', 11, 'HorizontalAlignment', 'left');
-
-    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Interp. Rayleigh peaks', 'Units', 'normalized',...
-        'Position', [0.02,0.35,0.19,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
-
-    interpRayleigh = uicontrol('Parent', parent, 'Style', 'checkbox', 'Units', 'normalized',...
-        'Position', [0.22,0.35,0.04,0.034], 'FontSize', 11, 'HorizontalAlignment', 'left');
+        'Position', [0.223,0.78,0.04,0.034], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Discard invalid results', 'Units', 'normalized',...
-        'Position', [0.02,0.75,0.19,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
+        'Position', [0.02,0.735,0.19,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
     discardInvalid = uicontrol('Parent', parent, 'Style', 'checkbox', 'Units', 'normalized',...
-        'Position', [0.22,0.75,0.04,0.034], 'FontSize', 11, 'HorizontalAlignment', 'left');
+        'Position', [0.223,0.735,0.04,0.034], 'FontSize', 11, 'HorizontalAlignment', 'left');
     
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Validity Threshould:', 'Units', 'normalized',...
-        'Position', [0.02,0.7,0.15,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
+        'Position', [0.02,0.69,0.15,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
     validity = uicontrol('Parent', parent, 'Style', 'edit', 'Units', 'normalized',...
-        'Position', [0.18,0.698,0.06,0.04], 'FontSize', 11, 'HorizontalAlignment', 'center');
+        'Position', [0.18,0.689,0.06,0.04], 'FontSize', 11, 'HorizontalAlignment', 'center');
     
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Refinement factor:', 'Units', 'normalized',...
-        'Position', [0.02,0.65,0.15,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
+        'Position', [0.02,0.645,0.15,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
     intFac = uicontrol('Parent', parent, 'Style', 'edit', 'Units', 'normalized',...
-        'Position', [0.18,0.648,0.06,0.04], 'FontSize', 11, 'HorizontalAlignment', 'center');
+        'Position', [0.18,0.644,0.06,0.04], 'FontSize', 11, 'HorizontalAlignment', 'center');
     
     showSpectrum = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...
-        'String','Show spectrum','Position',[0.02,0.58,0.222,0.055],...
+        'String','Show spectrum','Position',[0.02,0.58,0.22,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     selectbright = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...
-        'String', BE_SharedFunctions.iconString([model.pp '/images/add.png']),'Position',[0.02,0.50,0.0375,0.055],...
+        'String', BE_SharedFunctions.iconString([model.pp '/images/add.png']),'Position',[0.02,0.51,0.0375,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     getbrightposition = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...
-        'String','Adjust overlay','Position',[0.065,0.50,0.177,0.055],...
+        'String','Adjust overlay','Position',[0.065,0.51,0.175,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     startMasking = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...
-        'String','Create Masks','Position',[0.02,0.42,0.222,0.055],...
+        'String','Create Masks','Position',[0.02,0.44,0.22,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
 
-    % extraction axis selection
+    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Interp. Rayleigh peaks', 'Units', 'normalized',...
+        'Position', [0.02,0.39,0.19,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
+
+    interpRayleigh = uicontrol('Parent', parent, 'Style', 'checkbox', 'Units', 'normalized',...
+        'Position', [0.223,0.39,0.04,0.034], 'FontSize', 11, 'HorizontalAlignment', 'left');
+
+    % Number Brillouin peaks
     nrBrillouinPeaksGroup = uibuttongroup(parent, 'Units', 'normalized', 'FontSize', 11, ...
     'Title', 'Number Brillouin peaks',...
-    'Position', [0.02 0.25 0.222 0.08]);
+    'Position', [0.02 0.31 0.222 0.08]);
     % Create three radio buttons in the button group.
     nrBrillouinPeaks(1) = uicontrol(nrBrillouinPeaksGroup, 'Style', 'radiobutton', 'FontSize', 11, ...
         'String', '1', 'Tag', 'nrBrillouinPeaks_1', ...
@@ -90,6 +93,14 @@ function initGUI(model, view)
     nrBrillouinPeaks(2) = uicontrol(nrBrillouinPeaksGroup, 'Style', 'radiobutton', 'FontSize', 11, ...
         'String', '2', 'Tag', 'nrBrillouinPeaks_2', ...
         'Position', [60 10 150 15]);
+    
+    % Constraints
+    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Brillouin fit constraints:', 'Units', 'normalized',...
+        'Position', [0.02,0.27,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
+    
+    constraints = uitable('Parent', parent, 'Units', 'normalized', 'Position', [0.02 0.10 0.22 0.17], ...
+        'ColumnWidth', {70, 70}, 'ColumnName', {'Lower', 'Upper'}, 'FontSize', 10, 'ColumnEditable', true, ...
+        'ColumnFormat',[repmat({[]},1,2),'logical']);
     
     zoomIn = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
         'String', BE_SharedFunctions.iconString([model.pp '/images/zoomin.png']), 'Position',[0.33,0.92,0.0375,0.055],...
@@ -163,11 +174,13 @@ function initGUI(model, view)
         'evaluate', evaluate, ...
         'newFig', newFig, ...
         'plotTypes', plotTypes, ...
+        'peakNumber', peakNumber, ...
         'livePreview', livePreview, ...
         'discardInvalid', discardInvalid, ...
         'intFac', intFac, ...
         'validity', validity, ...
         'interpRayleigh', interpRayleigh, ...
+        'constraints', constraints, ...
         'showSpectrum', showSpectrum, ...
         'selectbright', selectbright, ... 
         'getbrightposition', getbrightposition, ...
@@ -206,6 +219,15 @@ function onFileLoad(view, model)
     handles = view.evaluation;
     set(handles.nrBrillouinPeaksGroup, 'SelectedObject', findobj('Tag', ...
         ['nrBrillouinPeaks_' num2str(model.parameters.evaluation.nrBrillouinPeaks)]));
+    
+    c = model.parameters.evaluation.constraints;
+    
+    handles.constraints.RowName = {'sa', 'sb'};
+    val{1,1} = c.sa.Lower;
+    val{2,1} = c.sb.Lower;
+    val{1,2} = c.sa.Upper;
+    val{2,2} = c.sb.Upper;
+    handles.constraints.Data = val;
 end
 
 function onStatus(view, model)
@@ -249,19 +271,24 @@ function onDisplaySettings(view, model)
             caxis(handles.axesImage,[model.displaySettings.evaluation.floor model.displaySettings.evaluation.cap]);
         end
     end
+    %% Set option for peak selection
+    peaks = cell(1, model.parameters.evaluation.nrBrillouinPeaks);
+    for jj = 1:model.parameters.evaluation.nrBrillouinPeaks
+        peaks{jj} = ['Peak ' num2str(jj)];
+    end
+    if model.parameters.evaluation.nrBrillouinPeaks > 1
+        peaks = [peaks, [{'Mean'}, {'Weighted Mean'}]];
+    end
+    set(handles.peakNumber, 'Value', model.displaySettings.evaluation.peakNumber);
+    set(handles.peakNumber, 'String', peaks);
+    %% Plot the data
     plotData(handles, model, 'int', 1);
 end
 
-function plotData (handles, model, location, full)
+function plotData(handles, model, location, full)
     intFac = model.displaySettings.evaluation.intFac - 1;
     
     data = model.results.(model.displaySettings.evaluation.type);
-    if size(data, 5) > 1
-        int_real = model.results.peaksBrillouin_int_real;
-        int = model.results.peaksBrillouin_int;
-        data(int_real < 10) = NaN;
-        data(int < 10) = NaN;
-    end
     
     data = double(data);
     if ~strcmp(model.displaySettings.evaluation.type, 'brightfield') && ~strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')
@@ -273,8 +300,21 @@ function plotData (handles, model, location, full)
             data(validity > model.displaySettings.evaluation.valThreshould) = NaN;
         end
     end
-    data = nanmean(data,5);
-    data = nanmean(data,4);
+    
+    %% Select the peak to show, average if requested
+    if size(data, 5) >= model.displaySettings.evaluation.peakNumber
+        data = data(:,:,:,:,model.displaySettings.evaluation.peakNumber);
+    % Show mean value
+    elseif (size(data, 5) > 1 && model.displaySettings.evaluation.peakNumber == size(data, 5) + 1)
+        data = nanmean(data, 5);
+    % Show weighted mean value
+    elseif (size(data, 5) > 1 && model.displaySettings.evaluation.peakNumber == size(data, 5) + 2)
+        area = model.results.peaksBrillouin_int_real .* model.results.peaksBrillouin_fwhm;
+        data = sum(data .* area, 5) ./ sum(area, 5);
+    else
+        data = data(:,:,:,:,1);
+    end
+    data = nanmean(data, 4);
 
     %% find non-singleton dimensions
     dimensions = size(data);
