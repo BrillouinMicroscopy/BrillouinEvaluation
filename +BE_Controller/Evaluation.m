@@ -342,7 +342,7 @@ function evaluate(view, model)
                                             if ~isempty(calibration.frequency) && sum(valid(:))
                                                 x = BE_SharedFunctions.getFrequencyFromMap(1:length(spectrum), time, calibration);
 
-                                                [~, ind] = min(abs(x - f_Rayleigh + val));
+                                                ind = interp1(x, 1:length(x), f_Rayleigh - val);
                                                 constraints.(s{s_ind}).(r{r_ind}) = ind - min(ind_Brillouin_shifted(:)) + 1;
                                             end
                                         end

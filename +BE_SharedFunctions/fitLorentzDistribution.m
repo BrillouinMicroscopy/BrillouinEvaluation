@@ -84,11 +84,11 @@ switch nrPeaks
             s_keys = [{'a'}, {'b'}];
             % Calculate Brillouin shift range
             for s_ind = 1:length(s_keys)
-                left = round(constraints.(['s' s_keys{s_ind}]).Lower);
+                left = floor(constraints.(['s' s_keys{s_ind}]).Lower);
                 if isinf(left)
                     left = 1;
                 end
-                right = round(constraints.(['s' s_keys{s_ind}]).Upper);
+                right = ceil(constraints.(['s' s_keys{s_ind}]).Upper);
                 if isinf(right)
                     right = length(intensity);
                 end
