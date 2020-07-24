@@ -7,7 +7,7 @@ function callbacks = Extraction(model, view)
     set(view.extraction.clearPeaks, 'Callback', {@clearPeaks, model});
     set(view.extraction.autoPeaks, 'Callback', {@findPeaksSingle, model});
     
-    set(view.extraction.calibrationSlider, 'StateChangedCallback', {@selectCalibration, model});
+    set(view.extraction.calibrationSlider, 'Callback', {@selectCalibration, model});
     
     set(view.extraction.clearPeaksAll, 'Callback', {@clearPeaksAll, model});
     set(view.extraction.autoPeaksAll, 'Callback', {@findPeaksAll, model});
@@ -49,7 +49,7 @@ function setActive(view)
 end
 
 function selectCalibration(src, ~, model)
-    model.parameters.extraction.currentCalibrationNr = get(src, 'Value');
+    model.parameters.extraction.currentCalibrationNr = round(get(src, 'Value'));
 end
 
 function findPeaksSingle(~, ~, model)

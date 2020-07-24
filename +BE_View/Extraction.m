@@ -26,11 +26,8 @@ function initGUI(model, view)
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Individual image number:', 'Units', 'normalized',...
         'Position', [0.02,0.94,0.2,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
     
-    calibrationSlider = javax.swing.JSlider;
-    calibrationSlider.setEnabled(true);
-    javacomponent(calibrationSlider,[18,535,198,50],parent);
-    set(calibrationSlider, 'MajorTickSpacing', 1, 'PaintLabels', true, 'PaintTicks', true, 'Minimum', 1, 'Maximum', 10);
-    calibrationSlider.setValue(model.parameters.extraction.currentCalibrationNr);
+    calibrationSlider = uicontrol('Parent', parent, 'Style', 'slider', 'Units', 'normalized', 'Position', [0.02,0.89,0.22,0.035], ...
+        'Min', 1, 'Max', 10, 'Value', model.parameters.extraction.currentCalibrationNr, 'SliderStep', [.5 .5]);
 
     manualPeaks = uicontrol('Parent', parent, 'Style','pushbutton', 'Units', 'normalized',...
         'String','Select','Position',[0.02,0.800,0.1,0.055],...
@@ -321,7 +318,7 @@ function onSettingsChange(view, model)
     % set number of calibrations
     f = fields(model.parameters.calibration.samples);
     nrs = max([length(f)-1, 1]);
-    set(handles.calibrationSlider, 'Maximum', nrs);
+    set(handles.calibrationSlider, 'Max', nrs);
     set(handles.calibrationSlider, 'Value', model.parameters.extraction.currentCalibrationNr);
     if model.displaySettings.extraction.autoscale
         caxis(handles.axesImage,'auto');
