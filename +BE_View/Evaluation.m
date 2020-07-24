@@ -273,11 +273,13 @@ function onDisplaySettings(view, model)
     end
     %% Set option for peak selection
     peaks = cell(1, model.parameters.evaluation.nrBrillouinPeaks);
-    for jj = 1:model.parameters.evaluation.nrBrillouinPeaks
-        peaks{jj} = ['Peak ' num2str(jj)];
-    end
+    peaks{1} = 'Single-Peak-Fit';
     if model.parameters.evaluation.nrBrillouinPeaks > 1
-        peaks = [peaks, [{'Mean'}, {'Weighted Mean'}]];
+        for jj = 1:model.parameters.evaluation.nrBrillouinPeaks
+            peaks{jj + 1} = ['Two-Peak-Fit - Peak ' num2str(jj)];
+        end
+        peaks{4} = 'Two-Peak-Fit - Mean';
+        peaks{5} = 'Two-Peak-Fit - Weighted Mean';
     end
     set(handles.peakNumber, 'Value', model.displaySettings.evaluation.peakNumber);
     set(handles.peakNumber, 'String', peaks);
@@ -304,13 +306,13 @@ function plotData(handles, model, location, full)
     %% Select the peak to show, average if requested
     if size(data, 5) >= model.displaySettings.evaluation.peakNumber
         data = data(:,:,:,:,model.displaySettings.evaluation.peakNumber);
-    % Show mean value
+    % Show mean value of the two-peak-fit peaks
     elseif (size(data, 5) > 1 && model.displaySettings.evaluation.peakNumber == size(data, 5) + 1)
-        data = nanmean(data, 5);
-    % Show weighted mean value
+        data = nanmean(data(:,:,:,:,2:3), 5);
+    % Show weighted mean value of the two-peak-fit peaks
     elseif (size(data, 5) > 1 && model.displaySettings.evaluation.peakNumber == size(data, 5) + 2)
-        area = model.results.peaksBrillouin_int_real .* model.results.peaksBrillouin_fwhm;
-        data = sum(data .* area, 5) ./ sum(area, 5);
+        area = model.results.peaksBrillouin_int_real(:,:,:,:,2:3) .* model.results.peaksBrillouin_fwhm(:,:,:,:,2:3);
+        data = sum(data(:,:,:,:,2:3) .* area, 5) ./ sum(area, 5);
     else
         data = data(:,:,:,:,1);
     end
