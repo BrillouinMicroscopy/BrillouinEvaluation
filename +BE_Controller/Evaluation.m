@@ -316,63 +316,7 @@ function evaluate(view, model)
                         ind_Brillouin_shifted = ind_Brillouin + shift;
                         BrillouinSection = spectrum(ind_Brillouin_shifted);
                         if ~sum(isnan(BrillouinSection))
-                            %% Construct constraints for Brillouin fit
-                            constraints = model.parameters.evaluation.constraints;
                             
-                            % frequency of the Rayleigh peak
-                            f_Rayleigh = BE_SharedFunctions.getFrequencyFromMap( ...
-                                res.peaksRayleigh_pos_exact(kk, jj, ll, mm, :), ...
-                                time, ...
-                                calibration ...
-                            );
-                        
-                            invert = mean(ind_Rayleigh_shifted, 'all') > mean(ind_Brillouin_shifted, 'all');
-                            
-                            s = [{'sa'}, {'sb'}];
-                            r = [{'Lower'}, {'Upper'}];
-                            % Calculate Brillouin shift range
-                            for s_ind = 1:length(s)
-                                for r_ind = 1:length(r)
-                                    val = constraints.(s{s_ind}).(r{r_ind});
-                                    if isnumeric(val)
-                                        % If the value is not Inf, we have to
-                                        % convert from GHz to pix
-                                        if ~isinf(val)
-                                            valid = ~isnan(calibration.frequency);
-                                            if ~isempty(calibration.frequency) && sum(valid(:))
-                                                x = BE_SharedFunctions.getFrequencyFromMap(1:length(spectrum), time, calibration);
-
-                                                ind = interp1(x, 1:length(x), f_Rayleigh - val);
-                                                constraints.(s{s_ind}).(r{r_ind}) = ind - min(ind_Brillouin_shifted(:)) + 1;
-                                            end
-                                        end
-                                    else
-                                        switch lower(val)
-                                            case 'min'
-                                                if invert
-                                                    constraints.(s{s_ind}).(r{r_ind}) = length(BrillouinSection);
-                                                else
-                                                    constraints.(s{s_ind}).(r{r_ind}) = 1;
-                                                end
-                                            case 'max'
-                                                if invert
-                                                    constraints.(s{s_ind}).(r{r_ind}) = 1;
-                                                else
-                                                    constraints.(s{s_ind}).(r{r_ind}) = length(BrillouinSection);
-                                                end
-                                            otherwise
-                                                constraints.(s{s_ind}).(r{r_ind}) = NaN;
-                                        end
-                                    end
-                                end
-                                % If the Upper and Lower bound are
-                                % switched, correct it
-                                if constraints.(s{s_ind}).Lower > constraints.(s{s_ind}).Upper
-                                    tmp = constraints.(s{s_ind}).Lower;
-                                    constraints.(s{s_ind}).Lower = constraints.(s{s_ind}).Upper;
-                                    constraints.(s{s_ind}).Upper = tmp;
-                                end
-                            end
                             
                             %% Fit the Brillouin peak
                             [peakPos(1), fwhm(1), BrillouinIntensity(1), ~, thres(1), deviation(1), intensity_real(1)] = ...
@@ -381,10 +325,67 @@ function evaluate(view, model)
                                     model.parameters.evaluation.fwhm, ...
                                     1, ...
                                     parameters.peaks, ...
-                                    false, ...
-                                    constraints ...
+                                    false ...
                                 );
                             if model.parameters.evaluation.nrBrillouinPeaks > 1
+                                %% Construct constraints for Brillouin fit
+                                constraints = model.parameters.evaluation.constraints;
+
+                                % frequency of the Rayleigh peak
+                                f_Rayleigh = BE_SharedFunctions.getFrequencyFromMap( ...
+                                    res.peaksRayleigh_pos_exact(kk, jj, ll, mm, :), ...
+                                    time, ...
+                                    calibration ...
+                                );
+
+                                invert = mean(ind_Rayleigh_shifted, 'all') > mean(ind_Brillouin_shifted, 'all');
+
+                                s = [{'sa'}, {'sb'}];
+                                r = [{'Lower'}, {'Upper'}];
+                                % Calculate Brillouin shift range
+                                for s_ind = 1:length(s)
+                                    for r_ind = 1:length(r)
+                                        val = constraints.(s{s_ind}).(r{r_ind});
+                                        if isnumeric(val)
+                                            % If the value is not Inf, we have to
+                                            % convert from GHz to pix
+                                            if ~isinf(val)
+                                                valid = ~isnan(calibration.frequency);
+                                                if ~isempty(calibration.frequency) && sum(valid(:))
+                                                    x = BE_SharedFunctions.getFrequencyFromMap(1:length(spectrum), time, calibration);
+
+                                                    ind = interp1(x, 1:length(x), f_Rayleigh - val);
+                                                    constraints.(s{s_ind}).(r{r_ind}) = ind - min(ind_Brillouin_shifted(:)) + 1;
+                                                end
+                                            end
+                                        else
+                                            switch lower(val)
+                                                case 'min'
+                                                    if invert
+                                                        constraints.(s{s_ind}).(r{r_ind}) = length(BrillouinSection);
+                                                    else
+                                                        constraints.(s{s_ind}).(r{r_ind}) = 1;
+                                                    end
+                                                case 'max'
+                                                    if invert
+                                                        constraints.(s{s_ind}).(r{r_ind}) = 1;
+                                                    else
+                                                        constraints.(s{s_ind}).(r{r_ind}) = length(BrillouinSection);
+                                                    end
+                                                otherwise
+                                                    constraints.(s{s_ind}).(r{r_ind}) = NaN;
+                                            end
+                                        end
+                                    end
+                                    % If the Upper and Lower bound are
+                                    % switched, correct it
+                                    if constraints.(s{s_ind}).Lower > constraints.(s{s_ind}).Upper
+                                        tmp = constraints.(s{s_ind}).Lower;
+                                        constraints.(s{s_ind}).Lower = constraints.(s{s_ind}).Upper;
+                                        constraints.(s{s_ind}).Upper = tmp;
+                                    end
+                                end
+
                                 [peakPos(2:3), fwhm(2:3), BrillouinIntensity(2:3), ~, thres(2:3), deviation(2:3), intensity_real(2:3)] = ...
                                     BE_SharedFunctions.fitLorentzDistribution( ...
                                         BrillouinSection, ...
