@@ -357,6 +357,11 @@ function evaluate(view, model)
                                                     f_Brillouin = (-1)^invert * (val - f_Rayleigh);
                                                     ind = interp1(x, 1:length(x), f_Brillouin);
                                                     constraints.(s{s_ind}).(r{r_ind}) = ind - min(ind_Brillouin_shifted(:)) + 1;
+                                                else
+                                                    errorStr = 'Error: No calibration available, cannot calculate constraints in GHz.';
+                                                    disp(errorStr);
+                                                    model.log.log('E', errorStr);
+                                                    return;
                                                 end
                                             end
                                         else
