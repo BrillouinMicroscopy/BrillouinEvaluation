@@ -1,20 +1,6 @@
-function [sseb, FittedCurve2b] = lorentz2(params, newxb, newdata2b, floorb)
+function [y] = lorentz2(x, sa, sb, wa, wb, Ba, Bb)
 % LORENTZ2 model for a lorentz function with 2 peaks
 
-    s0b = params(1);
-    s1b = params(2);
-
-    w0b = params(3);
-    w1b = params(4);
-
-    B0b = abs(params(5)) - floorb;
-    B1b = abs(params(6)) - floorb;
-
-    FittedCurve2b = floorb + ...
-                    B0b * ((w0b/2).^2) ./ ((newxb-s0b).^2 + (w0b/2).^2) + ...
-                    B1b * ((w1b/2).^2) ./ ((newxb-s1b).^2 + (w1b/2).^2);
-
-    ErrorVectorb = FittedCurve2b - newdata2b;
-
-    sseb = sum(ErrorVectorb.^2);
+    y = Ba * ((wa/2).^2) ./ ((x - sa).^2 + (wa/2).^2) + ...
+        Bb * ((wb/2).^2) ./ ((x - sb).^2 + (wb/2).^2);
 end

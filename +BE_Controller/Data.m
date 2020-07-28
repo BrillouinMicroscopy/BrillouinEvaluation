@@ -493,6 +493,28 @@ function loadData(model, filePath)
                 );
                 
             end
+            
+            %% migration steps for files coming from versions older than 1.4.2
+            if parameters.programVersion.major <= 1 && parameters.programVersion.minor <= 4 ...
+                    && parameters.programVersion.patch < 2
+                if ~isfield(displaySettings.evaluation, 'peakNumber')
+                    displaySettings.evaluation.peakNumber = model.defaultDisplaySettings.evaluation.peakNumber;
+                end
+                
+                if ~isfield(parameters.evaluation, 'constraints')
+                    parameters.evaluation.constraints = model.defaultParameters.evaluation.constraints;
+                end
+                
+                % set version to 1.4.2 to allow further migration steps
+                % possibly necessary for future versions
+                parameters.programVersion = struct( ...
+                    'major', 1, ...
+                    'minor', 4, ...
+                    'patch', 2, ...
+                    'preRelease', '' ...
+                );
+                
+            end
             % after all calibration steps, set version to program version
             parameters.programVersion = model.programVersion;
             

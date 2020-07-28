@@ -39,7 +39,34 @@ parameters = struct( ...
     'evaluation', struct( ...           % parameters for the evaluation
         'do', true, ...                 % execute evaluation?
         'interpRayleigh', true, ...     % interpolate Rayleigh peaks position?
-        'minRayleighPeakHeight', 50 ... % minimum height of Rayleigh peaks
+        'minRayleighPeakHeight', 50, ...% minimum height of Rayleigh peaks
+        'nrBrillouinPeaks', 2, ...      % [1]   number of Brillouin peaks to fit
+        'constraints', struct( ...      % constraints for the Brillouin peak fit
+            'sa', struct( ...           % first peak - frequency
+                'Lower', 7.65, ...      % [GHz] lower border
+                'Upper', 7.85 ...       % [GHz] upper border
+            ), ...
+            'wa', struct( ...           % first peak - width
+                'Lower', 3, ...         % [pix] lower border
+                'Upper', Inf ...        % [pix] upper border
+            ), ...
+            'Ba', struct( ...           % first peak - intensity
+                'Lower', 0, ...         % [a.u.] lower border
+                'Upper', Inf ...        % [a.u.] upper border
+            ), ...
+            'sb', struct( ...           % second peak - frequency
+                'Lower', 7.85, ...      % [GHz] lower border
+                'Upper', 'max' ...      % [GHz] upper border
+            ), ...
+            'wb', struct( ...           % second peak - width
+                'Lower', 3, ...         % [pix] lower border
+                'Upper', Inf ...        % [pix] upper border
+            ), ...
+            'Bb', struct( ...           % second peak - intensity
+                'Lower', 0, ...         % [a.u.] lower border
+                'Upper', Inf ...        % [a.u.] upper border
+            ) ...
+        ) ...
     )...
 );
 

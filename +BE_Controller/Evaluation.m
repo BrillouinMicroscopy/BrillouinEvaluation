@@ -23,6 +23,7 @@ function callbacks = Evaluation(model, view)
     set(view.evaluation.rotate3dButton, 'Callback', {@rotate3d, view});
     
     set(view.evaluation.plotTypes, 'Callback', {@selectPlotType, model});
+    set(view.evaluation.peakNumber, 'Callback', {@selectPeakNumber, model});
     
     set(view.evaluation.autoscale, 'Callback', {@toggleAutoscale, model, view});
     set(view.evaluation.cap, 'Callback', {@setClim, model});
@@ -34,6 +35,7 @@ function callbacks = Evaluation(model, view)
     set(view.evaluation.decreaseCap, 'Callback', {@changeClim, model, -1});
 
     set(view.evaluation.nrBrillouinPeaks, 'Callback', {@setNrBrillouinPeaks, model, view});
+    set(view.evaluation.constraints, 'CellEditCallback', {@editConstraints, model});
     
     callbacks = struct( ...
         'setActive', @()setActive(view), ...
@@ -106,7 +108,13 @@ function evaluate(view, model)
 
             if ~sum(isnan(spectrumSection))
                 [tmp, ~, ~] = ...
-                    BE_SharedFunctions.fitLorentzDistribution(spectrumSection, model.parameters.evaluation.fwhm, nrPeaks, parameters.peaks, 0);
+                    BE_SharedFunctions.fitLorentzDistribution( ...
+                        spectrumSection, ...
+                        model.parameters.evaluation.fwhm, ...
+                        nrPeaks, ...
+                        parameters.peaks, ...
+                        false ...
+                    );
                  RayleighPosSample(kk) = tmp + min(ind_Rayleigh(:)) - 1;
             end
         end
@@ -160,6 +168,10 @@ function evaluate(view, model)
     );
     
     nrBrillouinPeaks = model.parameters.evaluation.nrBrillouinPeaks;
+    % We also do a one-peak-fit if a two-peak fit is requested
+    if nrBrillouinPeaks == 2
+        nrBrillouinPeaks = model.parameters.evaluation.nrBrillouinPeaks + 1;
+    end
     res.peaksBrillouin_pos = NaN( ...
         model.parameters.resolution.Y, ...
         model.parameters.resolution.X, ...
@@ -304,30 +316,91 @@ function evaluate(view, model)
                         ind_Brillouin_shifted = ind_Brillouin + shift;
                         BrillouinSection = spectrum(ind_Brillouin_shifted);
                         if ~sum(isnan(BrillouinSection))
-                            [peakPos, fwhm, BrillouinIntensity, ~, thres, deviation, intensity_real] = ...
+                            
+                            
+                            %% Fit the Brillouin peak
+                            [peakPos(1), fwhm(1), BrillouinIntensity(1), ~, thres(1), deviation(1), intensity_real(1)] = ...
                                 BE_SharedFunctions.fitLorentzDistribution( ...
                                     BrillouinSection, ...
                                     model.parameters.evaluation.fwhm, ...
-                                    nrBrillouinPeaks, ...
+                                    1, ...
                                     parameters.peaks, ...
                                     false ...
                                 );
-                            %% We check whether a two-peak fit is reasonable
-                            if size(peakPos,2) == 2
-                                % If the peaks are very close, we fall back
-                                % to one-peak fitting
-                                if ~checkTwoPeaks(BrillouinSection, peakPos, fwhm, BrillouinIntensity, intensity_real, thres)
-                                    res.peaksBrillouin_nrFittedPeaks(kk, jj, ll, mm) = 1;
-                                    [peakPos, fwhm, BrillouinIntensity, intensity_real] = deal(NaN(2,1));
-                                    [peakPos(1), fwhm(1), BrillouinIntensity(1), ~, thres, deviation, intensity_real(1)] = ...
-                                        BE_SharedFunctions.fitLorentzDistribution( ...
-                                            BrillouinSection, ...
-                                            model.parameters.evaluation.fwhm, ...
-                                            1, ...
-                                            parameters.peaks, ...
-                                            false ...
-                                        );
+                            if model.parameters.evaluation.nrBrillouinPeaks > 1
+                                %% Construct constraints for Brillouin fit
+                                constraints = model.parameters.evaluation.constraints;
+
+                                % frequency of the Rayleigh peak
+                                f_Rayleigh = BE_SharedFunctions.getFrequencyFromMap( ...
+                                    res.peaksRayleigh_pos_exact(kk, jj, ll, mm, :), ...
+                                    time, ...
+                                    calibration ...
+                                );
+
+                                invert = mean(ind_Rayleigh_shifted, 'all') > mean(ind_Brillouin_shifted, 'all');
+
+                                s = [{'sa'}, {'sb'}];
+                                r = [{'Lower'}, {'Upper'}];
+                                % Calculate Brillouin shift range
+                                for s_ind = 1:length(s)
+                                    for r_ind = 1:length(r)
+                                        val = constraints.(s{s_ind}).(r{r_ind});
+                                        if isnumeric(val)
+                                            % If the value is not Inf, we have to
+                                            % convert from GHz to pix
+                                            if ~isinf(val)
+                                                valid = ~isnan(calibration.frequency);
+                                                if ~isempty(calibration.frequency) && sum(valid(:))
+                                                    x = BE_SharedFunctions.getFrequencyFromMap(1:length(spectrum), time, calibration);
+
+                                                    f_Brillouin = (-1)^invert * (val - f_Rayleigh);
+                                                    ind = interp1(x, 1:length(x), f_Brillouin);
+                                                    constraints.(s{s_ind}).(r{r_ind}) = ind - min(ind_Brillouin_shifted(:)) + 1;
+                                                else
+                                                    errorStr = 'Error: No calibration available, cannot calculate constraints in GHz.';
+                                                    disp(errorStr);
+                                                    model.log.log('E', errorStr);
+                                                    return;
+                                                end
+                                            end
+                                        else
+                                            switch lower(val)
+                                                case 'min'
+                                                    if invert
+                                                        constraints.(s{s_ind}).(r{r_ind}) = length(BrillouinSection);
+                                                    else
+                                                        constraints.(s{s_ind}).(r{r_ind}) = 1;
+                                                    end
+                                                case 'max'
+                                                    if invert
+                                                        constraints.(s{s_ind}).(r{r_ind}) = 1;
+                                                    else
+                                                        constraints.(s{s_ind}).(r{r_ind}) = length(BrillouinSection);
+                                                    end
+                                                otherwise
+                                                    constraints.(s{s_ind}).(r{r_ind}) = NaN;
+                                            end
+                                        end
+                                    end
+                                    % If the Upper and Lower bound are
+                                    % switched, correct it
+                                    if constraints.(s{s_ind}).Lower > constraints.(s{s_ind}).Upper
+                                        tmp = constraints.(s{s_ind}).Lower;
+                                        constraints.(s{s_ind}).Lower = constraints.(s{s_ind}).Upper;
+                                        constraints.(s{s_ind}).Upper = tmp;
+                                    end
                                 end
+
+                                [peakPos(2:3), fwhm(2:3), BrillouinIntensity(2:3), ~, thres(2:3), deviation(2:3), intensity_real(2:3)] = ...
+                                    BE_SharedFunctions.fitLorentzDistribution( ...
+                                        BrillouinSection, ...
+                                        model.parameters.evaluation.fwhm, ...
+                                        model.parameters.evaluation.nrBrillouinPeaks, ...
+                                        parameters.peaks, ...
+                                        false, ...
+                                        constraints ...
+                                    );
                             end
                         else
                             [peakPos, fwhm, BrillouinIntensity, thres, deviation] = deal(NaN);
@@ -485,33 +558,33 @@ function results = calculateResults(model, res)
     results.times                     = res.times;                      % [s]    time of the measurement
 end
 
-function twoPeaks = checkTwoPeaks(BrillouinSection, peakPos, fwhm, intensity, intensity_real, thres)
-    twoPeaks = true;
-    %% If the peaks are to close together --> 1 peak
-    if (abs(diff(peakPos)) < 0.8*nanmax(fwhm(:)))
-        twoPeaks = false;
-    end
-    
-    %% If the found peaks are to narrow --> 1 peak
-    if (nanmin(fwhm(:)) < 1)
-        twoPeaks = false;
-    end
-    
-    %% If the fitted intensity is higher than 2 times the real max --> 1 peak
-    if nanmax(intensity(:)) > 2*nanmax(BrillouinSection(:))
-        twoPeaks = false;
-    end
-    
-    %% If the fitted intensity is to low --> 1 peak
-    if (nanmin(intensity(:)) - thres < 10)
-        twoPeaks = false;
-    end
-    
-    %% If the real intensity is to low --> 1 peak
-    if (nanmin(intensity_real(:)) - thres < 10)
-        twoPeaks = false;
-    end
-end
+% function twoPeaks = checkTwoPeaks(BrillouinSection, peakPos, fwhm, intensity, intensity_real, thres)
+%     twoPeaks = true;
+%     %% If the peaks are to close together --> 1 peak
+%     if (abs(diff(peakPos)) < 0.8*nanmax(fwhm(:)))
+%         twoPeaks = false;
+%     end
+%     
+%     %% If the found peaks are to narrow --> 1 peak
+%     if (nanmin(fwhm(:)) < 1)
+%         twoPeaks = false;
+%     end
+%     
+%     %% If the fitted intensity is higher than 2 times the real max --> 1 peak
+%     if nanmax(intensity(:)) > 2*nanmax(BrillouinSection(:))
+%         twoPeaks = false;
+%     end
+%     
+%     %% If the fitted intensity is to low --> 1 peak
+%     if (nanmin(intensity(:)) - thres < 10)
+%         twoPeaks = false;
+%     end
+%     
+%     %% If the real intensity is to low --> 1 peak
+%     if (nanmin(intensity_real(:)) - thres < 10)
+%         twoPeaks = false;
+%     end
+% end
 
 function zoom(src, ~, str, view)
 switch get(src, 'UserData')
@@ -591,9 +664,13 @@ function changeClim(UIControl, ~, model, sign)
 end
 
 function selectPlotType(src, ~, model)
-    val = get(src,'Value');
-    types = get(src,'String');
+    val = get(src, 'Value');
+    types = get(src, 'String');
     model.displaySettings.evaluation.type = types{val};
+end
+
+function selectPeakNumber(src, ~, model)
+    model.displaySettings.evaluation.peakNumber = get(src, 'Value');
 end
 
 function toggleLivePreview(~, ~, view, model)
@@ -887,4 +964,37 @@ end
 function setNrBrillouinPeaks(~, ~, model, view)
     nrBrillouinPeaks = get(view.evaluation.nrBrillouinPeaksGroup, 'SelectedObject');
     model.parameters.evaluation.nrBrillouinPeaks = str2double(erase(nrBrillouinPeaks.Tag, 'nrBrillouinPeaks_'));
+    
+    if model.parameters.evaluation.nrBrillouinPeaks < model.displaySettings.evaluation.peakNumber
+        model.displaySettings.evaluation.peakNumber = 1;
+        set(view.evaluation.peakNumber, 'Value', model.displaySettings.evaluation.peakNumber);
+    end
+    
+    %% Set option for peak selection
+    peaks = cell(1, model.parameters.evaluation.nrBrillouinPeaks);
+    peaks{1} = 'Single-Peak-Fit';
+    if model.parameters.evaluation.nrBrillouinPeaks > 1
+        for jj = 1:model.parameters.evaluation.nrBrillouinPeaks
+            peaks{jj + 1} = ['Two-Peak-Fit - Peak ' num2str(jj)];
+        end
+        peaks{4} = 'Two-Peak-Fit - Mean';
+        peaks{5} = 'Two-Peak-Fit - Weighted Mean';
+    end
+    set(view.evaluation.peakNumber, 'String', peaks);
+end
+
+function editConstraints(src, table, model)
+    param = src.RowName{table.Indices(1)};
+    if table.Indices(2) == 1
+        side = 'Lower';
+    else
+        side = 'Upper';
+    end
+    if strcmpi(table.EditData, 'min') || strcmpi(table.EditData, 'max')
+        model.parameters.evaluation.constraints.(param).(side) = table.EditData;
+    elseif ~isnumeric(table.EditData)
+        model.parameters.evaluation.constraints.(param).(side) = str2double(table.EditData);
+    else
+        model.parameters.evaluation.constraints.(param).(side) = table.EditData;
+    end
 end
