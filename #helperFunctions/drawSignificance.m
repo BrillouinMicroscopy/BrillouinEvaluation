@@ -8,28 +8,51 @@ function drawSignificance(ax, measurement, positions, show)
     h = ishold(ax);
     hold(ax, 'on');
     dy = diff(ax.YLim);
+    dx = diff(ax.XLim);
     bracketheight = 0.02 * dy;
     bracketspacing = 0.06 * dy;
     stardistance = 0.01 * dy;
     % plot significance stars and lines
-    ind = 0;
+    levels = [];
     if (measurement.p < 0.05)
         for jj = 1:size(measurement.significance,1)
             if (measurement.significance(jj,6) < 0.05) && show(jj)
                 xStart = positions(measurement.significance(jj,1));
                 xEnd = positions(measurement.significance(jj,2));
                 stars = getStars(measurement.significance(jj,6));
-                xPos = mean([xStart, xEnd]);
-                text(xPos,measurement.significance_yPos + stardistance + ind * bracketspacing,stars,...
+                bracket = [xStart, xEnd];
+                xPos = mean(bracket);
+                
+                %% Calculate level
+                level = 0;
+                for kk = 1:size(levels, 1)
+                    % Check if the level is free
+                    if xEnd <= levels(kk, 1)
+                        levels(kk, 1) = xEnd; %#ok<AGROW>
+                        level = kk - 1;
+                        break
+                    end
+                    if levels(kk, 2) <= xStart
+                        levels(kk, 2) = xStart; %#ok<AGROW>
+                        level = kk - 1;
+                        break
+                    end
+                    % Go one level up
+                    level = kk;
+                end
+                if level == size(levels, 1)
+                    levels(level + 1, 1:2) = bracket; %#ok<AGROW>
+                end
+                
+                %% Set line and text
+                text(xPos,measurement.significance_yPos + stardistance + level * bracketspacing,stars,...
                     'HorizontalAlignment','Center',...
                     'BackGroundColor','none',...
                     'Tag','sigstar_stars');
                 line([xStart, xStart,...
-                      xEnd, xEnd],...
+                      xEnd, xEnd] + [1 1 -1 -1] * 0.004* dx,...
                      [measurement.significance_yPos - bracketheight, measurement.significance_yPos,...
-                      measurement.significance_yPos, measurement.significance_yPos - bracketheight] + ind * bracketspacing, 'color', 'k');
-                
-                ind = ind + 1;
+                      measurement.significance_yPos, measurement.significance_yPos - bracketheight] + level * bracketspacing, 'color', 'k');
             end
         end
     end
