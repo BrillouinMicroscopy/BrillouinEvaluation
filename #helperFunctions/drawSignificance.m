@@ -28,12 +28,12 @@ function drawSignificance(ax, measurement, positions, show)
                 for kk = 1:size(levels, 1)
                     % Check if the level is free
                     if xEnd <= levels(kk, 1)
-                        levels(kk, 1) = xEnd; %#ok<AGROW>
+                        levels(kk, 1) = xStart; %#ok<AGROW>
                         level = kk - 1;
                         break
                     end
                     if levels(kk, 2) <= xStart
-                        levels(kk, 2) = xStart; %#ok<AGROW>
+                        levels(kk, 2) = xEnd; %#ok<AGROW>
                         level = kk - 1;
                         break
                     end
