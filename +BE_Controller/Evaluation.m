@@ -492,7 +492,9 @@ function results = calculateResults(model, res)
     % actually interpolate
     peaksRayleigh_pos_vec_sort_cal_notnan = peaksRayleigh_pos_vec_sort_cal(notnan);
     if length(peaksRayleigh_pos_vec_sort_cal_notnan) > 1
-        peaksRayleigh_pos_vec_sort_int = interp1(t_vec_sort_cal(notnan), peaksRayleigh_pos_vec_sort_cal(notnan), t_vec_sort);
+        [t_vec_sort_cal_not_nan_unique, ind, ~] = unique(t_vec_sort_cal(notnan));
+        peaksRayleigh_pos_vec_sort_cal_not_nan_unique = peaksRayleigh_pos_vec_sort_cal_notnan(ind);
+        peaksRayleigh_pos_vec_sort_int = interp1(t_vec_sort_cal_not_nan_unique, peaksRayleigh_pos_vec_sort_cal_not_nan_unique, t_vec_sort);
     else
         peaksRayleigh_pos_vec_sort_int = peaksRayleigh_pos_vec_sort_cal_notnan * ones(size(t_vec_sort));
     end
