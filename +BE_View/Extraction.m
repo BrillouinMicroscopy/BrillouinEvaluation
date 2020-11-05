@@ -195,6 +195,7 @@ function initGUI(model, view)
     set(axesImage, 'box', 'on');
     xlabel(axesImage, '$x$ [pix]', 'interpreter', 'latex');
     ylabel(axesImage, '$y$ [pix]', 'interpreter', 'latex');
+    colormap(axesImage, BE_Utils.Colormaps.viridis);
     zoom(gcf,'reset');
     zoomHandle = zoom;
     panHandle = pan;
