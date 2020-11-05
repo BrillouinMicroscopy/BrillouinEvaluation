@@ -160,6 +160,7 @@ function initGUI(model, view)
     axis(axesImage, 'equal');
     box(axesImage, 'on');
 %     zoom(gcf,'reset');
+    colormap(axesImage, BE_Utils.Colormaps.viridis);
     zoomHandle = zoom;
     panHandle = pan;
     rotate3dHandle = rotate3d;
@@ -466,6 +467,7 @@ function plotData(handles, model, location, full)
             %% plot
             hold(ax,'off');
             hndl = surf(ax, pos.X, pos.Y, pos.Z, d);
+            colormap(ax, BE_Utils.Colormaps.viridis);
             title(ax,labels.titleString);
             shading(ax, 'flat');
             axis(ax, 'equal');
@@ -547,6 +549,7 @@ function plotData(handles, model, location, full)
             ylabel(ax, '$y$ [$\mu$m]', 'interpreter', 'latex');
             zlabel(ax, '$z$ [$\mu$m]', 'interpreter', 'latex');
             cb = colorbar(ax);
+            colormap(ax, BE_Utils.Colormaps.viridis);
             title(cb,labels.dataLabel, 'interpreter', 'latex');
             box(ax, 'on');
             if model.displaySettings.evaluation.autoscale
