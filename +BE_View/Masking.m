@@ -114,6 +114,7 @@ function handles = initGUI(model, parent)
     hPointer = imagesc(axesImage, NaN);
     axis(axesImage, 'equal');
     box(axesImage, 'on');
+    colormap(axesImage, BE_Utils.Colormaps.viridis);
 %     zoom(gcf,'reset');
     zoomHandle = zoom;
     panHandle = pan;
