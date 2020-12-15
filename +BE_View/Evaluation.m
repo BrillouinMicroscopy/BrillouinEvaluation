@@ -294,7 +294,7 @@ function plotData(handles, model, location, full)
     data = model.results.(model.displaySettings.evaluation.type);
     
     data = double(data);
-    if ~strcmp(model.displaySettings.evaluation.type, 'brightfield') && ~strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')
+    if ~strcmp(model.displaySettings.evaluation.type, 'brightfield')
         if model.displaySettings.evaluation.discardInvalid && ~strcmp(model.displaySettings.evaluation.type, 'validity')
             tmpValidity = model.results.validity;
             tmpValidity(isnan(tmpValidity)) = 0;
@@ -322,9 +322,6 @@ function plotData(handles, model, location, full)
     %% find non-singleton dimensions
     dimensions = size(data);
     dimension = sum(dimensions > 1);
-    if strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')
-        dimension = 1;
-    end
 
     %% only update cdata for live preview
     if model.displaySettings.evaluation.preview && model.status.evaluation.evaluate && ~full
@@ -360,20 +357,15 @@ function plotData(handles, model, location, full)
     dims = {'Y', 'X', 'Z'};
     dimslabel = {'y', 'x', 'z'};
 
-    if ~strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')  
-        nsdims = cell(dimension,1);
-        nsdimslabel = cell(dimension,1);
-        ind = 0;
-        for jj = 1:length(dimensions)
-            if dimensions(jj) > 1
-                ind = ind + 1;
-                nsdims{ind} = dims{jj};
-                nsdimslabel{ind} = ['$' dimslabel{jj} '$ [$\mu$m]'];
-            end
+    nsdims = cell(dimension,1);
+    nsdimslabel = cell(dimension,1);
+    ind = 0;
+    for jj = 1:length(dimensions)
+        if dimensions(jj) > 1
+            ind = ind + 1;
+            nsdims{ind} = dims{jj};
+            nsdimslabel{ind} = ['$' dimslabel{jj} '$ [$\mu$m]'];
         end
-    else
-        nsdims{1} = 't';
-        nsdimslabel{1} = '$t$ [s]';
     end
 
     %% calculate zero mean positions
