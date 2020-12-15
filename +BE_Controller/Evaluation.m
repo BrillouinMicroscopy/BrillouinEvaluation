@@ -353,10 +353,17 @@ function evaluate(view, model)
                                                 valid = ~isnan(calibration.frequency);
                                                 if ~isempty(calibration.frequency) && sum(valid(:))
                                                     x = BE_SharedFunctions.getFrequencyFromMap(1:length(spectrum), time, calibration);
-
+                                                    
+                                                    % Only use not-nan
+                                                    % values
+                                                    valid = ~isnan(x);
+                                                    % Search for the first
+                                                    % valid value
+                                                    [~, offset] = max(valid);
+                                                    
                                                     f_Brillouin = (-1)^invert * (val - f_Rayleigh);
-                                                    ind = interp1(x, 1:length(x), f_Brillouin);
-                                                    constraints.(s{s_ind}).(r{r_ind}) = ind - min(ind_Brillouin_shifted(:)) + 1;
+                                                    ind = interp1(x(valid), 1:length(x(valid)), f_Brillouin);
+                                                    constraints.(s{s_ind}).(r{r_ind}) = ind - min(ind_Brillouin_shifted(:)) + 1 + offset;
                                                 else
                                                     errorStr = 'Error: No calibration available, cannot calculate constraints in GHz.';
                                                     disp(errorStr);
