@@ -19,7 +19,7 @@ end
 
 function handles = initGUI(model, parent)
 
-    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Brush size [µm]:', 'Units', 'normalized',...
+    uicontrol('Parent', parent, 'Style', 'text', 'String', 'Brush size [Âµm]:', 'Units', 'normalized',...
         'Position', [0.02,0.7,0.15,0.035], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
     brushSize = uicontrol('Parent', parent, 'Style', 'edit', 'Units', 'normalized',...
@@ -208,7 +208,7 @@ function plotBrillouinImage(handles, model)
 
     data = model.results.(model.displaySettings.evaluation.type);
     data = double(data);
-    if ~strcmp(model.displaySettings.evaluation.type, 'brightfield') && ~strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')
+    if ~strcmp(model.displaySettings.evaluation.type, 'brightfield')
         if model.displaySettings.evaluation.discardInvalid && ~strcmp(model.displaySettings.evaluation.type, 'validity')
             data(~model.results.validity) = NaN;
             validity = model.results.peaksBrillouin_dev./model.results.peaksBrillouin_int;
@@ -221,9 +221,6 @@ function plotBrillouinImage(handles, model)
     %% find non-singleton dimensions
     dimensions = size(data);
     dimension = sum(dimensions > 1);
-    if strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')
-        dimension = 1;
-    end
     
     labels = model.labels.evaluation.typesLabels.(model.displaySettings.evaluation.type);
     
@@ -325,7 +322,7 @@ function onDisplaySettings(handles, model)
     
     data = model.results.(model.displaySettings.evaluation.type);
     data = double(data);
-    if ~strcmp(model.displaySettings.evaluation.type, 'brightfield') && ~strcmp(model.displaySettings.evaluation.type, 'calibrationFrequency')
+    if ~strcmp(model.displaySettings.evaluation.type, 'brightfield')
         if model.displaySettings.evaluation.discardInvalid && ~strcmp(model.displaySettings.evaluation.type, 'validity')
             data(~model.results.validity) = NaN;
             validity = model.results.peaksBrillouin_dev./model.results.peaksBrillouin_int;
