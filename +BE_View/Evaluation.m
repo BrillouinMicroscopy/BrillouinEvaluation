@@ -310,7 +310,7 @@ function plotData(handles, model, location, full)
     data = nanmean(data, 4);
 
     %% find non-singleton dimensions
-    dimensions = size(data);
+    dimensions = size(data, 1, 2, 3);
     dimension = sum(dimensions > 1);
 
     %% only update cdata for live preview

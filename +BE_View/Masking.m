@@ -219,7 +219,7 @@ function plotBrillouinImage(handles, model)
     data = nanmean(data,4);
 
     %% find non-singleton dimensions
-    dimensions = size(data);
+    dimensions = size(data, 1, 2, 3);
     dimension = sum(dimensions > 1);
     
     labels = model.labels.evaluation.typesLabels.(model.displaySettings.evaluation.type);
@@ -245,12 +245,12 @@ function plotBrillouinImage(handles, model)
             model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
     end
     
-    d = squeeze(data);
+    data = squeeze(data);
     pos.X_zm = squeeze(positions.X_zm);
     pos.Y_zm = squeeze(positions.Y_zm);
     pos.Z_zm = squeeze(positions.Z_zm);
     
-    dimensions = size(d);
+    dimensions = size(data, 1, 2, 3);
     dimension = sum(dimensions > 1);
 
     %% plot
@@ -259,8 +259,8 @@ function plotBrillouinImage(handles, model)
             hold(handles.axesImage,'off');
             handles.hImage.XData = pos.X_zm(1,:);
             handles.hImage.YData = pos.Y_zm(:,1);
-            handles.hImage.CData = d;
-            handles.hImage.AlphaData = ~isnan(d);
+            handles.hImage.CData = data;
+            handles.hImage.AlphaData = ~isnan(data);
             title(handles.axesImage,labels.titleString);
             axis(handles.axesImage, 'equal');
             xdif = diff(pos.X_zm,1,2);
@@ -288,7 +288,7 @@ function plotBrillouinImage(handles, model)
             set(handles.axesImage, 'YDir', 'normal');
 
             %% plot the selected mask
-            pointer = zeros(size(d));
+            pointer = zeros(size(data));
             pointerColor = [0 0 1];
             pointerRGB = cat(3, pointerColor(1)*ones(size(pointer)), pointerColor(2)*ones(size(pointer)), pointerColor(3)*ones(size(pointer)));
             % update mask data
@@ -306,11 +306,11 @@ function plotBrillouinImage(handles, model)
                 handles.hMask.CData = maskRGB;
                 handles.hMask.AlphaData = 0.4*double(mask.mask);
             else
-                handles.hMask.CData = zeros(size(d));
-                handles.hMask.AlphaData = zeros(size(d));
+                handles.hMask.CData = zeros(size(data));
+                handles.hMask.AlphaData = zeros(size(data));
             end
             if ~model.displaySettings.masking.showOverlay
-                handles.hImage.AlphaData = zeros(size(d));
+                handles.hImage.AlphaData = zeros(size(data));
             end
     end
 end
