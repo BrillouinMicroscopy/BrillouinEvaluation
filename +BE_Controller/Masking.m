@@ -44,17 +44,46 @@ function masking = Masking(model, view)
     
     %% Callbacks related to masking
     % Motion function
-    dims = {'X', 'Y', 'Z'};
-    for kk = 1:length(dims)
-        pos.([dims{kk} '_zm']) = ...
-            model.parameters.positions.(dims{kk}) - ...
-            mean(model.parameters.positions.(dims{kk})(:))*ones(size(model.parameters.positions.(dims{kk})));
-        pos.([dims{kk} '_zm']) = squeeze(pos.([dims{kk} '_zm']));
+    data = model.results.(model.displaySettings.evaluation.type);
+    data = double(data);
+    dimensions = struct( ...
+        'count', 3, ...
+        'names' , {{'X', 'Y', 'Z'}}, ...
+        'orders', [2, 1, 3], ...
+        'indices', {{ {1, ':', 1}, {':', 1, 1}, {1, 1, ':'} }}, ... 
+        'labels', {{'$x$ [$\mu$m]', '$y$ [$\mu$m]', '$z$ [$\mu$m]'}} ...
+    );
+
+    dimLength = size(data, 1, 2, 3);
+    nsdimensions = struct( ...
+        'count', sum(dimLength > 1) ...
+    );
+    kk = 1;
+    for jj = 1:dimensions.count
+        if dimLength(dimensions.orders(jj)) > 1
+            nsdimensions.names{kk} = dimensions.names{jj};
+            nsdimensions.orders(kk) = dimensions.orders(jj);
+            nsdimensions.indices{kk} = dimensions.indices{jj};
+            nsdimensions.labels{kk} = dimensions.labels{jj};
+            kk = kk + 1;
+        end
     end
+
+    for jj = 1:dimensions.count
+        positions.([dimensions.names{jj} '_zm']) = model.parameters.positions.(dimensions.names{jj}) - ...
+            mean(model.parameters.positions.(dimensions.names{jj})(:))*ones(size(model.parameters.positions.(dimensions.names{jj})));
+    end
+    
+    x = squeeze(positions.([nsdimensions.names{1} '_zm']));
+    y = squeeze(positions.([nsdimensions.names{2} '_zm']));
+    
+    global needsTranspose;
+    needsTranspose = (nsdimensions.orders(1) < nsdimensions.orders(2));
+    
     global brushSize;
     brushSize = model.parameters.masking.brushSize;
 %     axInfo = getAxInfo(view.masking.axesImage);
-    MotionFcnCallback = @(src, data) DrawPointer(src, data, view.masking.axesImage, view.masking.hPointer, pos);
+    MotionFcnCallback = @(src, data) DrawPointer(src, data, view.masking.axesImage, view.masking.hPointer, x, y);
     set(view.masking.parent, 'WindowButtonMotionFcn', MotionFcnCallback);
     % ButtonDown function
     set(view.masking.parent,'WindowButtonDownFcn',{@StartDrawing, MotionFcnCallback, view.masking.hMask, model});
@@ -90,10 +119,17 @@ function movedraw(~, ~, MotionFcnCallback, hMask, adding)
 end
 
 function UpdateMask(hMask, m, adding)
-    global mask;
+    global mask needsTranspose;
     if ~isempty(mask)
+        if needsTranspose
+            m = transpose(m);
+        end
         mask.mask(logical(m)) = adding;
-        set(hMask,'AlphaData',0.4*double(mask.mask));
+        maskData = squeeze(mask.mask);
+        if needsTranspose
+            maskData = transpose(maskData);
+        end
+        set(hMask, 'AlphaData', 0.4*double(maskData));
     end
 end
 
@@ -106,14 +142,17 @@ function EndDrawing(src, ~, MotionFcnCallback, model)
     end
 end
 
-function pointer = DrawPointer(~, ~, axInfo, hPointer, pos)
+function pointer = DrawPointer(~, ~, axInfo, hPointer, x, y)
     cp = get(axInfo, 'currentpoint');
-    cp = [cp(1,1), cp(1,2)];
-    global brushSize;
+    cp = [cp(1, 1), cp(1, 2)];
+    global brushSize needsTranspose;
     
     if ~isempty(cp)
-        pointer = sqrt((pos.X_zm-cp(1)).^2+(pos.Y_zm-cp(2)).^2) <= (brushSize/2);
-        set(hPointer, 'AlphaData', 0.6*pointer);
+        pointer = sqrt((x - cp(1)).^2 + (y - cp(2)).^2) <= (brushSize / 2);
+        if needsTranspose
+            pointer = transpose(pointer);
+        end
+        set(hPointer, 'AlphaData', 0.6 * pointer);
     else
         pointer = [];
     end
@@ -122,24 +161,24 @@ end
 function zoomCallback(src, ~, str, view)
     switch get(src, 'UserData')
         case 0
-            set(view.masking.panButton,'UserData',0);
-            set(view.masking.panHandle,'Enable','off');
-            set(view.masking.rotate3dButton,'UserData',0);
-            set(view.masking.rotate3dHandle,'Enable','off');
+            set(view.masking.panButton, 'UserData', 0);
+            set(view.masking.panHandle, 'Enable', 'off');
+            set(view.masking.rotate3dButton, 'UserData', 0);
+            set(view.masking.rotate3dHandle, 'Enable', 'off');
             switch str
                 case 'in'
-                    set(view.masking.zoomHandle,'Enable','on','Direction','in');
-                    set(view.masking.zoomIn,'UserData',1);
-                    set(view.masking.zoomOut,'UserData',0);
+                    set(view.masking.zoomHandle, 'Enable', 'on', 'Direction', 'in');
+                    set(view.masking.zoomIn, 'UserData', 1);
+                    set(view.masking.zoomOut, 'UserData', 0);
                 case 'out'
-                    set(view.masking.zoomHandle,'Enable','on','Direction','out');
-                    set(view.masking.zoomOut,'UserData',1);
-                    set(view.masking.zoomIn,'UserData',0);
+                    set(view.masking.zoomHandle, 'Enable', 'on', 'Direction', 'out');
+                    set(view.masking.zoomOut, 'UserData', 1);
+                    set(view.masking.zoomIn, 'UserData', 0);
             end
         case 1
-            set(view.masking.zoomHandle,'Enable','off','Direction','in');
-            set(view.masking.zoomOut,'UserData',0);
-            set(view.masking.zoomIn,'UserData',0);
+            set(view.masking.zoomHandle, 'Enable', 'off', 'Direction', 'in');
+            set(view.masking.zoomOut, 'UserData', 0);
+            set(view.masking.zoomIn, 'UserData', 0);
     end
 end
 
@@ -196,16 +235,20 @@ function changeClim(UIControl, ~, model, sign)
 end
 
 function selectMask(~, data, model, view)
-    global mask;
+    global mask needsTranspose;
     if ~isempty(data.Indices)
         masks = model.tmp.masks;
         maskFields = fieldnames(masks);
         selectedMask = maskFields{data.Indices(1)};
         model.displaySettings.masking.selected = selectedMask;
         mask = model.tmp.masks.(selectedMask);
-        maskRGB = cat(3, mask.color(1)*ones(size(mask.mask)), mask.color(2)*ones(size(mask.mask)), mask.color(3)*ones(size(mask.mask)));
+        maskData = squeeze(mask.mask);
+        if needsTranspose
+            maskData = transpose(maskData);
+        end
+        maskRGB = cat(3, mask.color(1)*ones(size(maskData)), mask.color(2)*ones(size(maskData)), mask.color(3)*ones(size(maskData)));
         view.masking.hMask.CData = maskRGB;
-        view.masking.hMask.AlphaData = 0.4*double(mask.mask);
+        view.masking.hMask.AlphaData = 0.4*double(maskData);
     end
 end
 
