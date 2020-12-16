@@ -13,8 +13,6 @@ function callbacks = Evaluation(model, view)
     set(view.evaluation.validity, 'Callback', {@setValue, model, 'valThreshould'});
     
     set(view.evaluation.showSpectrum, 'Callback', {@showSpectrum, view, model});
-    set(view.evaluation.selectbright, 'Callback', {@selectbright, view, model});
-    set(view.evaluation.getbrightposition, 'Callback', {@getpstn, view, model});
     set(view.evaluation.startMasking, 'Callback', {@startMasking, view, model});
     
     set(view.evaluation.zoomIn, 'Callback', {@zoom, 'in', view});
@@ -851,91 +849,6 @@ function ImageClickCallback(~, event, model)
     figure(124);
     plot(spectrum);
     ylim([100 500]);
-end
-
-function selectbright(~, ~, ~, model)
-
-    defaultFileName = fullfile(pwd, '*.png');
-    [baseFileName, folder] = uigetfile(defaultFileName, 'Select a file');
-    if baseFileName == 0
-        return;
-    end
-    
-    fullFileName = fullfile(folder, baseFileName);
-
-    I = imread(fullFileName);
-    I = I(:,:,1);
-    I = imcrop(I, [600 500 1500 1500]);
-    model.results.brightfield_raw = I;
-    overlayBrightfield(model);
-end
-    
-function overlayBrightfield(model)
-
-    model.parameters.evaluation.scaling = 0.086;
-    model.parameters.evaluation.centerx = 800;
-    model.parameters.evaluation.centery = 860;
-    model.parameters.evaluation.rotationAngle = -135;
-
-    scaling = model.parameters.evaluation.scaling;   % [micro m / pix]   scaling factor
-    
-    dims = {'Y', 'X', 'Z'};
-    for jj = 1:length(dims)
-        positions.([dims{jj} '_zm']) = ...
-            model.parameters.positions.(dims{jj}) ...
-            - mean(model.parameters.positions.(dims{jj})(:)) * ones(size(model.parameters.positions.(dims{jj})));
-    end
-    
-    maxx = max(max(positions.X_zm));
-    minx = min(min(positions.X_zm));
-    maxy = max(max(positions.Y_zm));
-    miny = min(min(positions.Y_zm));
-    
-    width = (maxx - minx)/(scaling);
-    height = (maxy - miny)/(scaling);
-    
-    startx = model.parameters.evaluation.centerx - width/2;
-    starty = model.parameters.evaluation.centery - height/2;
-
-    I = imrotate(model.results.brightfield_raw, model.parameters.evaluation.rotationAngle);
-    model.results.brightfield_rot = I;
-    
-    I = imcrop(I, [startx starty width height]);
-    
-    x = linspace(minx, maxx, size(I,2));
-    y = linspace(miny, maxy, size(I,1));
-    [X,Y,Z] = meshgrid(x, y, 1);
-    
-    parameters = model.parameters;
-    parameters.positions_brightfield.X = X;
-    parameters.positions_brightfield.Y = Y;
-    parameters.positions_brightfield.Z = Z;
-    model.parameters = parameters;
-    
-    model.results.brightfield = I;
-end
-
-function getpstn(~, ~, view, model)
-    valids = ~isnan(model.results.brightfield_rot);
-    if isempty(model.results.brightfield_rot) || sum(valids(:)) == 0
-        disp('Please load a brightfield image first.');
-        return;
-    end
-    if isempty(model.file)
-        disp('Please load a Brillouin file first.');
-        return;
-    end
-    if isfield(view.overlay, 'parent') && ishandle(view.overlay.parent)
-        return;
-    else
-        parent = figure('Position',[500,200,900,650]);
-        % hide the menubar and prevent resizing
-        set(parent, 'menubar', 'none', 'Resize','off');
-    end
-
-    view.overlay = BE_View.Overlay(parent, model);
-
-    BE_Controller.Overlay(model, view);
 end
 
 function startMasking(~, ~, view, model)
