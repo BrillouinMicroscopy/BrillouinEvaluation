@@ -758,13 +758,7 @@ function ImageClickCallback(~, event, model)
     data = model.results.(model.displaySettings.evaluation.type);
     data = double(data);
     %% find non-singleton dimensions
-    dimensions = size(data);
-    if numel(dimensions) > 3
-        dimensions = dimensions(1:3);
-    end
-    if numel(dimensions) < 3
-        dimensions(3) = 1;
-    end
+    dimensions = size(data, 1, 2, 3);
     dimension = sum(dimensions > 1);
     
     %% define possible dimensions and their labels
@@ -853,8 +847,9 @@ end
 
 function startMasking(~, ~, view, model)
     data = nanmean(model.results.BrillouinShift,4);
-    dimensions = size(data);
-    dimension = sum(dimensions(1:(min([3, sum(dimensions > 1)]))) > 1);
+    dimensions = size(data, 1, 2, 3);
+    dimension = sum(dimensions > 1);
+    
     if dimension ~= 2
         disp('Masking is only available for 2D data yet.');
         return;

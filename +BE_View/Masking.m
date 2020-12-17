@@ -114,6 +114,7 @@ function handles = initGUI(model, parent)
     hPointer = imagesc(axesImage, NaN);
     axis(axesImage, 'equal');
     box(axesImage, 'on');
+    colormap(axesImage, BE_Utils.Colormaps.viridis);
 %     zoom(gcf,'reset');
     zoomHandle = zoom;
     panHandle = pan;
@@ -219,98 +220,98 @@ function plotBrillouinImage(handles, model)
     data = nanmean(data,4);
 
     %% find non-singleton dimensions
-    dimensions = size(data);
-    dimension = sum(dimensions > 1);
-    
-    labels = model.labels.evaluation.typesLabels.(model.displaySettings.evaluation.type);
-    
-    %% define possible dimensions and their labels
-    dims = {'Y', 'X', 'Z'};
-    dimslabel = {'y', 'x', 'z'};
+    dimensions = struct( ...
+        'count', 3, ...
+        'names' , {{'X', 'Y', 'Z'}}, ...
+        'orders', [2, 1, 3], ...
+        'indices', {{ {1, ':', 1}, {':', 1, 1}, {1, 1, ':'} }}, ... 
+        'labels', {{'$x$ [$\mu$m]', '$y$ [$\mu$m]', '$z$ [$\mu$m]'}} ...
+    );
 
-    nsdims = cell(dimension,1);
-    nsdimslabel = cell(dimension,1);
-    ind = 0;
-    for jj = 1:length(dimensions)
-        if dimensions(jj) > 1
-            ind = ind + 1;
-            nsdims{ind} = dims{jj};
-            nsdimslabel{ind} = ['$' dimslabel{jj} '$ [$\mu$m]'];
+    dimLength = size(data, 1, 2, 3);
+    nsdimensions = struct( ...
+        'count', sum(dimLength > 1) ...
+    );
+    kk = 1;
+    for jj = 1:dimensions.count
+        if dimLength(dimensions.orders(jj)) > 1
+            nsdimensions.names{kk} = dimensions.names{jj};
+            nsdimensions.orders(kk) = dimensions.orders(jj);
+            nsdimensions.indices{kk} = dimensions.indices{jj};
+            nsdimensions.labels{kk} = dimensions.labels{jj};
+            kk = kk + 1;
         end
     end
     
+    labels = model.labels.evaluation.typesLabels.(model.displaySettings.evaluation.type);
+    
     %% calculate zero mean positions
-    for jj = 1:length(dims)
-        positions.([dims{jj} '_zm']) = ...
-            model.parameters.positions.(dims{jj}) - mean(model.parameters.positions.(dims{jj})(:))*ones(size(model.parameters.positions.(dims{jj})));
+    for jj = 1:dimensions.count
+        positions.([dimensions.names{jj} '_zm']) = model.parameters.positions.(dimensions.names{jj}) - ...
+            mean(model.parameters.positions.(dimensions.names{jj})(:))*ones(size(model.parameters.positions.(dimensions.names{jj})));
     end
-    
-    d = squeeze(data);
-    pos.X_zm = squeeze(positions.X_zm);
-    pos.Y_zm = squeeze(positions.Y_zm);
-    pos.Z_zm = squeeze(positions.Z_zm);
-    
-    dimensions = size(d);
-    dimension = sum(dimensions > 1);
-
     %% plot
-    switch dimension
+    data = squeeze(data);
+    switch nsdimensions.count
         case 2
+            %% Transpose the data if necessary
+            if (nsdimensions.orders(1) < nsdimensions.orders(2))
+                data = transpose(data);
+            end
+            
+            %% Plot the data
             hold(handles.axesImage,'off');
-            handles.hImage.XData = pos.X_zm(1,:);
-            handles.hImage.YData = pos.Y_zm(:,1);
-            handles.hImage.CData = d;
-            handles.hImage.AlphaData = ~isnan(d);
+            handles.hImage.XData = squeeze(positions.([nsdimensions.names{1} '_zm'])(nsdimensions.indices{1}{:}));
+            handles.hImage.YData = squeeze(positions.([nsdimensions.names{2} '_zm'])(nsdimensions.indices{2}{:}));
+            handles.hImage.CData = data;
+            handles.hImage.AlphaData = ~isnan(data);
             title(handles.axesImage,labels.titleString);
             axis(handles.axesImage, 'equal');
-            xdif = diff(pos.X_zm,1,2);
-            xdif = floor(1000*mean(xdif(:)))/1000;
-            ydif = diff(pos.Y_zm,1,1);
-            ydif = floor(1000*mean(ydif(:)))/1000;
-            xlim(handles.axesImage, [min(pos.X_zm(:)) - xdif/2, max(pos.X_zm(:)) + xdif/2]);
-            ylim(handles.axesImage, [min(pos.Y_zm(:)) - ydif/2, max(pos.Y_zm(:)) + ydif/2]);
+            xlim(handles.axesImage, [min(handles.hImage.XData(:)), max(handles.hImage.XData(:))]);
+            ylim(handles.axesImage, [min(handles.hImage.YData(:)), max(handles.hImage.YData(:))]);
 
-            xlabel(handles.axesImage, '$x$ [$\mu$m]', 'interpreter', 'latex');
-            ylabel(handles.axesImage, '$y$ [$\mu$m]', 'interpreter', 'latex');
-            zlabel(handles.axesImage, '$z$ [$\mu$m]', 'interpreter', 'latex');
+            xlabel(handles.axesImage, nsdimensions.labels{1}, 'interpreter', 'latex');
+            ylabel(handles.axesImage, nsdimensions.labels{2}, 'interpreter', 'latex');
             cb = colorbar(handles.axesImage);
             title(cb,labels.dataLabel, 'interpreter', 'latex');
             box(handles.axesImage, 'on');
+            
             if model.displaySettings.masking.autoscale
-        %                 [floor, cap] = checkCaxis(min(data(:)), max(data(:)));
-        %                 model.displaySettings.masking.floor = floor;
-        %                 model.displaySettings.masking.cap = cap;
-                caxis(handles.axesImage, 'auto');
+                caxis(handles.axesImage, [min(data(:)); max(data(:))]);
             elseif model.displaySettings.masking.floor < model.displaySettings.masking.cap
                 caxis(handles.axesImage, [model.displaySettings.masking.floor model.displaySettings.masking.cap]);
             end
             zoom(handles.axesImage, 'reset');
             set(handles.axesImage, 'YDir', 'normal');
 
-            %% plot the selected mask
-            pointer = zeros(size(d));
+            %% Plot the selected mask
+            pointer = zeros(size(data));
             pointerColor = [0 0 1];
             pointerRGB = cat(3, pointerColor(1)*ones(size(pointer)), pointerColor(2)*ones(size(pointer)), pointerColor(3)*ones(size(pointer)));
             % update mask data
-            handles.hMask.XData = pos.X_zm(1,:);
-            handles.hMask.YData = pos.Y_zm(:,1);
+            handles.hMask.XData = handles.hImage.XData;
+            handles.hMask.YData = handles.hImage.YData;
             % update pointer data
-            handles.hPointer.XData = pos.X_zm(1,:);
-            handles.hPointer.YData = pos.Y_zm(:,1);
+            handles.hPointer.XData = handles.hImage.XData;
+            handles.hPointer.YData = handles.hImage.YData;
             handles.hPointer.CData = pointerRGB;
             handles.hPointer.AlphaData = 0.4*double(pointer);
             selectedMask = model.displaySettings.masking.selected;
             if isfield(model.tmp.masks, selectedMask)
                 mask = model.tmp.masks.(selectedMask);
-                maskRGB = cat(3, mask.color(1)*ones(size(mask.mask)), mask.color(2)*ones(size(mask.mask)), mask.color(3)*ones(size(mask.mask)));
+                maskData = squeeze(mask.mask);
+                if (nsdimensions.orders(1) < nsdimensions.orders(2))
+                    maskData = transpose(maskData);
+                end
+                maskRGB = cat(3, mask.color(1)*ones(size(maskData)), mask.color(2)*ones(size(maskData)), mask.color(3)*ones(size(maskData)));
                 handles.hMask.CData = maskRGB;
-                handles.hMask.AlphaData = 0.4*double(mask.mask);
+                handles.hMask.AlphaData = 0.4*double(maskData);
             else
-                handles.hMask.CData = zeros(size(d));
-                handles.hMask.AlphaData = zeros(size(d));
+                handles.hMask.CData = zeros(size(data));
+                handles.hMask.AlphaData = zeros(size(data));
             end
             if ~model.displaySettings.masking.showOverlay
-                handles.hImage.AlphaData = zeros(size(d));
+                handles.hImage.AlphaData = zeros(size(data));
             end
     end
 end

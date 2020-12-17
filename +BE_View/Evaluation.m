@@ -65,7 +65,7 @@ function initGUI(model, view)
         'FontSize', 11, 'HorizontalAlignment', 'left');
     
     startMasking = uicontrol('Parent', parent, 'Style', 'pushbutton', 'Units', 'normalized',...
-        'String','Create Masks','Position',[0.02,0.44,0.22,0.055],...
+        'String','Masking','Position',[0.02,0.51,0.22,0.055],...
         'FontSize', 11, 'HorizontalAlignment', 'left');
 
     uicontrol('Parent', parent, 'Style', 'text', 'String', 'Interp. Rayleigh peaks', 'Units', 'normalized',...
@@ -310,7 +310,7 @@ function plotData(handles, model, location, full)
     data = nanmean(data, 4);
 
     %% find non-singleton dimensions
-    dimensions = size(data);
+    dimensions = size(data, 1, 2, 3);
     dimension = sum(dimensions > 1);
 
     %% only update cdata for live preview
