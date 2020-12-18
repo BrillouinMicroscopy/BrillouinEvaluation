@@ -47,7 +47,7 @@ for jj = 1:length(measurements)
             try
                 maskName = masks{kk};
                 %% write header
-                xlswrite(xlsFilename, {measurements(jj).metadata.sample}, maskName, conv2xlscell(1, jj));
+                writecell({measurements(jj).metadata.sample}, xlsFilename, 'Sheet', maskName, 'Range', conv2xlscell(1, jj));
 
                 %% extract values with respect to the mask
                 availableMasks = results.results.results.masks;
@@ -60,7 +60,7 @@ for jj = 1:length(measurements)
                 vals = vals(~isnan(vals));
 
                 %% extract values and write to file
-                xlswrite(xlsFilename, vals, maskName, conv2xlscell(2, jj));
+                writematrix(vals, xlsFilename, 'Sheet', maskName, 'Range', conv2xlscell(2, jj));
             catch
             end
         end
