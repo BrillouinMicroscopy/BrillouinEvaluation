@@ -14,7 +14,7 @@ function handles = initGUI(model, parent)
     if ~strcmp('', model.programVersion.preRelease)
         version = [version '-' model.programVersion.preRelease];
     end
-    labelStr = ['Brillouin Evalution version ' version];
+    labelStr = sprintf('%s v%s', model.programVersion.name, version);
     jLabel = javaObjectEDT('javax.swing.JLabel', labelStr);
     jLabel.setFont(jLabel.getFont().deriveFont(20));
     javacomponent(jLabel, [10,110,380,30], parent);
@@ -66,7 +66,7 @@ function handles = initGUI(model, parent)
     hjLabel.setToolTipText('Write an email');
 
     % Set the mouse-click callback
-    set(hjLabel, 'MouseClickedCallback', @(h,e)web(['mailto:' model.programVersion.email '?subject=Brillouin%20Evaluation']))
+    set(hjLabel, 'MouseClickedCallback', @(h,e)web(['mailto:' model.programVersion.email '?subject=BrillouinEvaluation']))
 
     %% Website
     labelStr = '<html>Website:</html>';
@@ -82,7 +82,7 @@ function handles = initGUI(model, parent)
     hjLabel.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
 
     % Set the label's tooltip
-    hjLabel.setToolTipText('Visit the Brillouin Evaluation website');
+    hjLabel.setToolTipText('Visit the BrillouinEvaluation website');
 
     % Set the mouse-click callback
     set(hjLabel, 'MouseClickedCallback', @(h,e)web([model.programVersion.website], '-browser'))

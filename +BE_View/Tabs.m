@@ -38,7 +38,7 @@ function initGUI(model, view)
     if ~strcmp('', model.programVersion.preRelease)
         version = [version '-' model.programVersion.preRelease];
     end
-    f.Name = sprintf('Brillouin Evaluation v%s', version);
+    f.Name = sprintf('%s v%s', model.programVersion.name, version);
 
     % Move the window to the center of the screen.
     movegui(f,'center')
