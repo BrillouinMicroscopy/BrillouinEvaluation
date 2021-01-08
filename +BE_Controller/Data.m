@@ -5,6 +5,7 @@ function callbacks = Data(model, view)
     set(view.menubar.fileOpen, 'Callback', {@selectLoadData, model});
     set(view.menubar.fileClose, 'Callback', {@closeFile, model});
     set(view.menubar.fileSave, 'Callback', {@selectSaveData, model});
+    set(view.menubar.fileExport, 'Callback', {@selectExportData, model});
     
     set(view.data.repetition, 'Callback', {@selectRepetition, model});
     
@@ -19,6 +20,7 @@ function callbacks = Data(model, view)
         'closeFile', @()closeFile('', '', model), ...
         'load', @(filePath)loadData(model, filePath), ...
         'save', @(filePath)saveData(model, filePath), ...
+        'export', @(filePath)exportData(model, filePath), ...
         'setParameters', @(parameters)setParameters(model, parameters), ...
         'getPayload', @(type, indX, indY, indZ)getPayload(model, type, indX, indY, indZ), ...
         'getCalibration', @(type, index)getCalibration(model, type, index), ...
@@ -684,6 +686,22 @@ function selectSaveData(~, ~, model)
     saveData(model, filePath)
 end
 
+function selectExportData(~, ~, model)
+    % Save the results file
+    if isempty(model.filename)
+        return
+    end
+    [~, filename, ~] = fileparts(model.filename);
+    if (model.repetitionCount > 1)
+        defaultPath = [model.filepath '..' filesep 'EvalData' filesep filename '_rep' num2str(model.repetition) '.h5'];
+    else
+        defaultPath = [model.filepath '..' filesep 'EvalData' filesep filename '.h5'];
+    end
+    [FileName, PathName, ~] = uiputfile('*.h5','Save results as', defaultPath);
+    filePath = [PathName, FileName];
+    exportData(model, filePath)
+end
+
 function saveData(model, filePath)
     % Save the results file
     if isempty(model.filename) || ~ischar(filePath)
@@ -711,6 +729,52 @@ function saveData(model, filePath)
         save(filePath, 'results', '-v7.3');
     end
     model.log.log(['I/File: Saved file "' filePath '"']);
+end
+
+function exportData(model, filePath)    
+    % Since we cannot overwrite existing datasets with the Matlab HDF5
+    % high-level functions, we delete the file first if it exists already.
+    if exist(filePath, 'file') == 2
+        delete(filePath);
+    end
+    
+    %%
+    values = fields(model.labels.evaluation.typesLabels);
+    for jj = 1:length(values)
+        val = model.results.(values{jj});
+        val = nanmean(val, 4);
+        h5create(filePath, ['/' values{jj}], size(val));
+        h5write(filePath, ['/' values{jj}], val);
+        h5writeatt(filePath, ['/' values{jj}], 'title', model.labels.evaluation.typesLabels.(values{jj}).titleString);
+        h5writeatt(filePath, ['/' values{jj}], 'label', model.labels.evaluation.typesLabels.(values{jj}).dataLabel);
+    end
+    
+    %% Write the scale in x-, y-, and z-direction
+    directions = {'Y', 'X', 'Z'};
+    for jj = 1:length(directions)
+        pos = model.parameters.positions.(directions{jj});
+        ind = {1, 1, 1};
+        ind{jj} = 1:2;
+        if size(pos, jj) > 1
+            scale = abs(diff(pos(ind{:})));
+        else
+            scale = NaN;
+        end
+        h5writeatt(filePath, '/', ['scale' directions{jj}], scale);
+    end
+    
+    %% Write the date
+    date = char(datetime('now', 'TimeZone', 'local', 'Format', 'uuuu-MM-dd''T''HH:mm:ssxxxxx'));
+    h5writeatt(filePath, '/', 'created', date);
+    
+    %% Write the program version and commit
+    version = sprintf('%d.%d.%d', model.programVersion.major, model.programVersion.minor, model.programVersion.patch);
+    if ~strcmp('', model.programVersion.preRelease)
+        version = [version '-' model.programVersion.preRelease];
+    end
+    version = sprintf('%s v%s', model.programVersion.name, version);
+    h5writeatt(filePath, '/', 'programVersion', version);
+    h5writeatt(filePath, '/', 'programCommit', model.programVersion.commit);
 end
 
 function value = getPayload(model, type, indX, indY, indZ)

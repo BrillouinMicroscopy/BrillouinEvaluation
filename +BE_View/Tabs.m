@@ -13,8 +13,9 @@ function initGUI(model, view)
     % set menubar
     menubar.file = uimenu(f,'Label','File');
     menubar.fileOpen   = uimenu(menubar.file,'Label','Open','Accelerator','O');
-    menubar.fileClose  = uimenu(menubar.file,'Label','Close','Accelerator','W');                 
     menubar.fileSave   = uimenu(menubar.file,'Label','Save','Accelerator','S');
+    menubar.fileExport = uimenu(menubar.file,'Label','Export','Accelerator','E');
+    menubar.fileClose  = uimenu(menubar.file,'Label','Close','Accelerator','W');
     
     menubar.help = uimenu(f,'Label','Help');
     menubar.helpAbout  = uimenu(menubar.help,'Label','About','Accelerator','A');
