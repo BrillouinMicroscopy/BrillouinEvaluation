@@ -747,6 +747,7 @@ function exportData(model, filePath)
         h5write(filePath, ['/' values{jj}], val);
         h5writeatt(filePath, ['/' values{jj}], 'title', model.labels.evaluation.typesLabels.(values{jj}).titleString);
         h5writeatt(filePath, ['/' values{jj}], 'label', model.labels.evaluation.typesLabels.(values{jj}).dataLabel);
+        h5writeatt(filePath, ['/' values{jj}], 'axisOrder', 'ZXY');
     end
     
     %% Write the scale in x-, y-, and z-direction
@@ -762,6 +763,7 @@ function exportData(model, filePath)
         end
         h5writeatt(filePath, '/', ['scale' directions{jj}], scale);
     end
+    h5writeatt(filePath, '/', 'scaleUnit', 'µm/px');
     
     %% Write the date
     date = char(datetime('now', 'TimeZone', 'local', 'Format', 'uuuu-MM-dd''T''HH:mm:ssxxxxx'));
