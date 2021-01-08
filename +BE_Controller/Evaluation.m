@@ -460,8 +460,6 @@ function evaluate(view, model)
             end
         end
     end
-    
-%     save('Brillouin_spectra.mat', 'spectra');
 
     %% issue warnings when Rayleigh or Brillouin peaks could not be fitted
     if warningRayleigh

@@ -706,9 +706,9 @@ function saveData(model, filePath)
             'parameters', parameters, ...
             'results', model.results, ...
             'displaySettings', model.displaySettings ...
-        ); %#ok<NASGU>
+        );
 
-        save(filePath, 'results');
+        save(filePath, 'results', '-v7.3');
     end
     model.log.log(['I/File: Saved file "' filePath '"']);
 end
