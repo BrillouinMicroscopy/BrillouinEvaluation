@@ -246,9 +246,14 @@ function evaluate(view, model)
                     catch
                         date = datetime(datestring, 'InputFormat', 'uuuu-MM-dd''T''HH:mm:ss.SSSXXX', 'TimeZone', 'UTC');
                     end
+                    
+                    exposureTime = model.controllers.data.getPayload('exposure', jj, kk, ll);
+                    if isnan(exposureTime)
+                        exposureTime = model.parameters.exposureTime;
+                    end
 
                     for mm = 1:size(imgs,3)
-                        time = etime(datevec(date),datevec(refTime)) + (mm-1) * model.parameters.exposureTime;
+                        time = etime(datevec(date),datevec(refTime)) + (mm-1) * exposureTime;
                         res.times(kk, jj, ll, mm) = time;
                         if ~model.status.evaluation.evaluate
                             break

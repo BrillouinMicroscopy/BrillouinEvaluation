@@ -239,10 +239,10 @@ classdef Model < handle
                 'adding', 1 ...             % [logical] add or delete mask
             ), ...
             'date', NaN, ...
-            'exposureTime', 0.5 ... % The hardcoded value for the exposure time needs to be read from the
-                                ... % raw data file once available. For now 0.5 s will do, since it is only
-                                ... % used for interpolating the Rayleigh peak position and +- 0.5 s have
-                                ... % no significant influence.
+            'exposureTime', 0.5 ... % This is the default exposure time for files in which the time was not
+                                ... % saved. For newer files, the exposure time is read from the file. The
+                                ... % time is only used for interpolating the Rayleigh peak position, so
+                                ... % +- 0.5 s have no significant influence.
         );
         %% Display settings of the plots
         % Saved to evaluated data file
