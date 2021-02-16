@@ -37,7 +37,7 @@ function setParameters(model, parameters)
     model.parameters = copyFields(model.parameters, parameters);
     
     %% Copy setup parameters
-    if isfield(parameters.data, 'setup')
+    if isfield(parameters, 'data') && isfield(parameters.data, 'setup')
         model.parameters.constants_setup = copyFields(model.parameters.constants_setup, model.availableSetups.(parameters.data.setup));
         if isfield(model.parameters.data, 'setup')
             model.parameters.data = rmfield(model.parameters.data, 'setup');
