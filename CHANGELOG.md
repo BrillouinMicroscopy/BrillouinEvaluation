@@ -1,3 +1,9 @@
+## 1.5.1 - 2012-02-19
+
+### Fixed
+- Minor layout fixes #34
+- Don't break auto-evaluation if data field is absent d0a0239
+
 ## 1.5.0 - 2012-02-08
 
 ### Added
