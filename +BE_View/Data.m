@@ -19,7 +19,7 @@ function initGUI(~, view)
     parent = view.data.parent;
 
     file_panel = uipanel('Parent', parent, 'Title', 'File', 'FontSize', 11,...
-                 'Position', [.02 .03 .4 .95]);
+                 'Position', [.02 .03 .5 .95]);
 
     uicontrol('Parent', file_panel, 'Style','text','String','Selected file:', 'Units', 'normalized',...
                'Position',[0.05,0.9,0.3,0.05], 'FontSize', 11, 'HorizontalAlignment', 'left');
@@ -41,7 +41,7 @@ function initGUI(~, view)
     filename = uicontrol('Parent', file_panel, 'Style','text', 'Units', 'normalized',...
                'Position',[0.35,0.9,0.6,0.05], 'FontSize', 11, 'HorizontalAlignment', 'left');
     repetition = uicontrol('Parent', file_panel, 'Style','popup', 'Units', 'normalized',...
-               'Position',[0.35,0.85,0.6,0.05], 'FontSize', 11, 'HorizontalAlignment', 'left', 'String', {''});
+               'Position',[0.35,0.856,0.6,0.05], 'FontSize', 11, 'HorizontalAlignment', 'left', 'String', {''});
     date = uicontrol('Parent', file_panel, 'Style','text', 'Units', 'normalized',...
                'Position',[0.35,0.8,0.6,0.05], 'FontSize', 11, 'HorizontalAlignment', 'left');
     resolutionX = uicontrol('Parent', file_panel, 'Style','text', 'Units', 'normalized',...
@@ -56,7 +56,7 @@ function initGUI(~, view)
            'Position',[0.05,0.20,0.9,0.35], 'FontSize', 11, 'HorizontalAlignment', 'left', 'Enable', 'inactive');
 
     orientation_panel = uipanel('Parent', parent, 'Title', 'Image orientation', 'FontSize', 11,...
-                 'Position', [.44 .78 .3 .20]);
+                 'Position', [.54 .78 .44 .20]);
              
     % extraction axis selection
     rotationGroup = uibuttongroup(orientation_panel, 'Units', 'normalized', 'FontSize', 11, ...
@@ -77,24 +77,24 @@ function initGUI(~, view)
              'Position', [.59 .03 .39 .96]);
 
     vertically = uicontrol('Parent', mirrorGroup, 'Style', 'checkbox', 'Units', 'normalized',...
-        'Position', [0.02,0.725,0.14,0.22], 'FontSize', 11, 'HorizontalAlignment', 'left', 'tag', 'Borders');
+        'Position', [0.04,0.72,0.14,0.22], 'FontSize', 11, 'HorizontalAlignment', 'left', 'tag', 'Borders');
     
     uicontrol('Parent', mirrorGroup, 'Style', 'text', 'String', 'Vertically', 'Units', 'normalized',...
-        'Position', [0.18,0.75,0.8,0.22], 'FontSize', 11, 'HorizontalAlignment', 'left');
+        'Position', [0.18,0.72,0.8,0.22], 'FontSize', 11, 'HorizontalAlignment', 'left');
 
     horizontally = uicontrol('Parent', mirrorGroup, 'Style', 'checkbox', 'Units', 'normalized',...
-        'Position', [0.02,0.425,0.14,0.22], 'FontSize', 11, 'HorizontalAlignment', 'left', 'tag', 'Center');
+        'Position', [0.04,0.40,0.14,0.22], 'FontSize', 11, 'HorizontalAlignment', 'left', 'tag', 'Center');
     
     uicontrol('Parent', mirrorGroup, 'Style', 'text', 'String', 'Horizontally', 'Units', 'normalized',...
-        'Position', [0.18,0.45,0.9,0.22], 'FontSize', 11, 'HorizontalAlignment', 'left');
+        'Position', [0.18,0.40,0.9,0.22], 'FontSize', 11, 'HorizontalAlignment', 'left');
     
     setup_panel = uipanel('Parent', parent, 'Title', 'Setup selection', 'FontSize', 11,...
-                 'Position', [.44 .68 .3 .10]);
+                 'Position', [.54 .68 .44 .10]);
     
     uicontrol('Parent', setup_panel, 'Style','text','String','Selected setup:', 'Units', 'normalized',...
                'Position',[0.02,0.03,0.4,0.8], 'FontSize', 11, 'HorizontalAlignment', 'left');   
     setup = uicontrol('Parent', setup_panel, 'Style','popup', 'Units', 'normalized',...
-               'Position',[0.42,0.1,0.55,0.8], 'FontSize', 11, 'HorizontalAlignment', 'left', 'String', {''});
+               'Position',[0.42,0.14,0.55,0.8], 'FontSize', 11, 'HorizontalAlignment', 'left', 'String', {''});
     
     %% Return handles
     view.data = struct(...
