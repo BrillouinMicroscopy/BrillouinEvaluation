@@ -52,6 +52,8 @@ function [ f ] = getFrequencyFromMap( peakPos, time, calibration)
             if calibration.extrapolate
                 maxTime = max(times_valid(:));
                 time(time>maxTime) = maxTime;
+                minTime = min(times_valid(:));
+                time(time<minTime) = minTime;
             end
             peakPos_offset = interp2(peaksOffset, times, offset, peakPos, time, 'spline');
 
