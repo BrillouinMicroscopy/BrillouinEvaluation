@@ -739,11 +739,12 @@ function exportData(model, filePath)
     end
     
     %%
+    dim = double([model.parameters.resolution.X, model.parameters.resolution.Y, model.parameters.resolution.Z]);
     values = fields(model.labels.evaluation.typesLabels);
     for jj = 1:length(values)
         val = model.results.(values{jj});
         val = nanmean(val, 4);
-        h5create(filePath, ['/' values{jj}], size(val));
+        h5create(filePath, ['/' values{jj}], dim);
         h5write(filePath, ['/' values{jj}], val);
         h5writeatt(filePath, ['/' values{jj}], 'title', model.labels.evaluation.typesLabels.(values{jj}).titleString);
         h5writeatt(filePath, ['/' values{jj}], 'label', model.labels.evaluation.typesLabels.(values{jj}).dataLabel);
