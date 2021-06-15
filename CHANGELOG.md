@@ -1,10 +1,17 @@
-## 1.5.1 - 2012-02-19
+## 1.5.2 - 2021-06-15
+
+### Fixed
+- Fix spectrum extraction for time points outside calibrations #35
+- Also extrapolate to earlier time points for frequency calculation #36
+- Don't hide singleton dimensions when exporting for Python #37
+
+## 1.5.1 - 2021-02-19
 
 ### Fixed
 - Minor layout fixes #34
 - Don't break auto-evaluation if data field is absent d0a0239
 
-## 1.5.0 - 2012-02-08
+## 1.5.0 - 2021-02-08
 
 ### Added
 - Allow masking for all 2D data #24
