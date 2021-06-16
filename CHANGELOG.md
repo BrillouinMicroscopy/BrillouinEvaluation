@@ -1,3 +1,8 @@
+## 1.5.3 - 2021-06-16
+
+### Fixed
+- Fix messed up dimensions for Python export #39
+
 ## 1.5.2 - 2021-06-15
 
 ### Fixed
