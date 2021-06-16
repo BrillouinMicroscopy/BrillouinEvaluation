@@ -739,7 +739,7 @@ function exportData(model, filePath)
     end
     
     %%
-    dim = double([model.parameters.resolution.X, model.parameters.resolution.Y, model.parameters.resolution.Z]);
+    dim = double([model.parameters.resolution.Y, model.parameters.resolution.X, model.parameters.resolution.Z]);
     values = fields(model.labels.evaluation.typesLabels);
     for jj = 1:length(values)
         val = model.results.(values{jj});
