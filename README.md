@@ -27,3 +27,12 @@ Datasets for demonstration are provided in the `tests/data` folder. Open the `h5
 - **Peak Selection tab**: Select the Rayleigh and Brillouin peaks to be evaluated.
 - **Evaluation**: Evaluate the measurement by clicking on "Evaluate".
 - Save the evaluated measurement.
+
+# How to cite
+
+If you use BrillouinEvaluation in a scientific publication, please cite it with:
+
+> Raimund Schlüßler and others (2016), BrillouinEvaluation version X.X.X: Matlab program for the evaluation of Brillouin microscopy data sets [Software]. Available at https://github.com/BrillouinMicroscopy/BrillouinEvaluation.
+
+If the journal does not accept ``and others``, you can fill in the missing
+names from the [credits file](https://github.com/BrillouinMicroscopy/BrillouinEvaluation/blob/master/CREDITS).
